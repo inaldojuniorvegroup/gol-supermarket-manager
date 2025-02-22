@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
@@ -27,12 +27,6 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { user, loginMutation } = useAuth();
 
-  // Redirect if user is already authenticated
-  if (user) {
-    setLocation("/products");
-    return null;
-  }
-
   const loginForm = useForm<InsertUser>({
     resolver: zodResolver(insertUserSchema),
     defaultValues: {
@@ -40,6 +34,13 @@ export default function AuthPage() {
       password: "",
     },
   });
+
+  // Use useEffect for navigation instead of doing it during render
+  useEffect(() => {
+    if (user) {
+      setLocation("/products");
+    }
+  }, [user, setLocation]);
 
   const handleSubmit = async (data: InsertUser) => {
     await loginMutation.mutateAsync(data);
