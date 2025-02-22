@@ -27,6 +27,12 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { user, loginMutation } = useAuth();
 
+  // Redirect if user is already authenticated
+  if (user) {
+    setLocation("/products");
+    return null;
+  }
+
   const loginForm = useForm<InsertUser>({
     resolver: zodResolver(insertUserSchema),
     defaultValues: {
@@ -35,15 +41,12 @@ export default function AuthPage() {
     },
   });
 
-  // Add isLoading check to prevent premature redirect
-  if (user && !loginMutation.isPending) {
-    setTimeout(() => setLocation("/products"), 0);
-    return null;
-  }
+  const handleSubmit = async (data: InsertUser) => {
+    await loginMutation.mutateAsync(data);
+  };
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Left side - Forms */}
       <div className="flex items-center justify-center p-8">
         <Card className="w-full max-w-md">
           <CardHeader>
@@ -55,9 +58,7 @@ export default function AuthPage() {
           <CardContent>
             <Form {...loginForm}>
               <form
-                onSubmit={loginForm.handleSubmit((data) =>
-                  loginMutation.mutate(data)
-                )}
+                onSubmit={loginForm.handleSubmit(handleSubmit)}
                 className="space-y-4"
               >
                 <FormField
@@ -99,7 +100,6 @@ export default function AuthPage() {
         </Card>
       </div>
 
-      {/* Right side - Hero */}
       <div className="hidden lg:flex items-center justify-center p-8 bg-primary text-primary-foreground">
         <div className="max-w-md text-center">
           <Store className="mx-auto h-16 w-16 mb-6" />

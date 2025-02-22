@@ -34,10 +34,12 @@ export const getQueryFn: <T>(options: {
         credentials: "include",
       });
 
+      // Silently handle 401 errors when configured to return null
       if (res.status === 401) {
         if (unauthorizedBehavior === "returnNull") {
           return null;
         }
+        // Only throw if explicitly configured to do so
         throw new Error("Unauthorized");
       }
 
@@ -48,6 +50,7 @@ export const getQueryFn: <T>(options: {
 
       return await res.json();
     } catch (error) {
+      // Handle unauthorized errors silently when configured
       if (error instanceof Error && error.message === "Unauthorized") {
         if (unauthorizedBehavior === "returnNull") {
           return null;
@@ -60,11 +63,12 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
+      queryFn: getQueryFn({ on401: "returnNull" }), // Default to silent handling
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
       retry: (failureCount, error) => {
+        // Don't retry unauthorized errors
         if (error instanceof Error && error.message === "Unauthorized") {
           return false;
         }
