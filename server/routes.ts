@@ -46,6 +46,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(distributor);
   });
 
+  // Initialize distributors
+  app.post("/api/distributors/init", async (_req, res) => {
+    try {
+      const distributors = [
+        { name: "E B EXPRESS PROVISIONS INC", code: "EB-EXP", contact: "Contact", phone: "(123) 456-7890", email: "contact@ebexpress.com" },
+        { name: "PANAMERICAN FOODS CORP", code: "PAN-FOODS", contact: "Contact", phone: "(123) 456-7890", email: "contact@panamerican.com" },
+        { name: "JULINA FOODS", code: "JULINA", contact: "Contact", phone: "(123) 456-7890", email: "contact@julina.com" },
+        { name: "LEBLON FOOD INC.", code: "LEBLON", contact: "Contact", phone: "(123) 456-7890", email: "contact@leblon.com" },
+        { name: "MASTER FOODS", code: "MASTER", contact: "Contact", phone: "(123) 456-7890", email: "contact@masterfoods.com" },
+        { name: "MINAS TRADING", code: "MINAS", contact: "Contact", phone: "(123) 456-7890", email: "contact@minastrading.com" },
+        { name: "PANAMERICAN FOODS OF FLORIDA", code: "PAN-FL", contact: "Contact", phone: "(123) 456-7890", email: "contact@panamericanfl.com" },
+        { name: "PRIME NORTH DISTRIBUITION", code: "PRIME", contact: "Contact", phone: "(123) 456-7890", email: "contact@primenorth.com" },
+        { name: "SEM FRONTEIRAS WHOLESALE", code: "SEM-FRONT", contact: "Contact", phone: "(123) 456-7890", email: "contact@semfronteiras.com" },
+        { name: "ZAP FOODS LLC", code: "ZAP", contact: "Contact", phone: "(123) 456-7890", email: "contact@zapfoods.com" },
+        { name: "UNLIMITED BAG & SUPPLY CO", code: "UNLIM", contact: "Contact", phone: "(123) 456-7890", email: "contact@unlimited.com" },
+        { name: "DISCOVER SUPPLY", code: "DISCOVER", contact: "Contact", phone: "(123) 456-7890", email: "contact@discover.com" }
+      ];
+
+      for (const dist of distributors) {
+        const parsed = insertDistributorSchema.parse(dist);
+        await storage.createDistributor(parsed);
+      }
+
+      res.status(201).json({ message: "Distribuidores criados com sucesso" });
+    } catch (error) {
+      console.error('Error creating distributors:', error);
+      res.status(500).json({ error: 'Failed to create distributors' });
+    }
+  });
+
   // Products
   app.get("/api/products", async (_req, res) => {
     const products = await storage.getProducts();
