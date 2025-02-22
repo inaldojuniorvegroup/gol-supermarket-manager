@@ -24,7 +24,6 @@ import { Input } from "@/components/ui/input";
 import { Store } from "lucide-react";
 
 export default function AuthPage() {
-  // Move all hooks to the top before any conditional logic
   const [, setLocation] = useLocation();
   const { user, loginMutation } = useAuth();
 
@@ -36,8 +35,8 @@ export default function AuthPage() {
     },
   });
 
-  // Now handle navigation after all hooks are called
-  if (user) {
+  // Add isLoading check to prevent premature redirect
+  if (user && !loginMutation.isPending) {
     setTimeout(() => setLocation("/products"), 0);
     return null;
   }
@@ -92,7 +91,7 @@ export default function AuthPage() {
                   className="w-full"
                   disabled={loginMutation.isPending}
                 >
-                  Entrar
+                  {loginMutation.isPending ? "Entrando..." : "Entrar"}
                 </Button>
               </form>
             </Form>
