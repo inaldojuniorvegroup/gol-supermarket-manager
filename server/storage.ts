@@ -5,8 +5,18 @@ import {
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
 
+const scryptAsync = promisify(scrypt);
 const MemoryStore = createMemoryStore(session);
+
+// Função para gerar hash da senha
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
 export interface IStorage {
   // User operations
@@ -60,13 +70,21 @@ export class MemStorage implements IStorage {
     });
     this.users.clear();
     // Initialize with Gol Supermarket user with password 'admin123'
-    this.createUser({
-      username: "gol",
-      password: "a7c1d55f3c27d585a33d0f65a4b31b9ec09cf38c6e6e0fb28b2d50c3e7419932d2db5a05769ff85e07c1c9f78090e7332ffa9ad9d0d1a7aadad5fcc80afd5e99.b46f94e6a07c6c70",
-      role: "supermarket"
-    }).then(() => {
+    this.initializeGolSupermarket();
+  }
+
+  private async initializeGolSupermarket() {
+    try {
+      const hashedPassword = await hashPassword('admin123');
+      await this.createUser({
+        username: "gol",
+        password: hashedPassword,
+        role: "supermarket"
+      });
       console.log("Initialized Gol Supermarket user");
-    });
+    } catch (error) {
+      console.error("Error initializing Gol Supermarket user:", error);
+    }
   }
 
   private nextId() {
