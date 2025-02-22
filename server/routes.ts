@@ -81,8 +81,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      res.status(201).json({ 
-        message: `Distribuidores processados: ${created} criados, ${skipped} já existiam.` 
+      res.status(201).json({
+        message: `Distribuidores processados: ${created} criados, ${skipped} já existiam.`
       });
     } catch (error) {
       console.error('Error creating distributors:', error);
@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               name: product.Description || product['Item Description'],
               itemCode: product['Item Code'] || product.Code,
               supplierCode: product['Supplier Code'] || '',
-              distributorId: 1, // Assuming EB EXPRESS is the first distributor
+              distributorId: Number(req.body.distributorId),
               unitPrice: product['Unit Price']?.toString() || '0',
               boxPrice: product['Box Price']?.toString() || null,
               boxQuantity: parseInt(product['Box Quantity'] || '1'),
