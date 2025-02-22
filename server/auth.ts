@@ -30,10 +30,14 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || 'temporary-secret-for-development',
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
   };
 
   app.set("trust proxy", 1);
@@ -43,19 +47,43 @@ export function setupAuth(app: Express) {
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
-      const user = await storage.getUserByUsername(username);
-      if (!user || !(await comparePasswords(password, user.password))) {
-        return done(null, false);
-      } else {
+      try {
+        const user = await storage.getUserByUsername(username);
+        console.log("Login attempt:", { username, userFound: !!user });
+
+        if (!user) {
+          return done(null, false, { message: "User not found" });
+        }
+
+        const isValid = await comparePasswords(password, user.password);
+        console.log("Password validation:", { isValid });
+
+        if (!isValid) {
+          return done(null, false, { message: "Invalid password" });
+        }
+
         return done(null, user);
+      } catch (error) {
+        console.error("Authentication error:", error);
+        return done(error);
       }
     }),
   );
 
-  passport.serializeUser((user, done) => done(null, user.id));
+  passport.serializeUser((user, done) => {
+    console.log("Serializing user:", user.id);
+    done(null, user.id);
+  });
+
   passport.deserializeUser(async (id: number, done) => {
-    const user = await storage.getUser(id);
-    done(null, user);
+    try {
+      const user = await storage.getUser(id);
+      console.log("Deserializing user:", { id, userFound: !!user });
+      done(null, user);
+    } catch (error) {
+      console.error("Deserialization error:", error);
+      done(error);
+    }
   });
 
   app.post("/api/register", async (req, res, next) => {

@@ -57,6 +57,8 @@ export class MemStorage implements IStorage {
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
+    // Clear any existing data
+    this.users.clear();
   }
 
   private nextId() {
