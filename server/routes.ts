@@ -123,6 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               name: product['Nome'],
               itemCode: product['Código'],
               supplierCode: product['Cód.Forn.'] || '',
+              barCode: product['Cód.Barra'] || null,
               distributorId: Number(product.distributorId),
               unitPrice: (product['Preço Custo'] || '0').toString(),
               boxPrice: null,

@@ -35,6 +35,7 @@ export const products = pgTable("products", {
   distributorId: integer("distributor_id").notNull().references(() => distributors.id),
   itemCode: text("item_code").notNull(),
   supplierCode: text("supplier_code").notNull(),
+  barCode: text("bar_code"),
   name: text("name").notNull(),
   description: text("description"),
   unitPrice: decimal("unit_price").notNull(),

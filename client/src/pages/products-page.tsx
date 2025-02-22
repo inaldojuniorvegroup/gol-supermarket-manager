@@ -2,11 +2,10 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Product, InsertProduct, insertProductSchema } from "@shared/schema";
+import { Product, InsertProduct, insertProductSchema, Distributor } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import ImportExcel from "@/components/products/import-excel";
 import {
   Dialog,
   DialogContent,
@@ -24,15 +23,29 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Package, Plus, Tag, DollarSign } from "lucide-react";
+import { Package, Plus, Tag, DollarSign, Barcode, FileImage } from "lucide-react";
+import ImportExcel from "@/components/products/import-excel";
+
 
 export default function ProductsPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [selectedDistributor, setSelectedDistributor] = useState<string>("all");
 
-  const { data: products, isLoading } = useQuery<Product[]>({
+  const { data: products, isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ["/api/products"],
+  });
+
+  const { data: distributors, isLoading: isLoadingDistributors } = useQuery<Distributor[]>({
+    queryKey: ["/api/distributors"],
   });
 
   const form = useForm<InsertProduct>({
@@ -40,12 +53,15 @@ export default function ProductsPage() {
     defaultValues: {
       itemCode: "",
       supplierCode: "",
+      barCode: "",
       name: "",
       description: "",
       unitPrice: "0",
       boxQuantity: 1,
       unit: "UN",
-      isSpecialOffer: false
+      isSpecialOffer: false,
+      imageUrl: "",
+      distributorId: 0
     }
   });
 
@@ -59,20 +75,25 @@ export default function ProductsPage() {
       setOpen(false);
       form.reset();
       toast({
-        title: "Product created",
-        description: "Product has been added to the catalog",
+        title: "Produto criado",
+        description: "O produto foi adicionado ao catálogo com sucesso",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error creating product",
+        title: "Erro ao criar produto",
         description: error.message,
         variant: "destructive",
       });
     }
   });
 
-  if (isLoading) {
+  // Filtra produtos por distribuidor
+  const filteredProducts = selectedDistributor === "all"
+    ? products
+    : products?.filter(product => product.distributorId === parseInt(selectedDistributor));
+
+  if (isLoadingProducts || isLoadingDistributors) {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
@@ -96,8 +117,23 @@ export default function ProductsPage() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Products</h1>
-        <div className="flex gap-2">
-          <ImportExcel />
+        <div className="flex gap-2 items-center">
+          <Select
+            value={selectedDistributor}
+            onValueChange={setSelectedDistributor}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Filter by distributor" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Distributors</SelectItem>
+              {distributors?.map((distributor) => (
+                <SelectItem key={distributor.id} value={distributor.id.toString()}>
+                  {distributor.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -155,6 +191,34 @@ export default function ProductsPage() {
                       )}
                     />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="barCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Bar Code</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="imageUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Image URL</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="url" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <FormField
                     control={form.control}
                     name="description"
@@ -196,6 +260,36 @@ export default function ProductsPage() {
                       )}
                     />
                   </div>
+                  <FormField
+                    control={form.control}
+                    name="distributorId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Distributor</FormLabel>
+                        <Select
+                          value={field.value.toString()}
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a distributor" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {distributors?.map((distributor) => (
+                              <SelectItem
+                                key={distributor.id}
+                                value={distributor.id.toString()}
+                              >
+                                {distributor.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <Button type="submit" className="w-full" disabled={createMutation.isPending}>
                     Create Product
                   </Button>
@@ -207,9 +301,18 @@ export default function ProductsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {products?.map((product) => (
+        {filteredProducts?.map((product) => (
           <Card key={product.id}>
             <CardHeader>
+              {product.imageUrl && (
+                <div className="relative w-full h-48 mb-4">
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="object-cover w-full h-full rounded-lg"
+                  />
+                </div>
+              )}
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
                 {product.name}
@@ -218,8 +321,20 @@ export default function ProductsPage() {
             <CardContent className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Tag className="h-4 w-4" />
-                Code: {product.itemCode}
+                Item Code: {product.itemCode}
               </div>
+              {product.supplierCode && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <FileImage className="h-4 w-4" />
+                  Supplier Code: {product.supplierCode}
+                </div>
+              )}
+              {product.barCode && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Barcode className="h-4 w-4" />
+                  Bar Code: {product.barCode}
+                </div>
+              )}
               <div className="flex items-center gap-2 font-semibold">
                 <DollarSign className="h-4 w-4" />
                 ${product.unitPrice}
