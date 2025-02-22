@@ -5,6 +5,13 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Upload } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function ImportExcel() {
   const { toast } = useToast();
@@ -87,22 +94,33 @@ export default function ImportExcel() {
   };
 
   return (
-    <Button
-      variant="outline"
-      className="gap-2"
-      disabled={isLoading || importMutation.isPending}
-    >
-      <Upload className="h-4 w-4" />
-      <label className="cursor-pointer">
-        {isLoading ? "Importando..." : "Importar Excel"}
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          className="hidden"
-          onChange={handleFileUpload}
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>Importação em Massa</CardTitle>
+        <CardDescription>
+          Use esta função apenas para importação inicial do catálogo ou atualizações em lote.
+          Para adições ou alterações pontuais, utilize o formulário de cadastro individual.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button
+          variant="outline"
+          className="gap-2 w-full sm:w-auto"
           disabled={isLoading || importMutation.isPending}
-        />
-      </label>
-    </Button>
+        >
+          <Upload className="h-4 w-4" />
+          <label className="cursor-pointer">
+            {isLoading ? "Importando..." : "Selecionar Arquivo Excel"}
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={handleFileUpload}
+              disabled={isLoading || importMutation.isPending}
+            />
+          </label>
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
