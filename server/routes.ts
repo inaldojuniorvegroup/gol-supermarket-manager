@@ -105,6 +105,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/products/import", async (req, res) => {
     try {
       const products = req.body;
+
+      // Log do primeiro produto para debug
+      if (products.length > 0) {
+        console.log('Estrutura do primeiro produto:', JSON.stringify(products[0], null, 2));
+      }
+
       const importedProducts = [];
       const batchSize = 50; // Processar em lotes de 50 produtos
 
@@ -129,6 +135,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               createdAt: new Date(),
               updatedAt: new Date()
             };
+
+            console.log('Dados mapeados do produto:', productData);
 
             const parsed = insertProductSchema.parse(productData);
             const savedProduct = await storage.createProduct(parsed);
