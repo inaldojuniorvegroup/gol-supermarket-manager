@@ -8,9 +8,9 @@ import * as express from 'express';
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
-  // Aumentar limite do body-parser para arquivos grandes
-  app.use(express.json({ limit: '100mb' }));
-  app.use(express.urlencoded({ limit: '100mb', extended: true }));
+  // Aumentar limite do body-parser para arquivos muito grandes
+  app.use(express.json({ limit: '500mb' }));
+  app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
   // Stores
   app.get("/api/stores", async (_req, res) => {
@@ -112,16 +112,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const batch = products.slice(i, i + batchSize);
         for (const product of batch) {
           try {
+            // Mapear campos do Excel para o nosso schema
             const productData = {
-              name: product.Description || product['Item Description'],
-              itemCode: product['Item Code'] || product.Code,
-              supplierCode: product['Supplier Code'] || '',
-              distributorId: Number(req.body.distributorId),
-              unitPrice: product['Unit Price']?.toString() || '0',
-              boxPrice: product['Box Price']?.toString() || null,
-              boxQuantity: parseInt(product['Box Quantity'] || '1'),
-              unit: product['Unit'] || 'un',
-              description: product['Notes'] || null
+              name: product.Description || product['Item Description'] || product['DESCRIPTION'],
+              itemCode: product['Item Code'] || product['ITEM CODE'] || product.Code || product['CODE'],
+              supplierCode: product['Supplier Code'] || product['SUPPLIER CODE'] || '',
+              distributorId: Number(product.distributorId),
+              unitPrice: (product['Unit Price'] || product['UNIT PRICE'] || '0').toString(),
+              boxPrice: (product['Box Price'] || product['BOX PRICE'] || null)?.toString(),
+              boxQuantity: parseInt(product['Box Quantity'] || product['BOX QUANTITY'] || '1'),
+              unit: product['Unit'] || product['UNIT'] || 'un',
+              description: product['Notes'] || product['NOTES'] || null,
+              // Campos opcionais
+              imageUrl: null,
+              isSpecialOffer: false,
+              createdAt: new Date(),
+              updatedAt: new Date()
             };
 
             const parsed = insertProductSchema.parse(productData);
@@ -129,15 +135,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             importedProducts.push(savedProduct);
           } catch (error) {
             console.error('Error importing product:', product, error);
-            // Continue with next product even if one fails
+            // Continue com o próximo produto mesmo se um falhar
           }
         }
       }
 
-      res.status(201).json(importedProducts);
+      res.status(201).json({
+        message: `${importedProducts.length} produtos importados com sucesso`,
+        products: importedProducts
+      });
     } catch (error) {
       console.error('Error importing products:', error);
-      res.status(400).json({ error: 'Failed to import products' });
+      res.status(400).json({ error: 'Falha ao importar produtos' });
     }
   });
 

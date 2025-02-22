@@ -130,9 +130,16 @@ export default function DistributorsPage() {
     }
   });
 
+  // Ajustando a função handleFileUpload para lidar melhor com o arquivo
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, distributorId: number) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Mostrar loading state
+    toast({
+      title: "Processando arquivo",
+      description: "Isso pode levar alguns segundos...",
+    });
 
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -143,22 +150,52 @@ export default function DistributorsPage() {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        // Adiciona o distributorId aos produtos
-        const productsWithDistributor = jsonData.map(product => ({
-          ...product,
-          distributorId
-        }));
+        // Processar em lotes de 100 produtos
+        const batchSize = 100;
+        const batches = [];
 
-        await importProductsMutation.mutateAsync(productsWithDistributor);
+        for (let i = 0; i < jsonData.length; i += batchSize) {
+          const batch = jsonData.slice(i, i + batchSize).map(product => ({
+            ...product,
+            distributorId
+          }));
+          batches.push(batch);
+        }
+
+        let processedCount = 0;
+        for (const batch of batches) {
+          await importProductsMutation.mutateAsync(batch);
+          processedCount += batch.length;
+
+          // Atualizar progresso
+          toast({
+            title: "Importando produtos",
+            description: `Processados ${processedCount} de ${jsonData.length} produtos...`,
+          });
+        }
+
+        toast({
+          title: "Importação concluída",
+          description: `${jsonData.length} produtos foram importados com sucesso!`,
+        });
       } catch (error) {
         console.error('Error reading file:', error);
         toast({
-          title: "Error reading file",
-          description: "Failed to read the Excel file",
+          title: "Erro ao processar arquivo",
+          description: error instanceof Error ? error.message : "Falha ao ler o arquivo Excel",
           variant: "destructive",
         });
       }
     };
+
+    reader.onerror = () => {
+      toast({
+        title: "Erro ao ler arquivo",
+        description: "Não foi possível ler o arquivo selecionado",
+        variant: "destructive",
+      });
+    };
+
     reader.readAsArrayBuffer(file);
   };
 
@@ -311,8 +348,8 @@ export default function DistributorsPage() {
               <div className="flex gap-2">
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="flex-1"
                       onClick={() => setSelectedDistributor(distributor.id)}
                     >
