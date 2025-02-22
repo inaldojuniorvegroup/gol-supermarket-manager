@@ -21,6 +21,11 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
   const { logoutMutation } = useAuth();
   const [open, setOpen] = useState(false);
 
+  const handleLogout = () => {
+    logoutMutation.mutate();
+    setOpen(false);
+  };
+
   const NavContent = () => (
     <>
       <div className="flex items-center gap-2 px-6 py-4">
@@ -40,6 +45,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
               <Link 
                 key={item.name} 
                 href={item.href}
+                onClick={() => setOpen(false)}
                 className={`
                   flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-md
                   ${isActive 
@@ -60,7 +66,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
         <Button 
           variant="outline" 
           className="w-full justify-start gap-2"
-          onClick={() => logoutMutation.mutate()}
+          onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
           Logout
