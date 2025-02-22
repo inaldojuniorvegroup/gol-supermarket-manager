@@ -1,0 +1,234 @@
+Sistema de Gerenciamento de Pedidos - Gol Supermarket
+Descrição do Projeto
+Sistema de gerenciamento de pedidos e catálogo para o Gol Supermarket, focado em otimizar o fluxo de compras e distribuição entre fornecedores e 5 lojas em Massachusetts.
+
+Objetivos Principais
+Automatizar o processo de pedidos entre lojas e distribuidores
+Gerenciar catálogos de produtos com preços e ofertas
+Acompanhar status de pedidos em tempo real
+Gerar documentação em PDF para pedidos
+Facilitar importação/exportação de dados via Excel
+Stack Tecnológico
+Frontend: React + TypeScript + Vite
+Backend: Express.js + TypeScript
+Banco de Dados: PostgreSQL com Drizzle ORM
+UI: shadcn/ui + Tailwind CSS
+Estado: TanStack Query v5
+Roteamento: wouter
+Autenticação: Passport.js
+WebSockets: ws (servidor) e WebSocket API (cliente)
+PDF: @react-pdf/renderer
+Planilhas: xlsx
+Estrutura de Dados
+Products
+interface Product {
+  id: number;
+  distributorId: number;
+  itemCode: string;        // Código interno
+  supplierCode: string;    // Código do fornecedor
+  name: string;
+  description: string | null;
+  unitPrice: string;
+  previousUnitPrice: string | null;
+  boxPrice: string | null;
+  previousBoxPrice: string | null;
+  boxQuantity: number;
+  unit: string;           // UN, CX, KG, etc
+  imageUrl: string | null;
+  isSpecialOffer: boolean;
+  expirationDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+Orders
+interface Order {
+  id: number;
+  distributorId: number;
+  storeId: number;
+  status: string;         // pending, approved, cancelled, completed
+  total: string;
+  createdAt: string;
+  items: OrderItem[];     // Sempre usar [] como fallback
+  distributor: Distributor;
+  store: Store;
+}
+interface OrderItem {
+  id: number;
+  orderId: number;
+  productId: number;
+  quantity: string;
+  price: string;
+  total: string;
+  product: Product;
+}
+Lojas
+interface Store {
+  id: number;
+  name: string;
+  code: string;
+  address: string;
+  city: string;
+  state: string;
+  phone: string;
+  active: boolean;
+}
+Distribuidores
+interface Distributor {
+  id: number;
+  name: string;
+  code: string;
+  contact: string;
+  phone: string;
+  email: string;
+  active: boolean;
+}
+Implementação do WebSocket
+Servidor (Express + ws)
+// Configuração do WebSocket Server
+const wss = new WebSocketServer({ 
+  server,
+  path: '/ws',
+  verifyClient: (info, callback) => {
+    // Importante: Ignorar conexões do Vite HMR
+    const protocol = info.req.headers['sec-websocket-protocol'];
+    if (protocol === 'vite-hmr') {
+      callback(false);
+      return;
+    }
+    callback(true);
+  }
+});
+// Heartbeat para detectar conexões mortas
+const HEARTBEAT_INTERVAL = 30000;
+setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if ((ws as any).isAlive === false) return ws.terminate();
+    (ws as any).isAlive = false;
+    ws.ping();
+  });
+}, HEARTBEAT_INTERVAL);
+// Gerenciamento de conexões
+wss.on('connection', (ws) => {
+  console.log('Client connected');
+  (ws as any).isAlive = true;
+  ws.on('pong', () => (ws as any).isAlive = true);
+  // Confirmação de conexão
+  ws.send(JSON.stringify({ 
+    type: 'connection', 
+    status: 'connected' 
+  }));
+  // Gerenciar mensagens com try-catch
+  ws.on('message', (message) => {
+    try {
+      const data = JSON.parse(message.toString());
+      // Processar mensagem
+    } catch (error) {
+      console.error('Error processing message:', error);
+      ws.send(JSON.stringify({ 
+        type: 'error', 
+        message: 'Invalid message format' 
+      }));
+    }
+  });
+});
+Cliente (React Hook)
+function useWebSocket(orderId: string) {
+  const wsRef = useRef<WebSocket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectAttemptsRef = useRef(0);
+  const MAX_RECONNECT_ATTEMPTS = 10;
+  const INITIAL_RECONNECT_DELAY = 1000;
+  useEffect(() => {
+    const connect = () => {
+      if (wsRef.current?.readyState === WebSocket.CONNECTING) return;
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+      wsRef.current = ws;
+      ws.onopen = () => {
+        setIsConnected(true);
+        ws.send(JSON.stringify({ type: 'subscribe', orderId }));
+      };
+      ws.onclose = () => {
+        setIsConnected(false);
+        if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectAttemptsRef.current++;
+            connect();
+          }, INITIAL_RECONNECT_DELAY * Math.pow(2, reconnectAttemptsRef.current));
+        }
+      };
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+    };
+    connect();
+    return () => {
+      wsRef.current?.close();
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
+  }, [orderId]);
+  return isConnected;
+}
+Setup do Projeto
+1. Criar Projeto
+# Criar projeto Vite
+npm create vite@latest gol-market -- --template react-ts
+# Instalar dependências principais
+npm install @tanstack/react-query date-fns lucide-react wouter xlsx zod @radix-ui/react-dialog @radix-ui/react-dropdown-menu tailwindcss @react-pdf/renderer
+# Configurar Tailwind e shadcn/ui
+npx shadcn-ui@latest init
+2. Estrutura de Diretórios
+/
+├── client/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── ui/           # Componentes shadcn
+│   │   │   ├── order-pdf.tsx # Geração de PDF
+│   │   │   └── ...
+│   │   ├── hooks/           # Custom hooks
+│   │   ├── lib/            # Utilitários
+│   │   ├── pages/          # Páginas da aplicação
+│   │   └── App.tsx
+├── server/
+│   ├── routes/
+│   ├── db/
+│   └── index.ts
+└── db/
+    ├── schema.ts           # Schema Drizzle
+    └── migrations/
+Boas Práticas
+1. Tratamento de Erros
+Usar try-catch em operações assíncronas
+Implementar error boundaries no React
+Logging detalhado no servidor
+Feedback visual para erros no cliente
+2. Performance
+Implementar cache com TanStack Query
+Usar Skeleton components para loading
+Paginação server-side
+Lazy loading de imagens
+Debounce em operações pesadas
+3. Segurança
+Validar todos os inputs com Zod
+Implementar rate limiting
+Sanitizar dados antes de salvar
+Validar permissões por rota
+Usar HTTPS em produção
+4. UI/UX
+Design responsivo mobile-first
+Feedback visual para todas ações
+Loading states consistentes
+Mensagens de erro claras
+Confirmações para ações destrutivas
+Próximos Passos
+Setup inicial do projeto
+Configuração do banco de dados
+Implementação da autenticação
+Desenvolvimento das rotas principais
+Implementação do WebSocket
+Desenvolvimento dos componentes base
+Implementação da geração de PDF
+Testes e ajustes finais
