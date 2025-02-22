@@ -31,14 +31,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Package, Plus, Tag, DollarSign, Barcode, FileImage } from "lucide-react";
+import { Package, Plus, Tag, DollarSign, Barcode, FileImage, Folder } from "lucide-react";
 import ImportExcel from "@/components/products/import-excel";
-
 
 export default function ProductsPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [selectedDistributor, setSelectedDistributor] = useState<string>("all");
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
 
   const { data: products, isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ["/api/products"],
@@ -47,6 +47,9 @@ export default function ProductsPage() {
   const { data: distributors, isLoading: isLoadingDistributors } = useQuery<Distributor[]>({
     queryKey: ["/api/distributors"],
   });
+
+  // Extrair departamentos únicos dos produtos
+  const departments = Array.from(new Set(products?.map(p => p.description).filter(Boolean) || []));
 
   const form = useForm<InsertProduct>({
     resolver: zodResolver(insertProductSchema),
@@ -88,18 +91,12 @@ export default function ProductsPage() {
     }
   });
 
-  // Filtra produtos por distribuidor
-  const filteredProducts = selectedDistributor === "all"
-    ? products
-    : products?.filter(product => {
-        console.log('Filtrando produto:', {
-          produtoId: product.id,
-          produtoDistribuidor: product.distributorId,
-          selecionado: selectedDistributor,
-          match: product.distributorId === parseInt(selectedDistributor)
-        });
-        return product.distributorId === parseInt(selectedDistributor);
-      });
+  // Filtra produtos por distribuidor e departamento
+  const filteredProducts = products?.filter(product => {
+    const matchesDistributor = selectedDistributor === "all" || product.distributorId === parseInt(selectedDistributor);
+    const matchesDepartment = selectedDepartment === "all" || product.description === selectedDepartment;
+    return matchesDistributor && matchesDepartment;
+  });
 
   if (isLoadingProducts || isLoadingDistributors) {
     return (
@@ -126,6 +123,22 @@ export default function ProductsPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Products</h1>
         <div className="flex gap-2 items-center">
+          <Select
+            value={selectedDepartment}
+            onValueChange={setSelectedDepartment}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Filter by department" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Departments</SelectItem>
+              {departments.map((department) => (
+                <SelectItem key={department} value={department}>
+                  {department}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select
             value={selectedDistributor}
             onValueChange={setSelectedDistributor}
@@ -232,9 +245,9 @@ export default function ProductsPage() {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description</FormLabel>
+                        <FormLabel>Department</FormLabel>
                         <FormControl>
-                          <Textarea {...field} />
+                          <Textarea {...field} placeholder="Enter department name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -343,15 +356,16 @@ export default function ProductsPage() {
                   Bar Code: {product.barCode}
                 </div>
               )}
+              {product.description && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Folder className="h-4 w-4" />
+                  Department: {product.description}
+                </div>
+              )}
               <div className="flex items-center gap-2 font-semibold">
                 <DollarSign className="h-4 w-4" />
                 ${product.unitPrice}
               </div>
-              {product.description && (
-                <p className="text-sm text-muted-foreground">
-                  {product.description}
-                </p>
-              )}
             </CardContent>
           </Card>
         ))}
