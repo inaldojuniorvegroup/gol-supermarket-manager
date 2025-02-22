@@ -9,8 +9,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
   // Aumentar limite do body-parser para arquivos grandes
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ limit: '50mb', extended: true }));
+  app.use(express.json({ limit: '100mb' }));
+  app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
   // Stores
   app.get("/api/stores", async (_req, res) => {
@@ -62,23 +62,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const products = req.body;
       const importedProducts = [];
+      const batchSize = 50; // Processar em lotes de 50 produtos
 
-      for (const product of products) {
-        const productData = {
-          name: product.Description || product['Item Description'],
-          itemCode: product['Item Code'] || product.Code,
-          supplierCode: product['Supplier Code'] || '',
-          distributorId: 1, // Assuming EB EXPRESS is the first distributor
-          unitPrice: product['Unit Price']?.toString() || '0',
-          boxPrice: product['Box Price']?.toString() || null,
-          boxQuantity: parseInt(product['Box Quantity'] || '1'),
-          unit: product['Unit'] || 'un',
-          description: product['Notes'] || null
-        };
+      for (let i = 0; i < products.length; i += batchSize) {
+        const batch = products.slice(i, i + batchSize);
+        for (const product of batch) {
+          try {
+            const productData = {
+              name: product.Description || product['Item Description'],
+              itemCode: product['Item Code'] || product.Code,
+              supplierCode: product['Supplier Code'] || '',
+              distributorId: 1, // Assuming EB EXPRESS is the first distributor
+              unitPrice: product['Unit Price']?.toString() || '0',
+              boxPrice: product['Box Price']?.toString() || null,
+              boxQuantity: parseInt(product['Box Quantity'] || '1'),
+              unit: product['Unit'] || 'un',
+              description: product['Notes'] || null
+            };
 
-        const parsed = insertProductSchema.parse(productData);
-        const savedProduct = await storage.createProduct(parsed);
-        importedProducts.push(savedProduct);
+            const parsed = insertProductSchema.parse(productData);
+            const savedProduct = await storage.createProduct(parsed);
+            importedProducts.push(savedProduct);
+          } catch (error) {
+            console.error('Error importing product:', product, error);
+            // Continue with next product even if one fails
+          }
+        }
       }
 
       res.status(201).json(importedProducts);

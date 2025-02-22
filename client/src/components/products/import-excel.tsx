@@ -45,7 +45,24 @@ export default function ImportExcel() {
           const worksheet = workbook.Sheets[workbook.SheetNames[0]];
           const products = utils.sheet_to_json(worksheet);
 
-          await importMutation.mutateAsync(products);
+          // Processar em lotes menores
+          const batchSize = 50;
+          const batches = [];
+          for (let i = 0; i < products.length; i += batchSize) {
+            batches.push(products.slice(i, i + batchSize));
+          }
+
+          // Importar cada lote
+          let importedCount = 0;
+          for (const batch of batches) {
+            await importMutation.mutateAsync(batch);
+            importedCount += batch.length;
+            toast({
+              title: "Importando produtos",
+              description: `Processados ${importedCount} de ${products.length} produtos`,
+            });
+          }
+
         } catch (error) {
           console.error('Error processing file:', error);
           toast({
@@ -77,7 +94,7 @@ export default function ImportExcel() {
     >
       <Upload className="h-4 w-4" />
       <label className="cursor-pointer">
-        Importar Excel
+        {isLoading ? "Importando..." : "Importar Excel"}
         <input
           type="file"
           accept=".xlsx,.xls"
