@@ -30,9 +30,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { Package, Plus, Tag, DollarSign, Barcode, FileImage, Folder } from "lucide-react";
+import { Package, Plus, Tag, DollarSign, Barcode, FileImage, Folder, ShoppingCart } from "lucide-react";
 import ImportExcel from "@/components/products/import-excel";
+import { useCart } from "@/contexts/cart-context";
+import { CartSheet } from "@/components/cart/cart-sheet";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ProductsPage() {
   const { toast } = useToast();
@@ -97,6 +99,16 @@ export default function ProductsPage() {
     const matchesDepartment = selectedDepartment === "all" || product.description === selectedDepartment;
     return matchesDistributor && matchesDepartment;
   });
+
+  const { addToCart } = useCart();
+
+  const handleAddToCart = (product: Product) => {
+    addToCart(product);
+    toast({
+      title: "Added to cart",
+      description: `${product.name} has been added to your cart.`
+    });
+  };
 
   if (isLoadingProducts || isLoadingDistributors) {
     return (
@@ -318,6 +330,7 @@ export default function ProductsPage() {
               </Form>
             </DialogContent>
           </Dialog>
+          <CartSheet/>
         </div>
       </div>
 
@@ -362,9 +375,19 @@ export default function ProductsPage() {
                   Department: {product.description}
                 </div>
               )}
-              <div className="flex items-center gap-2 font-semibold">
-                <DollarSign className="h-4 w-4" />
-                ${product.unitPrice}
+              <div className="flex justify-between items-center mt-4">
+                <div className="flex items-center gap-2 font-semibold">
+                  <DollarSign className="h-4 w-4" />
+                  ${product.unitPrice}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddToCart(product)}
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Add to Cart
+                </Button>
               </div>
             </CardContent>
           </Card>
