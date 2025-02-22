@@ -25,14 +25,9 @@ import { Store } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AuthPage() {
+  // Move all hooks to the top before any conditional logic
   const [, setLocation] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
-
-  // Redirect if already logged in
-  if (user) {
-    setLocation("/products");
-    return null;
-  }
 
   const loginForm = useForm<InsertUser>({
     resolver: zodResolver(insertUserSchema),
@@ -49,6 +44,12 @@ export default function AuthPage() {
       password: "",
     },
   });
+
+  // Now handle navigation after all hooks are called
+  if (user) {
+    setTimeout(() => setLocation("/products"), 0);
+    return null;
+  }
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
