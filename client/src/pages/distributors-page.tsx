@@ -29,8 +29,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Mail, Plus, Truck, User, Package } from "lucide-react";
-import { Loader2 } from "lucide-react";
+import { Phone, Mail, Plus, Truck, User, Package, Upload } from "lucide-react";
+import * as XLSX from 'xlsx';
 
 export default function DistributorsPage() {
   const { toast } = useToast();
@@ -61,6 +61,27 @@ export default function DistributorsPage() {
     onError: (error: Error) => {
       toast({
         title: "Error initializing distributors",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const importProductsMutation = useMutation({
+    mutationFn: async (data: any[]) => {
+      const res = await apiRequest("POST", "/api/products/import", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({
+        title: "Success",
+        description: "Products imported successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error importing products",
         description: error.message,
         variant: "destructive",
       });
@@ -108,6 +129,38 @@ export default function DistributorsPage() {
       });
     }
   });
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, distributorId: number) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        // Adiciona o distributorId aos produtos
+        const productsWithDistributor = jsonData.map(product => ({
+          ...product,
+          distributorId
+        }));
+
+        await importProductsMutation.mutateAsync(productsWithDistributor);
+      } catch (error) {
+        console.error('Error reading file:', error);
+        toast({
+          title: "Error reading file",
+          description: "Failed to read the Excel file",
+          variant: "destructive",
+        });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
   const getDistributorProducts = (distributorId: number) => {
     return products?.filter(product => product.distributorId === distributorId) ?? [];
@@ -255,54 +308,70 @@ export default function DistributorsPage() {
                 </div>
               </div>
 
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => setSelectedDistributor(distributor.id)}
-                  >
-                    <Package className="h-4 w-4 mr-2" />
-                    View Catalog
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl">
-                  <DialogHeader>
-                    <DialogTitle>Product Catalog - {distributor.name}</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
-                    {getDistributorProducts(distributor.id).map((product) => (
-                      <Card key={product.id}>
-                        <CardHeader>
-                          <CardTitle className="text-lg">{product.name}</CardTitle>
-                          <CardDescription>Code: {product.itemCode}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                          <div className="text-sm text-muted-foreground">
-                            {product.description}
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <span className="font-semibold">Unit Price:</span> ${product.unitPrice}
+              <div className="flex gap-2">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => setSelectedDistributor(distributor.id)}
+                    >
+                      <Package className="h-4 w-4 mr-2" />
+                      View Catalog
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl">
+                    <DialogHeader>
+                      <DialogTitle>Product Catalog - {distributor.name}</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex justify-end mb-4">
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept=".xlsx,.xls"
+                          onChange={(e) => handleFileUpload(e, distributor.id)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <Button variant="outline">
+                          <Upload className="h-4 w-4 mr-2" />
+                          Import Products (XLSX)
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
+                      {getDistributorProducts(distributor.id).map((product) => (
+                        <Card key={product.id}>
+                          <CardHeader>
+                            <CardTitle className="text-lg">{product.name}</CardTitle>
+                            <CardDescription>Code: {product.itemCode}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-2">
+                            <div className="text-sm text-muted-foreground">
+                              {product.description}
                             </div>
-                            {product.boxPrice && (
+                            <div className="grid grid-cols-2 gap-2 text-sm">
                               <div>
-                                <span className="font-semibold">Box Price:</span> ${product.boxPrice}
+                                <span className="font-semibold">Unit Price:</span> ${product.unitPrice}
                               </div>
-                            )}
-                            <div>
-                              <span className="font-semibold">Box Quantity:</span> {product.boxQuantity}
+                              {product.boxPrice && (
+                                <div>
+                                  <span className="font-semibold">Box Price:</span> ${product.boxPrice}
+                                </div>
+                              )}
+                              <div>
+                                <span className="font-semibold">Box Quantity:</span> {product.boxQuantity}
+                              </div>
+                              <div>
+                                <span className="font-semibold">Unit:</span> {product.unit}
+                              </div>
                             </div>
-                            <div>
-                              <span className="font-semibold">Unit:</span> {product.unit}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </DialogContent>
-              </Dialog>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardContent>
           </Card>
         ))}
