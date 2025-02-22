@@ -71,6 +71,8 @@ export class MemStorage implements IStorage {
     this.users.clear();
     // Initialize with Gol Supermarket user with password 'admin123'
     this.initializeGolSupermarket();
+    // Initialize Gol Supermarket stores
+    this.initializeGolStores();
   }
 
   private async initializeGolSupermarket() {
@@ -84,6 +86,33 @@ export class MemStorage implements IStorage {
       console.log("Initialized Gol Supermarket user");
     } catch (error) {
       console.error("Error initializing Gol Supermarket user:", error);
+    }
+  }
+
+  private async initializeGolStores() {
+    try {
+      const stores = [
+        { name: "Gol Supermarket Hyannis", address: "Hyannis, MA", phone: "(123) 456-7890", active: true },
+        { name: "Gol Supermarket Fall River", address: "Fall River, MA", phone: "(123) 456-7890", active: true },
+        { name: "Gol Supermarket Falmouth", address: "Falmouth, MA", phone: "(123) 456-7890", active: true },
+        { name: "Gol Supermarket Leominster", address: "Leominster, MA", phone: "(123) 456-7890", active: true },
+        { name: "Gol Supermarket Sturbridge", address: "Sturbridge, MA", phone: "(123) 456-7890", active: true }
+      ];
+
+      const existingStores = await this.getStores();
+
+      for (const store of stores) {
+        // Verifica se já existe uma loja com o mesmo nome
+        const exists = existingStores.some(s => s.name === store.name);
+
+        if (!exists) {
+          await this.createStore(store);
+          console.log("Created store:", store.name);
+        }
+      }
+      console.log("Initialized Gol Supermarket stores");
+    } catch (error) {
+      console.error("Error initializing Gol Supermarket stores:", error);
     }
   }
 
