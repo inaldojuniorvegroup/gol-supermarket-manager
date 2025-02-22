@@ -37,20 +37,20 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
             const Icon = item.icon;
             const isActive = location === item.href;
             return (
-              <Link key={item.name} href={item.href}>
-                <a
-                  className={`
-                    flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-md
-                    ${isActive 
-                      ? "bg-primary text-primary-foreground" 
-                      : "hover:bg-muted"
-                    }
-                  `}
-                >
-                  <Icon className="h-5 w-5" />
-                  {item.name}
-                  {isActive && <ChevronRight className="ml-auto h-5 w-5" />}
-                </a>
+              <Link 
+                key={item.name} 
+                href={item.href}
+                className={`
+                  flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-md
+                  ${isActive 
+                    ? "bg-primary text-primary-foreground" 
+                    : "hover:bg-muted"
+                  }
+                `}
+              >
+                <Icon className="h-5 w-5" />
+                {item.name}
+                {isActive && <ChevronRight className="ml-auto h-5 w-5" />}
               </Link>
             );
           })}
