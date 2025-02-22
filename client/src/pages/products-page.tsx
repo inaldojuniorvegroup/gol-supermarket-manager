@@ -243,9 +243,13 @@ export default function ProductsPage() {
                       name="imageUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Image URL</FormLabel>
+                          <FormLabel>Product Image URL</FormLabel>
                           <FormControl>
-                            <Input {...field} type="url" />
+                            <Input
+                              {...field}
+                              type="url"
+                              placeholder="https://example.com/image.jpg"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

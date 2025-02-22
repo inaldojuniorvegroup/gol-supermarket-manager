@@ -1,8 +1,9 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@shared/schema";
-import { Tag, Box, Store } from "lucide-react";
+import { Tag, Box, Store, ImageOff } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,21 +15,25 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onEdit, isLoading }: ProductCardProps) {
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    // Reset image error state when product changes
+    setImageError(false);
+  }, [product.imageUrl]);
+
   if (isLoading) {
     return (
       <Card className="h-full">
         <CardHeader>
-          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-48 w-full rounded-lg" />
+          <Skeleton className="h-6 w-3/4 mt-4" />
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <Skeleton className="h-4 w-1/2" />
             <Skeleton className="h-4 w-2/3" />
             <Skeleton className="h-4 w-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-            </div>
           </div>
         </CardContent>
         <CardFooter>
@@ -48,6 +53,22 @@ export function ProductCard({ product, onEdit, isLoading }: ProductCardProps) {
     >
       <Card className="h-full flex flex-col hover:shadow-lg transition-shadow duration-200">
         <CardHeader className="space-y-2">
+          {product.imageUrl && !imageError ? (
+            <div className="relative w-full h-48 rounded-lg overflow-hidden bg-muted">
+              <img
+                src={product.imageUrl}
+                alt={product.name}
+                className="object-cover w-full h-full transition-transform duration-200 hover:scale-105"
+                onError={() => setImageError(true)}
+              />
+            </div>
+          ) : (
+            product.imageUrl && (
+              <div className="flex items-center justify-center w-full h-48 rounded-lg bg-muted">
+                <ImageOff className="h-12 w-12 text-muted-foreground" />
+              </div>
+            )
+          )}
           <div className="flex justify-between items-start gap-4">
             <CardTitle className="line-clamp-2 text-lg">{product.name}</CardTitle>
             {product.isSpecialOffer && (
