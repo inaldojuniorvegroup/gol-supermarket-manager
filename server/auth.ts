@@ -28,6 +28,14 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+// Middleware to check if user is from Gol Supermarket
+function isSupermarket(req: Express.Request, res: Express.Response, next: Express.NextFunction) {
+  if (req.isAuthenticated() && req.user.role === 'supermarket') {
+    return next();
+  }
+  res.status(403).send("Apenas usuários do Gol Supermarket podem realizar esta ação");
+}
+
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'temporary-secret-for-development',
@@ -86,7 +94,8 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/register", async (req, res, next) => {
+  // Modificado para permitir apenas Gol Supermarket criar usuários
+  app.post("/api/register", isSupermarket, async (req, res, next) => {
     const existingUser = await storage.getUserByUsername(req.body.username);
     if (existingUser) {
       return res.status(400).send("Username already exists");
@@ -95,6 +104,23 @@ export function setupAuth(app: Express) {
     const user = await storage.createUser({
       ...req.body,
       password: await hashPassword(req.body.password),
+      role: 'distributor' // Novos usuários são sempre distribuidores
+    });
+
+    res.status(201).json(user);
+  });
+
+  // Rota especial para o primeiro usuário (Gol Supermarket)
+  app.post("/api/register/supermarket", async (req, res, next) => {
+    const users = await storage.getUsers();
+    if (users.length > 0) {
+      return res.status(403).send("Gol Supermarket user already exists");
+    }
+
+    const user = await storage.createUser({
+      ...req.body,
+      password: await hashPassword(req.body.password),
+      role: 'supermarket'
     });
 
     req.login(user, (err) => {

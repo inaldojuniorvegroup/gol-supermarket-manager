@@ -11,27 +11,28 @@ const MemoryStore = createMemoryStore(session);
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Store operations
   getStores(): Promise<Store[]>;
   getStore(id: number): Promise<Store | undefined>;
   createStore(store: InsertStore): Promise<Store>;
   updateStore(id: number, store: Partial<Store>): Promise<Store>;
-  
+
   // Distributor operations
   getDistributors(): Promise<Distributor[]>;
   getDistributor(id: number): Promise<Distributor | undefined>;
   createDistributor(distributor: InsertDistributor): Promise<Distributor>;
   updateDistributor(id: number, distributor: Partial<Distributor>): Promise<Distributor>;
-  
+
   // Product operations
   getProducts(): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<Product>): Promise<Product>;
-  
+
   // Order operations
   getOrders(): Promise<Order[]>;
   getOrder(id: number): Promise<Order | undefined>;
@@ -65,6 +66,10 @@ export class MemStorage implements IStorage {
   }
 
   // User operations with proper logging
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
   async getUser(id: number): Promise<User | undefined> {
     const user = this.users.get(id);
     console.log("Getting user by ID:", { id, userFound: !!user });
@@ -79,9 +84,13 @@ export class MemStorage implements IStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     const id = this.nextId();
-    const newUser = { ...user, id };
+    const newUser = { 
+      ...user, 
+      id,
+      role: user.role || 'distributor' 
+    };
     this.users.set(id, newUser);
-    console.log("Created new user:", { id, username: user.username });
+    console.log("Created new user:", { id, username: user.username, role: newUser.role });
     return newUser;
   }
 
@@ -99,7 +108,7 @@ export class MemStorage implements IStorage {
     const newStore = { 
       ...store, 
       id,
-      active: store.active ?? true // Set default value for active
+      active: store.active ?? true 
     };
     this.stores.set(id, newStore);
     return newStore;
@@ -127,7 +136,7 @@ export class MemStorage implements IStorage {
     const newDistributor = {
       ...distributor,
       id,
-      active: distributor.active ?? true // Set default value for active
+      active: distributor.active ?? true 
     };
     this.distributors.set(id, newDistributor);
     return newDistributor;
