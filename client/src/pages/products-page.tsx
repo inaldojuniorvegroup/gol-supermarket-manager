@@ -91,7 +91,15 @@ export default function ProductsPage() {
   // Filtra produtos por distribuidor
   const filteredProducts = selectedDistributor === "all"
     ? products
-    : products?.filter(product => product.distributorId === parseInt(selectedDistributor));
+    : products?.filter(product => {
+        console.log('Filtrando produto:', {
+          produtoId: product.id,
+          produtoDistribuidor: product.distributorId,
+          selecionado: selectedDistributor,
+          match: product.distributorId === parseInt(selectedDistributor)
+        });
+        return product.distributorId === parseInt(selectedDistributor);
+      });
 
   if (isLoadingProducts || isLoadingDistributors) {
     return (

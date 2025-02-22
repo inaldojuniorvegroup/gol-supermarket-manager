@@ -138,6 +138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
 
             console.log('Dados mapeados do produto:', productData);
+            console.log('ID do distribuidor:', productData.distributorId);
 
             const parsed = insertProductSchema.parse(productData);
             const savedProduct = await storage.createProduct(parsed);
