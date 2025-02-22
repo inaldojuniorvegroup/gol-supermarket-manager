@@ -120,15 +120,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             // Mapear campos do Excel para o nosso schema
             const productData = {
-              name: product.Description || product['Item Description'] || product['DESCRIPTION'],
-              itemCode: product['Item Code'] || product['ITEM CODE'] || product.Code || product['CODE'],
-              supplierCode: product['Supplier Code'] || product['SUPPLIER CODE'] || '',
+              name: product['Nome'],
+              itemCode: product['Código'],
+              supplierCode: product['Cód.Forn.'] || '',
               distributorId: Number(product.distributorId),
-              unitPrice: (product['Unit Price'] || product['UNIT PRICE'] || '0').toString(),
-              boxPrice: (product['Box Price'] || product['BOX PRICE'] || null)?.toString(),
-              boxQuantity: parseInt(product['Box Quantity'] || product['BOX QUANTITY'] || '1'),
-              unit: product['Unit'] || product['UNIT'] || 'un',
-              description: product['Notes'] || product['NOTES'] || null,
+              unitPrice: (product['Preço Custo'] || '0').toString(),
+              boxPrice: null,
+              boxQuantity: 1,
+              unit: product['Unid.'] || 'un',
+              description: product['Departamento'] || null,
               // Campos opcionais
               imageUrl: null,
               isSpecialOffer: false,
