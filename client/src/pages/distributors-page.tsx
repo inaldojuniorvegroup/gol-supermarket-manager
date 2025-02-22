@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Distributor, InsertDistributor, insertDistributorSchema } from "@shared/schema";
+import { Distributor, InsertDistributor, insertDistributorSchema, Product } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,14 +29,20 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Mail, Plus, Truck, User } from "lucide-react";
+import { Phone, Mail, Plus, Truck, User, Package } from "lucide-react";
 
 export default function DistributorsPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [selectedDistributor, setSelectedDistributor] = useState<number | null>(null);
 
   const { data: distributors, isLoading } = useQuery<Distributor[]>({
     queryKey: ["/api/distributors"],
+  });
+
+  const { data: products } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+    enabled: selectedDistributor !== null,
   });
 
   const form = useForm<InsertDistributor>({
@@ -73,6 +79,10 @@ export default function DistributorsPage() {
       });
     }
   });
+
+  const getDistributorProducts = (distributorId: number) => {
+    return products?.filter(product => product.distributorId === distributorId) ?? [];
+  };
 
   if (isLoading) {
     return (
@@ -200,19 +210,70 @@ export default function DistributorsPage() {
               </CardTitle>
               <CardDescription>Code: {distributor.code}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <User className="h-4 w-4" />
-                Contact: {distributor.contact}
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <User className="h-4 w-4" />
+                  Contact: {distributor.contact}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Phone className="h-4 w-4" />
+                  {distributor.phone}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Mail className="h-4 w-4" />
+                  {distributor.email}
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                {distributor.phone}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4" />
-                {distributor.email}
-              </div>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setSelectedDistributor(distributor.id)}
+                  >
+                    <Package className="h-4 w-4 mr-2" />
+                    View Catalog
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>Product Catalog - {distributor.name}</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
+                    {getDistributorProducts(distributor.id).map((product) => (
+                      <Card key={product.id}>
+                        <CardHeader>
+                          <CardTitle className="text-lg">{product.name}</CardTitle>
+                          <CardDescription>Code: {product.itemCode}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <div className="text-sm text-muted-foreground">
+                            {product.description}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="font-semibold">Unit Price:</span> ${product.unitPrice}
+                            </div>
+                            {product.boxPrice && (
+                              <div>
+                                <span className="font-semibold">Box Price:</span> ${product.boxPrice}
+                              </div>
+                            )}
+                            <div>
+                              <span className="font-semibold">Box Quantity:</span> {product.boxQuantity}
+                            </div>
+                            <div>
+                              <span className="font-semibold">Unit:</span> {product.unit}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         ))}
