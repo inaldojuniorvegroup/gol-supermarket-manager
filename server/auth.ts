@@ -29,11 +29,11 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 // Middleware to check if user is from Gol Supermarket
-function isSupermarket(req: Express.Request, res: Express.Response, next: Express.NextFunction) {
+function isSupermarket(req: Express.Request, res: Express.Response, next: Function) {
   if (req.isAuthenticated() && req.user.role === 'supermarket') {
     return next();
   }
-  res.status(403).send("Apenas usuários do Gol Supermarket podem realizar esta ação");
+  res.status(403).json({ message: "Apenas usuários do Gol Supermarket podem realizar esta ação" });
 }
 
 export function setupAuth(app: Express) {
@@ -92,22 +92,6 @@ export function setupAuth(app: Express) {
       console.error("Deserialization error:", error);
       done(error);
     }
-  });
-
-  // Modificado para permitir apenas Gol Supermarket criar usuários
-  app.post("/api/register", isSupermarket, async (req, res, next) => {
-    const existingUser = await storage.getUserByUsername(req.body.username);
-    if (existingUser) {
-      return res.status(400).send("Username already exists");
-    }
-
-    const user = await storage.createUser({
-      ...req.body,
-      password: await hashPassword(req.body.password),
-      role: 'distributor' // Novos usuários são sempre distribuidores
-    });
-
-    res.status(201).json(user);
   });
 
   // Rota especial para o primeiro usuário (Gol Supermarket)

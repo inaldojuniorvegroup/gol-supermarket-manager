@@ -59,6 +59,14 @@ export class MemStorage implements IStorage {
       checkPeriod: 86400000,
     });
     this.users.clear();
+    // Initialize with Gol Supermarket user
+    this.createUser({
+      username: "gol",
+      password: "db8e1a441e0425d841d0372ed2d597d59912d794a58bcf55c5f81a37a249443262f13ac6286f6515dd4561d617c6c7aef127bfbdf1735a9efce373fde8c019a3.350e1baffe1ba1e1b2feb3e68ee7fe18",
+      role: "supermarket"
+    }).then(() => {
+      console.log("Initialized Gol Supermarket user");
+    });
   }
 
   private nextId() {
