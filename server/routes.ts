@@ -49,6 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize distributors
   app.post("/api/distributors/init", async (_req, res) => {
     try {
+      const existingDistributors = await storage.getDistributors();
       const distributors = [
         { name: "E B EXPRESS PROVISIONS INC", code: "EB-EXP", contact: "Contact", phone: "(123) 456-7890", email: "contact@ebexpress.com" },
         { name: "PANAMERICAN FOODS CORP", code: "PAN-FOODS", contact: "Contact", phone: "(123) 456-7890", email: "contact@panamerican.com" },
@@ -64,12 +65,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { name: "DISCOVER SUPPLY", code: "DISCOVER", contact: "Contact", phone: "(123) 456-7890", email: "contact@discover.com" }
       ];
 
+      let created = 0;
+      let skipped = 0;
+
       for (const dist of distributors) {
-        const parsed = insertDistributorSchema.parse(dist);
-        await storage.createDistributor(parsed);
+        // Verifica se já existe um distribuidor com o mesmo código
+        const exists = existingDistributors.some(d => d.code === dist.code);
+
+        if (!exists) {
+          const parsed = insertDistributorSchema.parse(dist);
+          await storage.createDistributor(parsed);
+          created++;
+        } else {
+          skipped++;
+        }
       }
 
-      res.status(201).json({ message: "Distribuidores criados com sucesso" });
+      res.status(201).json({ 
+        message: `Distribuidores processados: ${created} criados, ${skipped} já existiam.` 
+      });
     } catch (error) {
       console.error('Error creating distributors:', error);
       res.status(500).json({ error: 'Failed to create distributors' });
