@@ -57,7 +57,6 @@ export class MemStorage implements IStorage {
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
-    // Clear any existing data
     this.users.clear();
   }
 
@@ -65,23 +64,28 @@ export class MemStorage implements IStorage {
     return this.currentId++;
   }
 
-  // User operations
+  // User operations with proper logging
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const user = this.users.get(id);
+    console.log("Getting user by ID:", { id, userFound: !!user });
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(u => u.username === username);
+    const user = Array.from(this.users.values()).find(u => u.username === username);
+    console.log("Getting user by username:", { username, userFound: !!user });
+    return user;
   }
 
   async createUser(user: InsertUser): Promise<User> {
     const id = this.nextId();
     const newUser = { ...user, id };
     this.users.set(id, newUser);
+    console.log("Created new user:", { id, username: user.username });
     return newUser;
   }
 
-  // Store operations
+  // Store operations with default values
   async getStores(): Promise<Store[]> {
     return Array.from(this.stores.values());
   }
@@ -92,7 +96,11 @@ export class MemStorage implements IStorage {
 
   async createStore(store: InsertStore): Promise<Store> {
     const id = this.nextId();
-    const newStore = { ...store, id };
+    const newStore = { 
+      ...store, 
+      id,
+      active: store.active ?? true // Set default value for active
+    };
     this.stores.set(id, newStore);
     return newStore;
   }
@@ -105,7 +113,7 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  // Distributor operations
+  // Distributor operations with default values
   async getDistributors(): Promise<Distributor[]> {
     return Array.from(this.distributors.values());
   }
@@ -116,7 +124,11 @@ export class MemStorage implements IStorage {
 
   async createDistributor(distributor: InsertDistributor): Promise<Distributor> {
     const id = this.nextId();
-    const newDistributor = { ...distributor, id };
+    const newDistributor = {
+      ...distributor,
+      id,
+      active: distributor.active ?? true // Set default value for active
+    };
     this.distributors.set(id, newDistributor);
     return newDistributor;
   }
@@ -129,7 +141,7 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  // Product operations
+  // Product operations with default values
   async getProducts(): Promise<Product[]> {
     return Array.from(this.products.values());
   }
@@ -140,7 +152,18 @@ export class MemStorage implements IStorage {
 
   async createProduct(product: InsertProduct): Promise<Product> {
     const id = this.nextId();
-    const newProduct = { ...product, id };
+    const now = new Date();
+    const newProduct = {
+      ...product,
+      id,
+      description: product.description ?? null,
+      previousUnitPrice: product.previousUnitPrice ?? null,
+      boxPrice: product.boxPrice ?? null,
+      previousBoxPrice: product.previousBoxPrice ?? null,
+      active: product.active ?? true,
+      createdAt: product.createdAt ?? now,
+      updatedAt: product.updatedAt ?? now
+    };
     this.products.set(id, newProduct);
     return newProduct;
   }
@@ -153,7 +176,7 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  // Order operations
+  // Order operations with default values
   async getOrders(): Promise<Order[]> {
     return Array.from(this.orders.values());
   }
@@ -164,7 +187,13 @@ export class MemStorage implements IStorage {
 
   async createOrder(order: InsertOrder): Promise<Order> {
     const id = this.nextId();
-    const newOrder = { ...order, id };
+    const now = new Date();
+    const newOrder = {
+      ...order,
+      id,
+      status: order.status ?? 'pending',
+      createdAt: order.createdAt ?? now
+    };
     this.orders.set(id, newOrder);
     return newOrder;
   }
