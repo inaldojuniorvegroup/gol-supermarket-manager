@@ -53,6 +53,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(product);
   });
 
+  app.post("/api/products/import", async (req, res) => {
+    try {
+      const products = req.body;
+      const importedProducts = [];
+
+      for (const product of products) {
+        const productData = {
+          name: product.Description || product['Item Description'],
+          itemCode: product['Item Code'] || product.Code,
+          supplierCode: product['Supplier Code'] || '',
+          distributorId: 1, // Assuming EB EXPRESS is the first distributor
+          unitPrice: product['Unit Price']?.toString() || '0',
+          boxPrice: product['Box Price']?.toString() || null,
+          boxQuantity: parseInt(product['Box Quantity'] || '1'),
+          unit: product['Unit'] || 'un',
+          description: product['Notes'] || null
+        };
+
+        const parsed = insertProductSchema.parse(productData);
+        const savedProduct = await storage.createProduct(parsed);
+        importedProducts.push(savedProduct);
+      }
+
+      res.status(201).json(importedProducts);
+    } catch (error) {
+      console.error('Error importing products:', error);
+      res.status(400).json({ error: 'Failed to import products' });
+    }
+  });
+
   app.patch("/api/products/:id", async (req, res) => {
     const product = await storage.updateProduct(Number(req.params.id), req.body);
     res.json(product);
