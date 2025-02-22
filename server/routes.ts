@@ -3,9 +3,14 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertStoreSchema, insertDistributorSchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema } from "@shared/schema";
+import * as express from 'express';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  // Aumentar limite do body-parser para arquivos grandes
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // Stores
   app.get("/api/stores", async (_req, res) => {

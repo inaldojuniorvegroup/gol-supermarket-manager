@@ -37,20 +37,35 @@ export default function ImportExcel() {
       const file = event.target.files?.[0];
       if (!file) return;
 
-      const data = await file.arrayBuffer();
-      const workbook = read(data);
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const products = utils.sheet_to_json(worksheet);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = e.target?.result;
+          const workbook = read(data, { type: 'binary' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const products = utils.sheet_to_json(worksheet);
 
-      await importMutation.mutateAsync(products);
+          await importMutation.mutateAsync(products);
+        } catch (error) {
+          console.error('Error processing file:', error);
+          toast({
+            title: "Erro ao processar arquivo",
+            description: "Verifique se o arquivo está no formato correto",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      reader.readAsBinaryString(file);
     } catch (error) {
+      setIsLoading(false);
       toast({
         title: "Erro ao processar arquivo",
         description: "Verifique se o arquivo está no formato correto",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
