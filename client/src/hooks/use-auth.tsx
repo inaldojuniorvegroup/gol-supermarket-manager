@@ -35,20 +35,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
-    suspense: false
+    cacheTime: Infinity,
   });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Falha no login");
+      }
+      return res.json();
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "Login realizado com sucesso",
+        description: `Bem-vindo, ${user.username}!`,
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: "Login failed",
+        title: "Erro no login",
         description: error.message,
         variant: "destructive",
       });
@@ -58,14 +66,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
       const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Falha no registro");
+      }
+      return res.json();
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "Registro realizado com sucesso",
+        description: `Bem-vindo, ${user.username}!`,
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: "Registration failed",
+        title: "Erro no registro",
         description: error.message,
         variant: "destructive",
       });
@@ -74,15 +90,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      const res = await apiRequest("POST", "/api/logout");
+      if (!res.ok) {
+        throw new Error("Falha ao fazer logout");
+      }
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
       queryClient.clear();
+      toast({
+        title: "Logout realizado com sucesso",
+        description: "Até logo!",
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: "Logout failed",
+        title: "Erro ao fazer logout",
         description: error.message,
         variant: "destructive",
       });
