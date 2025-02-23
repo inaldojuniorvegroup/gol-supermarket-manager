@@ -1,8 +1,11 @@
 import { 
-  User, InsertUser, Store, InsertStore,
-  Distributor, InsertDistributor, Product, InsertProduct,
-  Order, InsertOrder, OrderItem, InsertOrderItem
+  users, stores, distributors, products, orders, orderItems,
+  type User, type InsertUser, type Store, type InsertStore,
+  type Distributor, type InsertDistributor, type Product, type InsertProduct,
+  type Order, type InsertOrder, type OrderItem, type InsertOrderItem
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { scrypt, randomBytes } from "crypto";
@@ -54,36 +57,30 @@ export interface IStorage {
   sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users = new Map<number, User>();
-  private stores = new Map<number, Store>();
-  private distributors = new Map<number, Distributor>();
-  private products = new Map<number, Product>();
-  private orders = new Map<number, Order>();
-  private orderItems = new Map<number, OrderItem>();
-  private currentId = 1;
+export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
-    this.users.clear();
-    // Initialize with Gol Supermarket user with password 'admin123'
     this.initializeGolSupermarket();
-    // Initialize Gol Supermarket stores
     this.initializeGolStores();
   }
 
   private async initializeGolSupermarket() {
     try {
       const hashedPassword = await hashPassword('admin123');
-      await this.createUser({
-        username: "gol",
-        password: hashedPassword,
-        role: "supermarket"
-      });
-      console.log("Initialized Gol Supermarket user");
+      const existingUser = await this.getUserByUsername('gol');
+
+      if (!existingUser) {
+        await this.createUser({
+          username: "gol",
+          password: hashedPassword,
+          role: "supermarket"
+        });
+        console.log("Initialized Gol Supermarket user");
+      }
     } catch (error) {
       console.error("Error initializing Gol Supermarket user:", error);
     }
@@ -92,19 +89,17 @@ export class MemStorage implements IStorage {
   private async initializeGolStores() {
     try {
       const stores = [
-        { name: "Gol Supermarket Hyannis", address: "Hyannis, MA", phone: "(123) 456-7890", active: true },
-        { name: "Gol Supermarket Fall River", address: "Fall River, MA", phone: "(123) 456-7890", active: true },
-        { name: "Gol Supermarket Falmouth", address: "Falmouth, MA", phone: "(123) 456-7890", active: true },
-        { name: "Gol Supermarket Leominster", address: "Leominster, MA", phone: "(123) 456-7890", active: true },
-        { name: "Gol Supermarket Sturbridge", address: "Sturbridge, MA", phone: "(123) 456-7890", active: true }
+        { name: "Gol Supermarket Hyannis", code: "HYA", address: "Hyannis", city: "Hyannis", state: "MA", phone: "(123) 456-7890", active: true },
+        { name: "Gol Supermarket Fall River", code: "FAL", address: "Fall River", city: "Fall River", state: "MA", phone: "(123) 456-7890", active: true },
+        { name: "Gol Supermarket Falmouth", code: "FLM", address: "Falmouth", city: "Falmouth", state: "MA", phone: "(123) 456-7890", active: true },
+        { name: "Gol Supermarket Leominster", code: "LEO", address: "Leominster", city: "Leominster", state: "MA", phone: "(123) 456-7890", active: true },
+        { name: "Gol Supermarket Sturbridge", code: "STU", address: "Sturbridge", city: "Sturbridge", state: "MA", phone: "(123) 456-7890", active: true }
       ];
 
       const existingStores = await this.getStores();
 
       for (const store of stores) {
-        // Verifica se já existe uma loja com o mesmo nome
         const exists = existingStores.some(s => s.name === store.name);
-
         if (!exists) {
           await this.createStore(store);
           console.log("Created store:", store.name);
@@ -116,170 +111,130 @@ export class MemStorage implements IStorage {
     }
   }
 
-  private nextId() {
-    return this.currentId++;
-  }
-
-  // User operations with proper logging
+  // User operations
   async getUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    return await db.select().from(users);
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    const user = this.users.get(id);
-    console.log("Getting user by ID:", { id, userFound: !!user });
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const user = Array.from(this.users.values()).find(u => u.username === username);
-    console.log("Getting user by username:", { username, userFound: !!user });
+    const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const id = this.nextId();
-    const newUser = { 
-      ...user, 
-      id,
-      role: user.role || 'distributor' 
-    };
-    this.users.set(id, newUser);
-    console.log("Created new user:", { id, username: user.username, role: newUser.role });
+    const [newUser] = await db.insert(users).values(user).returning();
     return newUser;
   }
 
-  // Store operations with default values
+  // Store operations
   async getStores(): Promise<Store[]> {
-    return Array.from(this.stores.values());
+    return await db.select().from(stores);
   }
 
   async getStore(id: number): Promise<Store | undefined> {
-    return this.stores.get(id);
+    const [store] = await db.select().from(stores).where(eq(stores.id, id));
+    return store;
   }
 
   async createStore(store: InsertStore): Promise<Store> {
-    const id = this.nextId();
-    const newStore = { 
-      ...store, 
-      id,
-      active: store.active ?? true 
-    };
-    this.stores.set(id, newStore);
+    const [newStore] = await db.insert(stores).values(store).returning();
     return newStore;
   }
 
   async updateStore(id: number, store: Partial<Store>): Promise<Store> {
-    const existing = await this.getStore(id);
-    if (!existing) throw new Error('Store not found');
-    const updated = { ...existing, ...store };
-    this.stores.set(id, updated);
-    return updated;
+    const [updatedStore] = await db
+      .update(stores)
+      .set(store)
+      .where(eq(stores.id, id))
+      .returning();
+    return updatedStore;
   }
 
-  // Distributor operations with default values
+  // Distributor operations
   async getDistributors(): Promise<Distributor[]> {
-    return Array.from(this.distributors.values());
+    return await db.select().from(distributors);
   }
 
   async getDistributor(id: number): Promise<Distributor | undefined> {
-    return this.distributors.get(id);
+    const [distributor] = await db.select().from(distributors).where(eq(distributors.id, id));
+    return distributor;
   }
 
   async createDistributor(distributor: InsertDistributor): Promise<Distributor> {
-    const id = this.nextId();
-    const newDistributor = {
-      ...distributor,
-      id,
-      active: distributor.active ?? true 
-    };
-    this.distributors.set(id, newDistributor);
+    const [newDistributor] = await db.insert(distributors).values(distributor).returning();
     return newDistributor;
   }
 
   async updateDistributor(id: number, distributor: Partial<Distributor>): Promise<Distributor> {
-    const existing = await this.getDistributor(id);
-    if (!existing) throw new Error('Distributor not found');
-    const updated = { ...existing, ...distributor };
-    this.distributors.set(id, updated);
-    return updated;
+    const [updatedDistributor] = await db
+      .update(distributors)
+      .set(distributor)
+      .where(eq(distributors.id, id))
+      .returning();
+    return updatedDistributor;
   }
 
-  // Product operations with default values
+  // Product operations
   async getProducts(): Promise<Product[]> {
-    return Array.from(this.products.values());
+    return await db.select().from(products);
   }
 
   async getProduct(id: number): Promise<Product | undefined> {
-    return this.products.get(id);
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product;
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
-    const id = this.nextId();
-    const now = new Date();
-    const newProduct = {
-      ...product,
-      id,
-      description: product.description ?? null,
-      previousUnitPrice: product.previousUnitPrice ?? null,
-      boxPrice: product.boxPrice ?? null,
-      previousBoxPrice: product.previousBoxPrice ?? null,
-      active: product.active ?? true,
-      createdAt: product.createdAt ?? now,
-      updatedAt: product.updatedAt ?? now
-    };
-    this.products.set(id, newProduct);
+    const [newProduct] = await db.insert(products).values(product).returning();
     return newProduct;
   }
 
   async updateProduct(id: number, product: Partial<Product>): Promise<Product> {
-    const existing = await this.getProduct(id);
-    if (!existing) throw new Error('Product not found');
-    const updated = { ...existing, ...product };
-    this.products.set(id, updated);
-    return updated;
+    const [updatedProduct] = await db
+      .update(products)
+      .set(product)
+      .where(eq(products.id, id))
+      .returning();
+    return updatedProduct;
   }
 
-  // Order operations with default values
+  // Order operations
   async getOrders(): Promise<Order[]> {
-    return Array.from(this.orders.values());
+    return await db.select().from(orders);
   }
 
   async getOrder(id: number): Promise<Order | undefined> {
-    return this.orders.get(id);
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
   }
 
   async createOrder(order: InsertOrder): Promise<Order> {
-    const id = this.nextId();
-    const now = new Date();
-    const newOrder = {
-      ...order,
-      id,
-      status: order.status ?? 'pending',
-      createdAt: order.createdAt ?? now
-    };
-    this.orders.set(id, newOrder);
+    const [newOrder] = await db.insert(orders).values(order).returning();
     return newOrder;
   }
 
   async updateOrder(id: number, order: Partial<Order>): Promise<Order> {
-    const existing = await this.getOrder(id);
-    if (!existing) throw new Error('Order not found');
-    const updated = { ...existing, ...order };
-    this.orders.set(id, updated);
-    return updated;
+    const [updatedOrder] = await db
+      .update(orders)
+      .set(order)
+      .where(eq(orders.id, id))
+      .returning();
+    return updatedOrder;
   }
 
   async getOrderItems(orderId: number): Promise<OrderItem[]> {
-    return Array.from(this.orderItems.values()).filter(item => item.orderId === orderId);
+    return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
   }
 
   async createOrderItem(item: InsertOrderItem): Promise<OrderItem> {
-    const id = this.nextId();
-    const newItem = { ...item, id };
-    this.orderItems.set(id, newItem);
+    const [newItem] = await db.insert(orderItems).values(item).returning();
     return newItem;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
