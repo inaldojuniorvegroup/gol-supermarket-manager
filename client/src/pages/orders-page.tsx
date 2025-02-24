@@ -39,43 +39,82 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Plus, ShoppingCart, Store as StoreIcon, Package } from "lucide-react";
 
-// Adiciona interface para os dados completos do pedido
+// Interface para os dados do pedido
 interface OrderWithDetails extends Order {
-  store: {
+  store?: {
     id: number;
     name: string;
     code: string;
-  };
-  distributor: {
+  } | null;
+  distributor?: {
     id: number;
     name: string;
     code: string;
-  };
-  items: Array<{
+  } | null;
+  items?: Array<{
     id: number;
     quantity: string;
     price: string;
     total: string;
-    product: {
+    product?: {
       id: number;
       name: string;
       itemCode: string;
-    };
-  }>;
+    } | null;
+  }> | null;
 }
 
 export default function OrdersPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
 
-  const { data: orders, isLoading: ordersLoading, error: ordersError } = useQuery<OrderWithDetails[]>({
+  const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useQuery<OrderWithDetails[]>({
     queryKey: ["/api/orders"],
     retry: 1,
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Erro ao carregar pedidos",
         description: "Não foi possível carregar a lista de pedidos. Por favor, tente novamente.",
         variant: "destructive"
+      });
+    }
+  });
+
+  const { data: stores = [] } = useQuery({
+    queryKey: ["/api/stores"],
+  });
+
+  const { data: distributors = [] } = useQuery({
+    queryKey: ["/api/distributors"],
+  });
+
+  const form = useForm<InsertOrder>({
+    resolver: zodResolver(insertOrderSchema),
+    defaultValues: {
+      total: "0",
+      status: "pending"
+    }
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: InsertOrder) => {
+      const res = await apiRequest("POST", "/api/orders", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      setOpen(false);
+      form.reset();
+      toast({
+        title: "Pedido criado",
+        description: "O pedido foi criado com sucesso",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao criar pedido",
+        description: error.message,
+        variant: "destructive",
       });
     }
   });
@@ -116,45 +155,6 @@ export default function OrdersPage() {
       </div>
     );
   }
-
-  const { data: stores } = useQuery({
-    queryKey: ["/api/stores"],
-  });
-
-  const { data: distributors } = useQuery({
-    queryKey: ["/api/distributors"],
-  });
-
-  const form = useForm<InsertOrder>({
-    resolver: zodResolver(insertOrderSchema),
-    defaultValues: {
-      total: "0",
-      status: "pending"
-    }
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (data: InsertOrder) => {
-      const res = await apiRequest("POST", "/api/orders", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      setOpen(false);
-      form.reset();
-      toast({
-        title: "Pedido criado",
-        description: "O pedido foi criado com sucesso",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erro ao criar pedido",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
 
   return (
     <div className="space-y-4">
@@ -243,7 +243,7 @@ export default function OrdersPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {orders?.map((order) => (
+        {orders.map((order) => (
           <Card key={order.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -251,23 +251,25 @@ export default function OrdersPage() {
                   <ShoppingCart className="h-5 w-5" />
                   Pedido #{order.id}
                 </div>
-                <PDFDownloadLink
-                  document={
-                    <OrderPDF
-                      order={order}
-                      items={order.items}
-                      store={order.store}
-                      distributor={order.distributor}
-                    />
-                  }
-                  fileName={`pedido-${order.id}.pdf`}
-                >
-                  {({ loading }) => (
-                    <Button variant="outline" size="icon" disabled={loading}>
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                  )}
-                </PDFDownloadLink>
+                {order.store && order.distributor && order.items && (
+                  <PDFDownloadLink
+                    document={
+                      <OrderPDF
+                        order={order}
+                        items={order.items}
+                        store={order.store}
+                        distributor={order.distributor}
+                      />
+                    }
+                    fileName={`pedido-${order.id}.pdf`}
+                  >
+                    {({ loading }) => (
+                      <Button variant="outline" size="icon" disabled={loading}>
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </PDFDownloadLink>
+                )}
               </CardTitle>
               <CardDescription>
                 Status: {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
@@ -287,7 +289,7 @@ export default function OrdersPage() {
                 <div className="space-y-1">
                   {order.items?.map((item) => (
                     <div key={item.id} className="text-sm text-muted-foreground flex justify-between">
-                      <span>{item.product?.name} x{item.quantity}</span>
+                      <span>{item.product?.name || "Produto não encontrado"} x{item.quantity}</span>
                       <span>${Number(item.total).toFixed(2)}</span>
                     </div>
                   ))}
