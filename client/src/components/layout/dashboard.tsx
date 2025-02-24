@@ -7,7 +7,8 @@ import {
   SheetContent, 
   SheetTrigger,
   SheetHeader,
-  SheetTitle
+  SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
@@ -33,10 +34,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
   };
 
   const NavContent = () => (
-    <>
-      <SheetHeader>
-        <SheetTitle>Navigation Menu</SheetTitle>
-      </SheetHeader>
+    <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-6 py-4">
         <img 
           src="https://placehold.co/32x32/png" 
@@ -81,7 +79,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
           Logout
         </Button>
       </div>
-    </>
+    </div>
   );
 
   return (
@@ -103,6 +101,10 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="p-0 w-64">
+          <SheetHeader className="px-6 py-4">
+            <SheetTitle>Navigation Menu</SheetTitle>
+            <SheetDescription>Access all sections of the application</SheetDescription>
+          </SheetHeader>
           <NavContent />
         </SheetContent>
       </Sheet>
