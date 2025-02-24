@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   table: {
-    display: 'table',
+    display: "flex",
     width: '100%',
     borderStyle: 'solid',
     borderWidth: 1,
@@ -63,52 +63,52 @@ export default function OrderPDF({ order, items, store, distributor }: OrderPDFP
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.title}>Order #{order.id}</Text>
-          <Text>Date: {new Date(order.createdAt).toLocaleDateString()}</Text>
+          <Text style={styles.title}>Pedido #{order.id}</Text>
+          <Text>Data: {new Date(order.createdAt).toLocaleDateString()}</Text>
           <Text>Status: {order.status}</Text>
         </View>
 
         <View style={styles.section}>
           <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>
-            Store Information
+            Informações da Loja
           </Text>
           <Text>{store.name}</Text>
           <Text>{store.address}</Text>
           <Text>{store.city}, {store.state}</Text>
-          <Text>Phone: {store.phone}</Text>
+          <Text>Telefone: {store.phone}</Text>
         </View>
 
         <View style={styles.section}>
           <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>
-            Distributor Information
+            Informações do Distribuidor
           </Text>
           <Text>{distributor.name}</Text>
-          <Text>Contact: {distributor.contact}</Text>
-          <Text>Phone: {distributor.phone}</Text>
+          <Text>Contato: {distributor.contact}</Text>
+          <Text>Telefone: {distributor.phone}</Text>
           <Text>Email: {distributor.email}</Text>
         </View>
 
         <View style={styles.section}>
           <View style={styles.table}>
             <View style={[styles.tableRow, styles.tableHeader]}>
-              <Text style={styles.tableCell}>Product</Text>
-              <Text style={styles.tableCell}>Quantity</Text>
-              <Text style={styles.tableCell}>Price</Text>
+              <Text style={styles.tableCell}>Produto</Text>
+              <Text style={styles.tableCell}>Quantidade</Text>
+              <Text style={styles.tableCell}>Preço</Text>
               <Text style={styles.tableCell}>Total</Text>
             </View>
 
             {items.map((item) => (
               <View key={item.id} style={styles.tableRow}>
-                <Text style={styles.tableCell}>{item.product.name}</Text>
+                <Text style={styles.tableCell}>{item.product?.name || "Produto não encontrado"}</Text>
                 <Text style={styles.tableCell}>{item.quantity}</Text>
-                <Text style={styles.tableCell}>${item.price}</Text>
-                <Text style={styles.tableCell}>${item.total}</Text>
+                <Text style={styles.tableCell}>${Number(item.price).toFixed(2)}</Text>
+                <Text style={styles.tableCell}>${Number(item.total).toFixed(2)}</Text>
               </View>
             ))}
           </View>
 
           <Text style={styles.total}>
-            Total: ${order.total}
+            Total: ${Number(order.total).toFixed(2)}
           </Text>
         </View>
       </Page>
