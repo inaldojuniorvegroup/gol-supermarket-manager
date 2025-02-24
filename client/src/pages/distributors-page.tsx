@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Distributor, InsertDistributor, insertDistributorSchema, Product, InsertUser, insertUserSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Card,
   CardContent,
@@ -125,9 +126,19 @@ export default function DistributorsPage() {
   const [open, setOpen] = useState(false);
   const [selectedDistributor, setSelectedDistributor] = useState<number | null>(null);
   const [createUserOpen, setCreateUserOpen] = useState<number | null>(null);
+  const { user } = useAuth();
 
+  // Buscar distribuidores
   const { data: distributors, isLoading } = useQuery<Distributor[]>({
     queryKey: ["/api/distributors"],
+  });
+
+  // Filtrar distribuidores baseado no papel do usuário
+  const filteredDistributors = distributors?.filter(distributor => {
+    if (user?.role === 'distributor') {
+      return distributor.id === user.distributorId;
+    }
+    return true; // Para usuários do Gol Supermarket, mostrar todos
   });
 
   const { data: products } = useQuery<Product[]>({
@@ -316,71 +327,32 @@ export default function DistributorsPage() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Distribuidores</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Distribuidor
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Adicionar Novo Distribuidor</DialogTitle>
-              <DialogDescription>
-                Preencha os dados abaixo para cadastrar um novo distribuidor.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit((data) => createMutation.mutate(data))}
-                className="space-y-4"
-              >
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Distributor Code</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="contact"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Contact Person</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="grid grid-cols-2 gap-4">
+        {user?.role === 'supermarket' && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Distribuidor
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Adicionar Novo Distribuidor</DialogTitle>
+                <DialogDescription>
+                  Preencha os dados abaixo para cadastrar um novo distribuidor.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit((data) => createMutation.mutate(data))}
+                  className="space-y-4"
+                >
                   <FormField
                     control={form.control}
-                    name="phone"
+                    name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Phone</FormLabel>
+                        <FormLabel>Name</FormLabel>
                         <FormControl>
                           <Input {...field} />
                         </FormControl>
@@ -390,29 +362,70 @@ export default function DistributorsPage() {
                   />
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="code"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>Distributor Code</FormLabel>
                         <FormControl>
-                          <Input type="email" {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
-                <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-                  Create Distributor
-                </Button>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+                  <FormField
+                    control={form.control}
+                    name="contact"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contact Person</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={createMutation.isPending}>
+                    Create Distributor
+                  </Button>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {distributors?.map((distributor) => (
+        {filteredDistributors?.map((distributor) => (
           <Card key={distributor.id}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -504,20 +517,22 @@ export default function DistributorsPage() {
                   </DialogContent>
                 </Dialog>
 
-                <Dialog open={createUserOpen === distributor.id} onOpenChange={(open) => setCreateUserOpen(open ? distributor.id : null)}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline">
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Create User
-                    </Button>
-                  </DialogTrigger>
-                  {createUserOpen === distributor.id && (
-                    <CreateUserDialog 
-                      distributorId={distributor.id} 
-                      onClose={() => setCreateUserOpen(null)} 
-                    />
-                  )}
-                </Dialog>
+                {user?.role === 'supermarket' && (
+                  <Dialog open={createUserOpen === distributor.id} onOpenChange={(open) => setCreateUserOpen(open ? distributor.id : null)}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Create User
+                      </Button>
+                    </DialogTrigger>
+                    {createUserOpen === distributor.id && (
+                      <CreateUserDialog 
+                        distributorId={distributor.id} 
+                        onClose={() => setCreateUserOpen(null)} 
+                      />
+                    )}
+                  </Dialog>
+                )}
               </div>
             </CardContent>
           </Card>
