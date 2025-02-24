@@ -3,12 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@shared/schema";
-import { Package, Tag, DollarSign, ImageOff, ShoppingCart } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { Package, Tag, DollarSign, ImageOff, ShoppingCart, Barcode, FileImage, Box, Info } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/hooks/use-toast";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { formatDistanceToNow } from "date-fns";
 
 interface ProductCardProps {
   product: Product | null;
@@ -87,12 +92,53 @@ export function ProductCard({ product, isLoading }: ProductCardProps) {
 
         <CardContent className="p-4 space-y-4">
           <div>
-            <CardTitle className="line-clamp-2 text-base mb-2">
-              {product.name}
-            </CardTitle>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Tag className="h-3 w-3" />
-              <span className="truncate">{product.itemCode}</span>
+            <div className="flex items-center justify-between">
+              <CardTitle className="line-clamp-2 text-base mb-2">
+                {product.name}
+              </CardTitle>
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <Info className="h-4 w-4" />
+                  </Button>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Tag className="h-4 w-4" />
+                      <span>Item Code: {product.itemCode}</span>
+                    </div>
+                    {product.supplierCode && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <FileImage className="h-4 w-4" />
+                        <span>Supplier Code: {product.supplierCode}</span>
+                      </div>
+                    )}
+                    {product.barCode && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Barcode className="h-4 w-4" />
+                        <span>Bar Code: {product.barCode}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-sm">
+                      <Box className="h-4 w-4" />
+                      <span>Box Quantity: {product.boxQuantity} {product.unit}</span>
+                    </div>
+                    {product.description && (
+                      <div className="pt-2 border-t">
+                        <p className="text-sm text-muted-foreground">
+                          Department: {product.description}
+                        </p>
+                      </div>
+                    )}
+                    <div className="pt-2 border-t">
+                      <p className="text-xs text-muted-foreground">
+                        Last updated {formatDistanceToNow(new Date(product.updatedAt), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
             </div>
           </div>
 
