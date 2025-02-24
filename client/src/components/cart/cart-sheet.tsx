@@ -110,7 +110,7 @@ export function CartSheet() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="flex flex-col h-full">
+      <SheetContent className="flex flex-col h-full" side="right">
         <SheetHeader>
           <SheetTitle>Carrinho de Compras</SheetTitle>
           <SheetDescription>
