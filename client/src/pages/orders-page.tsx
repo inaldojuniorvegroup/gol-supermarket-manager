@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Order, OrderItem, Store, Distributor, InsertOrder, insertOrderSchema } from "@shared/schema";
+import { Order, InsertOrder, insertOrderSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import OrderPDF from "@/components/pdf/order-pdf";
@@ -37,21 +37,46 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Plus, ShoppingCart, Store as StoreIcon } from "lucide-react";
+import { FileText, Plus, ShoppingCart, Store as StoreIcon, Package } from "lucide-react";
+
+// Adiciona interface para os dados completos do pedido
+interface OrderWithDetails extends Order {
+  store: {
+    id: number;
+    name: string;
+    code: string;
+  };
+  distributor: {
+    id: number;
+    name: string;
+    code: string;
+  };
+  items: Array<{
+    id: number;
+    quantity: string;
+    price: string;
+    total: string;
+    product: {
+      id: number;
+      name: string;
+      itemCode: string;
+    };
+  }>;
+}
 
 export default function OrdersPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
 
-  const { data: orders, isLoading: ordersLoading } = useQuery<Order[]>({
+  const { data: orders, isLoading: ordersLoading } = useQuery<OrderWithDetails[]>({
     queryKey: ["/api/orders"],
   });
 
-  const { data: stores } = useQuery<Store[]>({
+  const { data: stores } = useQuery({
     queryKey: ["/api/stores"],
   });
 
-  const { data: distributors } = useQuery<Distributor[]>({
+  const { data: distributors } = useQuery({
     queryKey: ["/api/distributors"],
   });
 
@@ -73,13 +98,13 @@ export default function OrdersPage() {
       setOpen(false);
       form.reset();
       toast({
-        title: "Order created",
-        description: "Order has been created successfully",
+        title: "Pedido criado",
+        description: "O pedido foi criado com sucesso",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error creating order",
+        title: "Erro ao criar pedido",
         description: error.message,
         variant: "destructive",
       });
@@ -90,7 +115,7 @@ export default function OrdersPage() {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Orders</h1>
+          <h1 className="text-3xl font-bold">Pedidos</h1>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[...Array(4)].map((_, i) => (
@@ -109,17 +134,17 @@ export default function OrdersPage() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Orders</h1>
+        <h1 className="text-3xl font-bold">Pedidos</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              New Order
+              Novo Pedido
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create New Order</DialogTitle>
+              <DialogTitle>Criar Novo Pedido</DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form
@@ -131,14 +156,14 @@ export default function OrdersPage() {
                   name="storeId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Store</FormLabel>
+                      <FormLabel>Loja</FormLabel>
                       <Select
                         onValueChange={(value) => field.onChange(Number(value))}
                         value={field.value?.toString()}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a store" />
+                            <SelectValue placeholder="Selecione uma loja" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -158,14 +183,14 @@ export default function OrdersPage() {
                   name="distributorId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Distributor</FormLabel>
+                      <FormLabel>Distribuidor</FormLabel>
                       <Select
                         onValueChange={(value) => field.onChange(Number(value))}
                         value={field.value?.toString()}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a distributor" />
+                            <SelectValue placeholder="Selecione um distribuidor" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -184,7 +209,7 @@ export default function OrdersPage() {
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-                  Create Order
+                  Criar Pedido
                 </Button>
               </form>
             </Form>
@@ -194,12 +219,12 @@ export default function OrdersPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {orders?.map((order) => (
-          <Card key={order.id}>
+          <Card key={order.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShoppingCart className="h-5 w-5" />
-                  Order #{order.id}
+                  Pedido #{order.id}
                 </div>
                 <PDFDownloadLink
                   document={
@@ -210,7 +235,7 @@ export default function OrdersPage() {
                       distributor={order.distributor}
                     />
                   }
-                  fileName={`order-${order.id}.pdf`}
+                  fileName={`pedido-${order.id}.pdf`}
                 >
                   {({ loading }) => (
                     <Button variant="outline" size="icon" disabled={loading}>
@@ -223,13 +248,28 @@ export default function OrdersPage() {
                 Status: {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <StoreIcon className="h-4 w-4" />
-                {order.store.name}
+                {order.store?.name || "Loja não encontrada"}
               </div>
-              <div className="flex items-center gap-2 font-semibold">
-                Total: ${order.total}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Package className="h-4 w-4" />
+                {order.distributor?.name || "Distribuidor não encontrado"}
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Itens:</p>
+                <div className="space-y-1">
+                  {order.items?.map((item) => (
+                    <div key={item.id} className="text-sm text-muted-foreground flex justify-between">
+                      <span>{item.product?.name} x{item.quantity}</span>
+                      <span>${Number(item.total).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 font-semibold pt-2 border-t">
+                Total: ${Number(order.total).toFixed(2)}
               </div>
             </CardContent>
           </Card>
