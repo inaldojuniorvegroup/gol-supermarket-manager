@@ -1,10 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Order } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useParams } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ShoppingCart, Store as StoreIcon, Package } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface OrderWithDetails extends Order {
   store?: {
@@ -22,6 +26,7 @@ interface OrderWithDetails extends Order {
     quantity: string;
     price: string;
     total: string;
+    productId: number;
     product?: {
       id: number;
       name: string;
@@ -33,11 +38,54 @@ interface OrderWithDetails extends Order {
 export default function SharedOrderPage() {
   const { id } = useParams<{ id: string }>();
   const orderId = parseInt(id);
+  const { toast } = useToast();
+  const [editedItems, setEditedItems] = useState<{[key: number]: { quantity: string; price: string }}>({});
 
   const { data: order, isLoading, error } = useQuery<OrderWithDetails>({
     queryKey: [`/api/orders/share/${orderId}`],
     retry: 1,
   });
+
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ productId, price }: { productId: number; price: string }) => {
+      const res = await apiRequest("PATCH", `/api/products/${productId}`, {
+        unitPrice: price
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({
+        title: "Product updated",
+        description: "Product price has been updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error updating product",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleEdit = (itemId: number, field: 'quantity' | 'price', value: string) => {
+    setEditedItems(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleUpdateProduct = async (productId: number, price: string) => {
+    await updateProductMutation.mutate({ productId, price });
+  };
+
+  const calculateTotal = (quantity: string, price: string) => {
+    return (Number(quantity) * Number(price)).toFixed(2);
+  };
 
   if (isLoading) {
     return (
@@ -90,17 +138,51 @@ export default function SharedOrderPage() {
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium">Items:</p>
-            <div className="space-y-1">
-              {order.items?.map((item) => (
-                <div key={item.id} className="text-sm text-muted-foreground flex justify-between">
-                  <span>{item.product?.name || "Product not found"} x{item.quantity}</span>
-                  <span>${Number(item.total).toFixed(2)}</span>
-                </div>
-              ))}
+            <div className="space-y-2">
+              {order.items?.map((item) => {
+                const editedItem = editedItems[item.id] || { quantity: item.quantity, price: item.price };
+                const total = calculateTotal(editedItem.quantity, editedItem.price);
+
+                return (
+                  <div key={item.id} className="flex items-center gap-4 p-2 rounded-lg border">
+                    <div className="flex-1">
+                      <p className="font-medium">{item.product?.name || "Product not found"}</p>
+                      <p className="text-sm text-muted-foreground">Code: {item.product?.itemCode}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        value={editedItem.quantity}
+                        onChange={(e) => handleEdit(item.id, 'quantity', e.target.value)}
+                        className="w-20"
+                      />
+                      <Input
+                        type="number"
+                        value={editedItem.price}
+                        onChange={(e) => handleEdit(item.id, 'price', e.target.value)}
+                        className="w-24"
+                      />
+                      <div className="w-24 text-right">${total}</div>
+                      {item.product && editedItem.price !== item.price && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleUpdateProduct(item.product!.id, editedItem.price)}
+                          disabled={updateProductMutation.isPending}
+                        >
+                          Update Price
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
           <div className="flex items-center gap-2 font-semibold pt-2 border-t">
-            Total: ${Number(order.total).toFixed(2)}
+            Total: ${order.items?.reduce((acc, item) => {
+              const editedItem = editedItems[item.id] || { quantity: item.quantity, price: item.price };
+              return acc + Number(calculateTotal(editedItem.quantity, editedItem.price));
+            }, 0).toFixed(2)}
           </div>
         </CardContent>
       </Card>
