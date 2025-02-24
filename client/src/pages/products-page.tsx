@@ -38,22 +38,26 @@ import { useToast } from "@/hooks/use-toast";
 import { ProductCard } from "@/components/products/product-card";
 
 export default function ProductsPage() {
-  const { toast } = useToast();
+  // 1. Todos os useState hooks
   const [open, setOpen] = useState(false);
   const [selectedDistributor, setSelectedDistributor] = useState<string>("all");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: products, isLoading: isLoadingProducts } = useQuery<Product[]>({
+  // 2. Todos os hooks de contexto
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+
+  // 3. Todos os useQuery hooks
+  const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
 
-  const { data: distributors, isLoading: isLoadingDistributors } = useQuery<Distributor[]>({
+  const { data: distributors = [] } = useQuery<Distributor[]>({
     queryKey: ["/api/distributors"],
   });
 
-  const departments = Array.from(new Set(products?.map(p => p.description).filter(Boolean) || []));
-
+  // 4. useForm hook
   const form = useForm<InsertProduct>({
     resolver: zodResolver(insertProductSchema),
     defaultValues: {
@@ -71,6 +75,7 @@ export default function ProductsPage() {
     }
   });
 
+  // 5. useMutation hook
   const createMutation = useMutation({
     mutationFn: async (data: InsertProduct) => {
       const res = await apiRequest("POST", "/api/products", data);
@@ -94,6 +99,9 @@ export default function ProductsPage() {
     }
   });
 
+  // Extrair departamentos únicos dos produtos
+  const departments = Array.from(new Set(products?.map(p => p.description).filter(Boolean) || []));
+
   // Filtra produtos por distribuidor, departamento e termo de busca
   const filteredProducts = products?.filter(product => {
     const matchesDistributor = selectedDistributor === "all" || product.distributorId === parseInt(selectedDistributor);
@@ -104,7 +112,15 @@ export default function ProductsPage() {
     return matchesDistributor && matchesDepartment && matchesSearch;
   });
 
-  if (isLoadingProducts || isLoadingDistributors) {
+  const handleAddToCart = (product: Product) => {
+    addToCart(product);
+    toast({
+      title: "Added to cart",
+      description: `${product.name} has been added to your cart.`
+    });
+  };
+
+  if (isLoadingProducts) {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
@@ -118,15 +134,6 @@ export default function ProductsPage() {
       </div>
     );
   }
-
-  const { addToCart } = useCart();
-  const handleAddToCart = (product: Product) => {
-    addToCart(product);
-    toast({
-      title: "Added to cart",
-      description: `${product.name} has been added to your cart.`
-    });
-  };
 
   return (
     <div className="space-y-6">
@@ -327,7 +334,7 @@ export default function ProductsPage() {
             <SelectContent>
               <SelectItem value="all">All Departments</SelectItem>
               {departments.map((department) => (
-                <SelectItem key={department} value={department}>
+                <SelectItem key={department} value={department || ""}>
                   {department}
                 </SelectItem>
               ))}
