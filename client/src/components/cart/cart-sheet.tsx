@@ -110,89 +110,92 @@ export function CartSheet() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent>
+      <SheetContent className="flex flex-col h-full">
         <SheetHeader>
           <SheetTitle>Carrinho de Compras</SheetTitle>
         </SheetHeader>
-        <ScrollArea className="h-[calc(100vh-8rem)] mt-4">
-          {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-              <ShoppingCart className="h-8 w-8 mb-2" />
-              <p>Seu carrinho está vazio</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {items.map((item) => (
-                <div key={item.product.id} className="flex gap-4">
-                  <div className="flex-1 space-y-1">
-                    <h4 className="font-medium">{item.product.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      ${item.product.unitPrice} por unidade
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="w-8 text-center">{item.quantity}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => removeFromCart(item.product.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
-        {items.length > 0 && (
-          <div className="mt-4">
-            <Separator className="my-4" />
-            <div className="space-y-4">
-              <Select
-                value={selectedStore}
-                onValueChange={setSelectedStore}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma loja" />
-                </SelectTrigger>
-                <SelectContent>
-                  {stores?.map((store) => (
-                    <SelectItem key={store.id} value={store.id.toString()}>
-                      {store.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex justify-between">
-                <span className="font-medium">Total:</span>
-                <span className="font-medium">${total.toFixed(2)}</span>
+
+        {/* Área de rolagem com altura dinâmica */}
+        <div className="flex-1 overflow-hidden my-4">
+          <ScrollArea className="h-full">
+            {items.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                <ShoppingCart className="h-8 w-8 mb-2" />
+                <p>Seu carrinho está vazio</p>
               </div>
-              <Button 
-                className="w-full" 
-                onClick={() => createOrderMutation.mutate()}
-                disabled={createOrderMutation.isPending || !selectedStore}
-              >
-                {createOrderMutation.isPending ? "Processando..." : "Finalizar Pedido"}
-              </Button>
+            ) : (
+              <div className="space-y-4 pr-4">
+                {items.map((item) => (
+                  <div key={item.product.id} className="flex gap-4">
+                    <div className="flex-1 space-y-1">
+                      <h4 className="font-medium">{item.product.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        ${item.product.unitPrice} por unidade
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="w-8 text-center">{item.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => removeFromCart(item.product.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+
+        {/* Footer fixo com seleção de loja e botão de checkout */}
+        {items.length > 0 && (
+          <div className="border-t pt-4 mt-auto space-y-4">
+            <Select
+              value={selectedStore}
+              onValueChange={setSelectedStore}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma loja" />
+              </SelectTrigger>
+              <SelectContent>
+                {stores?.map((store) => (
+                  <SelectItem key={store.id} value={store.id.toString()}>
+                    {store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex justify-between font-medium">
+              <span>Total:</span>
+              <span>${total.toFixed(2)}</span>
             </div>
+            <Button 
+              className="w-full" 
+              onClick={() => createOrderMutation.mutate()}
+              disabled={createOrderMutation.isPending || !selectedStore}
+            >
+              {createOrderMutation.isPending ? "Processando..." : "Finalizar Pedido"}
+            </Button>
           </div>
         )}
       </SheetContent>
