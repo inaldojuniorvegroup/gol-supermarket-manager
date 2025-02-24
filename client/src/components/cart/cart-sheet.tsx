@@ -7,6 +7,7 @@ import {
   SheetTitle,
   SheetDescription,
   SheetTrigger,
+  SheetClose,
 } from "@/components/ui/sheet";
 import { useCart } from "@/contexts/cart-context";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -108,13 +109,14 @@ export function CartSheet() {
               {items.length}
             </span>
           )}
+          <span className="sr-only">Shopping Cart</span>
         </Button>
       </SheetTrigger>
       <SheetContent className="flex flex-col h-full" side="right">
         <SheetHeader>
-          <SheetTitle>Carrinho de Compras</SheetTitle>
+          <SheetTitle>Shopping Cart</SheetTitle>
           <SheetDescription>
-            Gerencie os itens do seu carrinho e finalize seu pedido
+            Manage your cart items and complete your order
           </SheetDescription>
         </SheetHeader>
 
