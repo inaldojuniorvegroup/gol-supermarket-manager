@@ -35,7 +35,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
   const NavContent = () => (
     <>
       <SheetHeader>
-        <SheetTitle>Menu de Navegação</SheetTitle>
+        <SheetTitle>Navigation Menu</SheetTitle>
       </SheetHeader>
       <div className="flex items-center gap-2 px-6 py-4">
         <img 
@@ -97,7 +97,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
           <Button 
             variant="ghost" 
             className="lg:hidden p-2 m-4"
-            aria-label="Abrir menu de navegação"
+            aria-label="Open navigation menu"
           >
             <Menu className="h-6 w-6" />
           </Button>

@@ -6,7 +6,6 @@ import { Product } from "@shared/schema";
 import { Package, Tag, DollarSign, ImageOff, ShoppingCart, Barcode, FileImage, Box, Info } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import {
   HoverCard,
@@ -18,11 +17,11 @@ import { formatDistanceToNow } from "date-fns";
 interface ProductCardProps {
   product: Product | null;
   isLoading?: boolean;
+  onAddToCart: (product: Product) => void;
 }
 
-export function ProductCard({ product, isLoading }: ProductCardProps) {
+export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
-  const { addToCart } = useCart();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -31,7 +30,7 @@ export function ProductCard({ product, isLoading }: ProductCardProps) {
 
   const handleAddToCart = () => {
     if (product) {
-      addToCart(product);
+      onAddToCart(product);
       toast({
         title: "Added to cart",
         description: `${product.name} has been added to your cart.`
