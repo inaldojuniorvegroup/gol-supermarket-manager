@@ -12,6 +12,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.json({ limit: '500mb' }));
   app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
+  // Adicionar rota pública para compartilhamento de pedidos
+  app.get("/api/orders/share/:id", async (req, res) => {
+    try {
+      const orderId = Number(req.params.id);
+      const order = await storage.getOrder(orderId);
+
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Buscar detalhes adicionais do pedido
+      const store = await storage.getStore(order.storeId);
+      const distributor = await storage.getDistributor(order.distributorId);
+      const items = await storage.getOrderItems(order.id);
+
+      // Buscar detalhes dos produtos para cada item
+      const itemsWithProducts = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return { ...item, product };
+      }));
+
+      // Retornar pedido completo com todos os detalhes
+      const orderWithDetails = {
+        ...order,
+        store,
+        distributor,
+        items: itemsWithProducts
+      };
+
+      res.json(orderWithDetails);
+    } catch (error) {
+      console.error('Error fetching shared order:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Stores
   app.get("/api/stores", async (_req, res) => {
     const stores = await storage.getStores();
