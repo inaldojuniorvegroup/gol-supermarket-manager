@@ -1,44 +1,52 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@shared/schema";
-import { Tag, Box, Store, ImageOff } from "lucide-react";
+import { Package, Tag, DollarSign, ImageOff, ShoppingCart } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCart } from "@/contexts/cart-context";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductCardProps {
-  product: Product;
-  onEdit?: (product: Product) => void;
+  product: Product | null;
   isLoading?: boolean;
 }
 
-export function ProductCard({ product, onEdit, isLoading }: ProductCardProps) {
+export function ProductCard({ product, isLoading }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
+  const { addToCart } = useCart();
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Reset image error state when product changes
     setImageError(false);
-  }, [product.imageUrl]);
+  }, [product?.imageUrl]);
 
-  if (isLoading) {
+  const handleAddToCart = () => {
+    if (product) {
+      addToCart(product);
+      toast({
+        title: "Added to cart",
+        description: `${product.name} has been added to your cart.`
+      });
+    }
+  };
+
+  if (isLoading || !product) {
     return (
       <Card className="h-full">
-        <CardHeader>
+        <CardHeader className="space-y-2">
           <Skeleton className="h-48 w-full rounded-lg" />
-          <Skeleton className="h-6 w-3/4 mt-4" />
+          <Skeleton className="h-5 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-4 w-full" />
-          </div>
+        <CardContent className="space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-8 w-full" />
         </CardContent>
-        <CardFooter>
-          <Skeleton className="h-4 w-1/3" />
-        </CardFooter>
       </Card>
     );
   }
@@ -48,86 +56,70 @@ export function ProductCard({ product, onEdit, isLoading }: ProductCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className="h-full flex flex-col hover:shadow-lg transition-shadow duration-200">
-        <CardHeader className="space-y-2">
+      <Card className="group relative h-full overflow-hidden hover:shadow-lg transition-all duration-200">
+        {product.isSpecialOffer && (
+          <Badge 
+            variant="destructive" 
+            className="absolute top-2 right-2 z-10"
+          >
+            Special Offer
+          </Badge>
+        )}
+
+        <CardHeader className="p-0">
           {product.imageUrl && !imageError ? (
-            <div className="relative w-full h-48 rounded-lg overflow-hidden bg-muted">
+            <div className="relative w-full h-48 overflow-hidden">
               <img
                 src={product.imageUrl}
                 alt={product.name}
-                className="object-cover w-full h-full transition-transform duration-200 hover:scale-105"
+                className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
                 onError={() => setImageError(true)}
               />
             </div>
           ) : (
-            product.imageUrl && (
-              <div className="flex items-center justify-center w-full h-48 rounded-lg bg-muted">
-                <ImageOff className="h-12 w-12 text-muted-foreground" />
-              </div>
-            )
-          )}
-          <div className="flex justify-between items-start gap-4">
-            <CardTitle className="line-clamp-2 text-lg">{product.name}</CardTitle>
-            {product.isSpecialOffer && (
-              <Badge variant="destructive" className="animate-pulse">
-                Special Offer
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Store className="h-4 w-4" />
-            <span>Distributor ID: {product.distributorId}</span>
-          </div>
-        </CardHeader>
-        <CardContent className="flex-grow">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm">
-              <Tag className="h-4 w-4 text-primary" />
-              <span>Code: {product.itemCode}</span>
+            <div className="flex items-center justify-center w-full h-48 bg-muted">
+              <Package className="h-12 w-12 text-muted-foreground" />
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Box className="h-4 w-4 text-primary" />
-              <span>
-                {product.boxQuantity} {product.unit} per box
+          )}
+        </CardHeader>
+
+        <CardContent className="p-4 space-y-4">
+          <div>
+            <CardTitle className="line-clamp-2 text-base mb-2">
+              {product.name}
+            </CardTitle>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Tag className="h-3 w-3" />
+              <span className="truncate">{product.itemCode}</span>
+            </div>
+          </div>
+
+          {product.description && (
+            <p className="text-sm text-muted-foreground line-clamp-1">
+              {product.description}
+            </p>
+          )}
+
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center gap-1">
+              <DollarSign className="h-4 w-4 text-primary" />
+              <span className="font-semibold text-lg">
+                {Number(product.unitPrice).toFixed(2)}
               </span>
             </div>
-            {product.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2 italic">
-                {product.description}
-              </p>
-            )}
-            <div className="space-y-2 p-3 bg-muted/30 rounded-lg">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Unit Price:</span>
-                <span className="font-bold text-primary">${product.unitPrice}</span>
-              </div>
-              {product.boxPrice && (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Box Price:</span>
-                  <span className="font-bold text-primary">${product.boxPrice}</span>
-                </div>
-              )}
-            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+              onClick={handleAddToCart}
+            >
+              <ShoppingCart className="h-4 w-4 mr-1" />
+              Add
+            </Button>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between items-center border-t pt-4">
-          <span className="text-xs text-muted-foreground">
-            Updated {formatDistanceToNow(new Date(product.updatedAt), { addSuffix: true })}
-          </span>
-          {onEdit && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => onEdit(product)}
-              className="hover:bg-primary hover:text-primary-foreground transition-colors"
-            >
-              Edit
-            </Button>
-          )}
-        </CardFooter>
       </Card>
     </motion.div>
   );
