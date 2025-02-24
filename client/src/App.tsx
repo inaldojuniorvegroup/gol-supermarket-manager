@@ -12,11 +12,13 @@ import ProductsPage from "@/pages/products-page";
 import OrdersPage from "@/pages/orders-page";
 import StoresPage from "@/pages/stores-page";
 import DistributorsPage from "@/pages/distributors-page";
+import SharedOrderPage from "@/pages/shared-order-page";
 
 function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      <Route path="/orders/share/:id" component={SharedOrderPage} />
       <ProtectedRoute path="/products" component={() => (
         <Dashboard>
           <ProductsPage />

@@ -38,7 +38,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Plus, ShoppingCart, Store as StoreIcon, Package } from "lucide-react";
+import { 
+  FileText, Plus, ShoppingCart, Store as StoreIcon, 
+  Package, Share2 
+} from "lucide-react";
 
 // Interface para os dados do pedido
 interface OrderWithDetails extends Order {
@@ -68,6 +71,23 @@ interface OrderWithDetails extends Order {
 export default function OrdersPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+
+  const handleShareOrder = async (orderId: number) => {
+    const shareUrl = `${window.location.origin}/orders/share/${orderId}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Link copied",
+        description: "Share link has been copied to clipboard",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to copy link to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
 
   const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useQuery<OrderWithDetails[]>({
     queryKey: ["/api/orders"],
@@ -247,7 +267,7 @@ export default function OrdersPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {orders.map((order) => (
+        {orders?.map((order) => (
           <Card key={order.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -255,25 +275,40 @@ export default function OrdersPage() {
                   <ShoppingCart className="h-5 w-5" />
                   Pedido #{order.id}
                 </div>
-                {order.store && order.distributor && order.items && (
-                  <PDFDownloadLink
-                    document={
-                      <OrderPDF
-                        order={order}
-                        items={order.items}
-                        store={order.store}
-                        distributor={order.distributor}
-                      />
-                    }
-                    fileName={`pedido-${order.id}.pdf`}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleShareOrder(order.id)}
+                    title="Share order"
                   >
-                    {({ loading }) => (
-                      <Button variant="outline" size="icon" disabled={loading}>
-                        <FileText className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </PDFDownloadLink>
-                )}
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                  {order.store && order.distributor && order.items && (
+                    <PDFDownloadLink
+                      document={
+                        <OrderPDF
+                          order={order}
+                          items={order.items}
+                          store={order.store}
+                          distributor={order.distributor}
+                        />
+                      }
+                      fileName={`pedido-${order.id}.pdf`}
+                    >
+                      {({ loading }) => (
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          disabled={loading}
+                          title="Download PDF"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </PDFDownloadLink>
+                  )}
+                </div>
               </CardTitle>
               <CardDescription>
                 Status: {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
