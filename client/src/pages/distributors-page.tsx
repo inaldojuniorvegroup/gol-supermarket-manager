@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Distributor, InsertDistributor, insertDistributorSchema, Product } from "@shared/schema";
+import { Distributor, InsertDistributor, insertDistributorSchema, Product, InsertUser, insertUserSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,13 +30,101 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Mail, Plus, Truck, User, Package, Upload } from "lucide-react";
+import { Phone, Mail, Plus, Truck, User, Package, Upload, UserPlus } from "lucide-react";
 import * as XLSX from 'xlsx';
+
+interface CreateUserDialogProps {
+  distributorId: number;
+  onClose: () => void;
+}
+
+function CreateUserDialog({ distributorId, onClose }: CreateUserDialogProps) {
+  const { toast } = useToast();
+  const form = useForm<InsertUser>({
+    resolver: zodResolver(insertUserSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+      role: "distributor",
+      distributorId
+    }
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: async (data: InsertUser) => {
+      const res = await apiRequest("POST", "/api/register/distributor", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "User created",
+        description: "Distributor user has been created successfully",
+      });
+      onClose();
+      form.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error creating user",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Create Distributor User</DialogTitle>
+        <DialogDescription>
+          Create a user account for this distributor to manage their products and orders.
+        </DialogDescription>
+      </DialogHeader>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit((data) => createUserMutation.mutate(data))}
+          className="space-y-4"
+        >
+          <FormField
+            control={form.control}
+            name="username"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Username</FormLabel>
+                <FormControl>
+                  <Input {...field} autoComplete="username" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input type="password" {...field} autoComplete="new-password" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full" disabled={createUserMutation.isPending}>
+            Create User
+          </Button>
+        </form>
+      </Form>
+    </DialogContent>
+  );
+}
 
 export default function DistributorsPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [selectedDistributor, setSelectedDistributor] = useState<number | null>(null);
+  const [createUserOpen, setCreateUserOpen] = useState<number | null>(null);
 
   const { data: distributors, isLoading } = useQuery<Distributor[]>({
     queryKey: ["/api/distributors"],
@@ -414,6 +502,21 @@ export default function DistributorsPage() {
                       ))}
                     </div>
                   </DialogContent>
+                </Dialog>
+
+                <Dialog open={createUserOpen === distributor.id} onOpenChange={(open) => setCreateUserOpen(open ? distributor.id : null)}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Create User
+                    </Button>
+                  </DialogTrigger>
+                  {createUserOpen === distributor.id && (
+                    <CreateUserDialog 
+                      distributorId={distributor.id} 
+                      onClose={() => setCreateUserOpen(null)} 
+                    />
+                  )}
                 </Dialog>
               </div>
             </CardContent>

@@ -36,6 +36,14 @@ function isSupermarket(req: Express.Request, res: Express.Response, next: Functi
   res.status(403).json({ message: "Apenas usuários do Gol Supermarket podem realizar esta ação" });
 }
 
+// Middleware to check if user is a distributor
+function isDistributor(req: Express.Request, res: Express.Response, next: Function) {
+  if (req.isAuthenticated() && req.user.role === 'distributor') {
+    return next();
+  }
+  res.status(403).json({ message: "Apenas distribuidores podem realizar esta ação" });
+}
+
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'temporary-secret-for-development',
@@ -113,6 +121,37 @@ export function setupAuth(app: Express) {
     });
   });
 
+  // Nova rota para registro de usuários distribuidores
+  app.post("/api/register/distributor", async (req, res, next) => {
+    try {
+      const { username, password, distributorId } = req.body;
+
+      // Verificar se já existe um usuário com este username
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      // Verificar se o distribuidor existe
+      const distributor = await storage.getDistributor(distributorId);
+      if (!distributor) {
+        return res.status(404).json({ message: "Distributor not found" });
+      }
+
+      const user = await storage.createUser({
+        username,
+        password: await hashPassword(password),
+        role: 'distributor',
+        distributorId
+      });
+
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Error creating distributor user:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
     res.status(200).json(req.user);
   });
@@ -129,3 +168,5 @@ export function setupAuth(app: Express) {
     res.json(req.user);
   });
 }
+
+export { isSupermarket, isDistributor };
