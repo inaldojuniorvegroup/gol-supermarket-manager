@@ -2,7 +2,13 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle
+} from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Package, Store, Truck, ShoppingCart, Menu, LogOut,
@@ -28,6 +34,9 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
 
   const NavContent = () => (
     <>
+      <SheetHeader>
+        <SheetTitle>Menu de Navegação</SheetTitle>
+      </SheetHeader>
       <div className="flex items-center gap-2 px-6 py-4">
         <img 
           src="https://placehold.co/32x32/png" 
@@ -88,6 +97,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
           <Button 
             variant="ghost" 
             className="lg:hidden p-2 m-4"
+            aria-label="Abrir menu de navegação"
           >
             <Menu className="h-6 w-6" />
           </Button>
