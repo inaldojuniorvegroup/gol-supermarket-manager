@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -98,17 +99,20 @@ export default function StoresPage() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Stores</h1>
+        <h1 className="text-3xl font-bold">Lojas</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Add Store
+              Adicionar Loja
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Store</DialogTitle>
+              <DialogTitle>Adicionar Nova Loja</DialogTitle>
+              <DialogDescription>
+                Preencha os dados abaixo para cadastrar uma nova loja.
+              </DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form

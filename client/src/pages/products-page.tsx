@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
@@ -106,7 +107,7 @@ export default function ProductsPage() {
   const filteredProducts = products?.filter(product => {
     const matchesDistributor = selectedDistributor === "all" || product.distributorId === parseInt(selectedDistributor);
     const matchesDepartment = selectedDepartment === "all" || product.description === selectedDepartment;
-    const matchesSearch = searchTerm === "" || 
+    const matchesSearch = searchTerm === "" ||
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.itemCode.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesDistributor && matchesDepartment && matchesSearch;
@@ -141,19 +142,22 @@ export default function ProductsPage() {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Package className="h-8 w-8" />
-            Products
+            Produtos
           </h1>
           <div className="flex gap-2">
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Product
+                  Adicionar Produto
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Add New Product</DialogTitle>
+                  <DialogTitle>Adicionar Novo Produto</DialogTitle>
+                  <DialogDescription>
+                    Preencha os dados abaixo para cadastrar um novo produto.
+                  </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                   <form
@@ -305,7 +309,7 @@ export default function ProductsPage() {
                       )}
                     />
                     <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-                      Create Product
+                      Criar Produto
                     </Button>
                   </form>
                 </Form>

@@ -19,6 +19,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
@@ -170,6 +171,9 @@ export default function OrdersPage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Criar Novo Pedido</DialogTitle>
+              <DialogDescription>
+                Preencha os dados abaixo para criar um novo pedido.
+              </DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form
@@ -234,7 +238,7 @@ export default function OrdersPage() {
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-                  Criar Pedido
+                  {createMutation.isPending ? "Criando..." : "Criar Pedido"}
                 </Button>
               </form>
             </Form>

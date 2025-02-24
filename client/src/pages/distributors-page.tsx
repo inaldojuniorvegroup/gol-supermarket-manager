@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -226,17 +227,20 @@ export default function DistributorsPage() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Distributors</h1>
+        <h1 className="text-3xl font-bold">Distribuidores</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Add Distributor
+              Adicionar Distribuidor
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Distributor</DialogTitle>
+              <DialogTitle>Adicionar Novo Distribuidor</DialogTitle>
+              <DialogDescription>
+                Preencha os dados abaixo para cadastrar um novo distribuidor.
+              </DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form
@@ -354,12 +358,15 @@ export default function DistributorsPage() {
                       onClick={() => setSelectedDistributor(distributor.id)}
                     >
                       <Package className="h-4 w-4 mr-2" />
-                      View Catalog
+                      Ver Catálogo
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-4xl">
                     <DialogHeader>
-                      <DialogTitle>Product Catalog - {distributor.name}</DialogTitle>
+                      <DialogTitle>Catálogo de Produtos - {distributor.name}</DialogTitle>
+                      <DialogDescription>
+                        Gerencie os produtos deste distribuidor e importe novos itens.
+                      </DialogDescription>
                     </DialogHeader>
                     <div className="flex justify-end mb-4">
                       <div className="relative">
