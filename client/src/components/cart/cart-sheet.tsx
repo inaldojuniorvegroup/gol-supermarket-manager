@@ -5,11 +5,11 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useCart } from "@/contexts/cart-context";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -25,7 +25,7 @@ export function CartSheet() {
   const [open, setOpen] = useState(false);
 
   // Buscar lojas disponíveis
-  const { data: stores } = useQuery<Store[]>({
+  const { data: stores = [] } = useQuery<Store[]>({
     queryKey: ["/api/stores"],
   });
 
@@ -113,6 +113,9 @@ export function CartSheet() {
       <SheetContent className="flex flex-col h-full">
         <SheetHeader>
           <SheetTitle>Carrinho de Compras</SheetTitle>
+          <SheetDescription>
+            Gerencie os itens do seu carrinho e finalize seu pedido
+          </SheetDescription>
         </SheetHeader>
 
         {/* Área de rolagem com altura dinâmica */}
