@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Product, InsertProduct, insertProductSchema, Distributor } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -32,24 +31,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Package, Plus } from "lucide-react";
-import ImportExcel from "@/components/products/import-excel";
 import { useCart } from "@/contexts/cart-context";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { useToast } from "@/hooks/use-toast";
 import { ProductCard } from "@/components/products/product-card";
 
 export default function ProductsPage() {
-  // 1. Todos os useState hooks
   const [open, setOpen] = useState(false);
   const [selectedDistributor, setSelectedDistributor] = useState<string>("all");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // 2. Todos os hooks de contexto
   const { addToCart } = useCart();
   const { toast } = useToast();
 
-  // 3. Todos os useQuery hooks
   const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
@@ -58,7 +53,6 @@ export default function ProductsPage() {
     queryKey: ["/api/distributors"],
   });
 
-  // 4. useForm hook
   const form = useForm<InsertProduct>({
     resolver: zodResolver(insertProductSchema),
     defaultValues: {
@@ -76,7 +70,6 @@ export default function ProductsPage() {
     }
   });
 
-  // 5. useMutation hook
   const createMutation = useMutation({
     mutationFn: async (data: InsertProduct) => {
       const res = await apiRequest("POST", "/api/products", data);
@@ -100,10 +93,8 @@ export default function ProductsPage() {
     }
   });
 
-  // Extrair departamentos únicos dos produtos
   const departments = Array.from(new Set(products?.map(p => p.description).filter(Boolean) || []));
 
-  // Filtra produtos por distribuidor, departamento e termo de busca
   const filteredProducts = products?.filter(product => {
     const matchesDistributor = selectedDistributor === "all" || product.distributorId === parseInt(selectedDistributor);
     const matchesDepartment = selectedDepartment === "all" || product.description === selectedDepartment;
@@ -113,14 +104,6 @@ export default function ProductsPage() {
     return matchesDistributor && matchesDepartment && matchesSearch;
   });
 
-  const handleAddToCart = (product: Product) => {
-    addToCart(product);
-    toast({
-      title: "Added to cart",
-      description: `${product.name} has been added to your cart.`
-    });
-  };
-
   if (isLoadingProducts) {
     return (
       <div className="space-y-4">
@@ -129,7 +112,7 @@ export default function ProductsPage() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {[...Array(10)].map((_, i) => (
-            <ProductCard key={i} product={null} isLoading={true} />
+            <ProductCard key={i} product={null} isLoading={true} onAddToCart={() => {}} />
           ))}
         </div>
       </div>
@@ -171,7 +154,7 @@ export default function ProductsPage() {
                         <FormItem>
                           <FormLabel>Name</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} value={field.value || ""} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -185,7 +168,7 @@ export default function ProductsPage() {
                           <FormItem>
                             <FormLabel>Item Code</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input {...field} value={field.value || ""} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -198,7 +181,7 @@ export default function ProductsPage() {
                           <FormItem>
                             <FormLabel>Supplier Code</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input {...field} value={field.value || ""} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -213,7 +196,7 @@ export default function ProductsPage() {
                           <FormItem>
                             <FormLabel>Bar Code</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input {...field} value={field.value || ""} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -230,6 +213,7 @@ export default function ProductsPage() {
                                 {...field}
                                 type="url"
                                 placeholder="https://example.com/image.jpg"
+                                value={field.value || ""}
                               />
                             </FormControl>
                             <FormMessage />
@@ -244,7 +228,7 @@ export default function ProductsPage() {
                         <FormItem>
                           <FormLabel>Department</FormLabel>
                           <FormControl>
-                            <Textarea {...field} placeholder="Enter department name" />
+                            <Textarea {...field} value={field.value || ""} placeholder="Enter department name" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -258,7 +242,7 @@ export default function ProductsPage() {
                           <FormItem>
                             <FormLabel>Unit Price</FormLabel>
                             <FormControl>
-                              <Input type="number" step="0.01" {...field} />
+                              <Input type="number" step="0.01" {...field} value={field.value || "0"} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -271,7 +255,7 @@ export default function ProductsPage() {
                           <FormItem>
                             <FormLabel>Box Quantity</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} />
+                              <Input type="number" {...field} value={field.value || "1"} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -368,7 +352,7 @@ export default function ProductsPage() {
           <ProductCard
             key={product.id}
             product={product}
-            handleAddToCart={handleAddToCart}
+            onAddToCart={() => addToCart(product)}
           />
         ))}
       </div>
