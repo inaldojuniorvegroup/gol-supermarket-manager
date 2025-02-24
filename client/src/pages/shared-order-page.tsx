@@ -73,7 +73,7 @@ export default function SharedOrderPage() {
     setEditedItems(prev => ({
       ...prev,
       [itemId]: {
-        ...prev[itemId],
+        ...(prev[itemId] || { quantity: "0", price: "0" }),
         [field]: value
       }
     }));
@@ -84,7 +84,7 @@ export default function SharedOrderPage() {
   };
 
   const calculateTotal = (quantity: string, price: string) => {
-    return (Number(quantity) * Number(price)).toFixed(2);
+    return (Number(quantity || 0) * Number(price || 0)).toFixed(2);
   };
 
   if (isLoading) {
@@ -140,7 +140,10 @@ export default function SharedOrderPage() {
             <p className="text-sm font-medium">Items:</p>
             <div className="space-y-2">
               {order.items?.map((item) => {
-                const editedItem = editedItems[item.id] || { quantity: item.quantity, price: item.price };
+                const editedItem = editedItems[item.id] || { 
+                  quantity: item.quantity || "0", 
+                  price: item.price || "0" 
+                };
                 const total = calculateTotal(editedItem.quantity, editedItem.price);
 
                 return (
@@ -180,7 +183,10 @@ export default function SharedOrderPage() {
           </div>
           <div className="flex items-center gap-2 font-semibold pt-2 border-t">
             Total: ${order.items?.reduce((acc, item) => {
-              const editedItem = editedItems[item.id] || { quantity: item.quantity, price: item.price };
+              const editedItem = editedItems[item.id] || { 
+                quantity: item.quantity || "0", 
+                price: item.price || "0" 
+              };
               return acc + Number(calculateTotal(editedItem.quantity, editedItem.price));
             }, 0).toFixed(2)}
           </div>
