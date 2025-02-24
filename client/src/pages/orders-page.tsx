@@ -68,9 +68,54 @@ export default function OrdersPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
 
-  const { data: orders, isLoading: ordersLoading } = useQuery<OrderWithDetails[]>({
+  const { data: orders, isLoading: ordersLoading, error: ordersError } = useQuery<OrderWithDetails[]>({
     queryKey: ["/api/orders"],
+    retry: 1,
+    onError: (error) => {
+      toast({
+        title: "Erro ao carregar pedidos",
+        description: "Não foi possível carregar a lista de pedidos. Por favor, tente novamente.",
+        variant: "destructive"
+      });
+    }
   });
+
+  if (ordersError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
+        <h1 className="text-3xl font-bold text-destructive">Erro ao carregar pedidos</h1>
+        <p className="text-muted-foreground">
+          Ocorreu um erro ao carregar os pedidos. Por favor, tente novamente mais tarde.
+        </p>
+        <Button 
+          onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/orders"] })}
+          variant="outline"
+        >
+          Tentar novamente
+        </Button>
+      </div>
+    );
+  }
+
+  if (ordersLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Pedidos</h1>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6 space-y-4">
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-4 bg-muted rounded w-1/2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const { data: stores } = useQuery({
     queryKey: ["/api/stores"],
@@ -110,26 +155,6 @@ export default function OrdersPage() {
       });
     }
   });
-
-  if (ordersLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Pedidos</h1>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6 space-y-4">
-                <div className="h-4 bg-muted rounded w-3/4" />
-                <div className="h-4 bg-muted rounded w-1/2" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">

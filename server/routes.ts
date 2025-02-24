@@ -167,23 +167,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Orders
   app.get("/api/orders", async (_req, res) => {
-    const orders = await storage.getOrders();
-    const ordersWithDetails = await Promise.all(orders.map(async (order) => {
-      const store = await storage.getStore(order.storeId);
-      const distributor = await storage.getDistributor(order.distributorId);
-      const items = await storage.getOrderItems(order.id);
-      const itemsWithProducts = await Promise.all(items.map(async (item) => {
-        const product = await storage.getProduct(item.productId);
-        return { ...item, product };
+    try {
+      console.log('Fetching orders...');
+      const orders = await storage.getOrders();
+      console.log('Orders fetched:', orders);
+
+      const ordersWithDetails = await Promise.all(orders.map(async (order) => {
+        try {
+          console.log('Fetching details for order:', order.id);
+          const store = await storage.getStore(order.storeId);
+          const distributor = await storage.getDistributor(order.distributorId);
+          const items = await storage.getOrderItems(order.id);
+
+          console.log('Fetching products for order items...');
+          const itemsWithProducts = await Promise.all(items.map(async (item) => {
+            const product = await storage.getProduct(item.productId);
+            return { ...item, product };
+          }));
+
+          return {
+            ...order,
+            store,
+            distributor,
+            items: itemsWithProducts
+          };
+        } catch (error) {
+          console.error('Error fetching details for order:', order.id, error);
+          // Return order with minimal information if details fetch fails
+          return {
+            ...order,
+            store: null,
+            distributor: null,
+            items: []
+          };
+        }
       }));
-      return {
-        ...order,
-        store,
-        distributor,
-        items: itemsWithProducts
-      };
-    }));
-    res.json(ordersWithDetails);
+
+      console.log('Sending response with orders...');
+      res.json(ordersWithDetails);
+    } catch (error) {
+      console.error('Error in /api/orders:', error);
+      res.status(500).json({ error: 'Internal server error fetching orders' });
+    }
   });
 
   app.post("/api/orders", async (req, res) => {
