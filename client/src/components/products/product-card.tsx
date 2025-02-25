@@ -112,10 +112,14 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
                       <Tag className="h-4 w-4" />
                       <span>Item Code: {product.itemCode}</span>
                     </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Tag className="h-4 w-4" />
+                      <span>Supplier Code: {product.supplierCode}</span>
+                    </div>
                     {product.grupo && (
                       <div className="flex items-center gap-2 text-sm font-medium text-primary">
                         <Package className="h-4 w-4" />
-                        <span>Grupo: {product.grupo}</span>
+                        <span>Categoria: {product.grupo}</span>
                       </div>
                     )}
                     {product.description && (
@@ -148,7 +152,7 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
           <div className="space-y-2">
             {product.grupo && (
               <p className="text-sm font-medium text-primary">
-                Grupo: {product.grupo}
+                Categoria: {product.grupo}
               </p>
             )}
             {product.description && (
@@ -156,6 +160,9 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
                 {product.description}
               </p>
             )}
+            <p className="text-sm text-muted-foreground">
+              Código Fornecedor: {product.supplierCode}
+            </p>
           </div>
 
           <div className="flex items-center justify-between pt-2">
