@@ -291,10 +291,12 @@ export default function DistributorsPage() {
   const handleMappingComplete = async (mapping: Record<string, string>) => {
     try {
       console.log('Iniciando importação com mapeamento:', mapping);
-      console.log('Dados do arquivo:', fileData);
+      console.log('Dados originais do arquivo:', fileData);
 
       // Transform data based on mapping
-      const transformedData = fileData.map((row: any) => {
+      const transformedData = fileData.map((row: any, index: number) => {
+        console.log(`Processando linha ${index + 1}:`, row);
+
         // Create a new object with mapped values
         const mappedProduct: any = {};
 
@@ -302,10 +304,10 @@ export default function DistributorsPage() {
         Object.entries(mapping).forEach(([systemField, excelColumn]) => {
           if (excelColumn !== '_EMPTY') {
             let value = row[excelColumn];
+            console.log(`Mapeando campo ${systemField} da coluna ${excelColumn}:`, value);
 
             // Handle numeric values
             if (systemField === 'unitPrice' || systemField === 'boxQuantity') {
-              // Convert string numbers (both with . and ,) to actual numbers
               if (typeof value === 'string') {
                 value = parseFloat(value.replace(',', '.')) || 0;
               } else if (typeof value === 'number') {
@@ -338,27 +340,40 @@ export default function DistributorsPage() {
         mappedProduct.supplierCode = mappedProduct.supplierCode || '';
         mappedProduct.barCode = mappedProduct.barCode || '';
 
+        console.log('Produto mapeado:', mappedProduct);
         return mappedProduct;
-      }).filter((product: any) => {
-        // Filter out invalid products
+      });
+
+      // Validar produtos antes do filtro
+      console.log('Produtos antes da validação:', transformedData);
+
+      const validProducts = transformedData.filter((product: any, index: number) => {
         const isValid = product.name && product.itemCode && product.distributorId;
         if (!isValid) {
-          console.log('Produto inválido removido:', product);
+          console.log(`Produto ${index + 1} inválido:`, {
+            produto: product,
+            motivo: {
+              semNome: !product.name,
+              semCodigo: !product.itemCode,
+              semDistribuidor: !product.distributorId
+            }
+          });
         }
         return isValid;
       });
 
-      console.log('Dados transformados:', transformedData);
+      console.log('Produtos válidos após filtro:', validProducts);
 
-      if (transformedData.length === 0) {
-        throw new Error('Nenhum produto válido encontrado após o mapeamento');
+      if (validProducts.length === 0) {
+        throw new Error('Nenhum produto válido encontrado após o mapeamento. Verifique se as colunas Nome do Produto e Código do Item foram mapeadas corretamente.');
       }
 
+      // Resto do código permanece igual
       const batchSize = 50;
       const batches = [];
 
-      for (let i = 0; i < transformedData.length; i += batchSize) {
-        batches.push(transformedData.slice(i, i + batchSize));
+      for (let i = 0; i < validProducts.length; i += batchSize) {
+        batches.push(validProducts.slice(i, i + batchSize));
       }
 
       console.log('Total de lotes para importação:', batches.length);
@@ -371,7 +386,7 @@ export default function DistributorsPage() {
 
         toast({
           title: "Importando produtos",
-          description: `Processados ${processedCount} de ${transformedData.length} produtos...`,
+          description: `Processados ${processedCount} de ${validProducts.length} produtos...`,
         });
       }
 
@@ -389,7 +404,9 @@ export default function DistributorsPage() {
       console.error("Erro ao importar produtos:", error);
       toast({
         title: "Erro na importação",
-        description: error instanceof Error ? error.message : "Erro ao importar produtos",
+        description: error instanceof Error 
+          ? error.message 
+          : "Erro ao importar produtos. Verifique o console para mais detalhes.",
         variant: "destructive",
       });
     }
