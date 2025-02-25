@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Distributor, InsertDistributor, Product, InsertUser, insertUserSchema, insertDistributorSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -128,6 +129,106 @@ function CreateUserDialog({ distributorId, onClose }: CreateUserDialogProps) {
         </form>
       </Form>
     </DialogContent>
+  );
+}
+
+// Add product edit schema
+const editProductSchema = z.object({
+  description: z.string().min(1, "Departamento é obrigatório"),
+  grupo: z.string().min(1, "Grupo é obrigatório"),
+});
+
+type EditProductForm = z.infer<typeof editProductSchema>;
+
+function EditProductDialog({ product, onClose }: { product: Product, onClose: () => void }) {
+  const { toast } = useToast();
+  const form = useForm<EditProductForm>({
+    resolver: zodResolver(editProductSchema),
+    defaultValues: {
+      description: product.description || "",
+      grupo: product.grupo || "",
+    }
+  });
+
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ id, description, grupo }: { id: number, description: string, grupo: string }) => {
+      const res = await apiRequest("PATCH", `/api/products/${id}`, { description, grupo });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({
+        title: "Produto atualizado",
+        description: "As categorias foram atualizadas com sucesso.",
+      });
+      onClose();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar produto",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  return (
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit((data) => {
+          updateProductMutation.mutate({
+            id: product.id,
+            description: data.description,
+            grupo: data.grupo
+          });
+        })}
+        className="space-y-4"
+      >
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Departamento</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o departamento" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {["FRIOS/LACTICNIOS/CONGELADOS", "MERCEARIA", "BEBIDAS", "LIMPEZA", "HORTIFRUTI"].map((dept) => (
+                    <SelectItem key={dept} value={dept}>
+                      {dept}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="grupo"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Grupo</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Digite o grupo do produto" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="w-full" disabled={updateProductMutation.isPending}>
+          Salvar Alterações
+        </Button>
+      </form>
+    </Form>
   );
 }
 
@@ -746,62 +847,7 @@ export default function DistributorsPage() {
                                         Atualize o departamento e grupo deste produto.
                                       </DialogDescription>
                                     </DialogHeader>
-                                    <Form {...form}>
-                                      <form
-                                        onSubmit={form.handleSubmit((data) => {
-                                          updateProductMutation.mutate({
-                                            id: product.id,
-                                            description: data.description,
-                                            grupo: data.grupo
-                                          });
-                                        })}
-                                        className="space-y-4"
-                                      >
-                                        <FormField
-                                          control={form.control}
-                                          name="description"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Departamento</FormLabel>
-                                              <Select
-                                                onValueChange={field.onChange}
-                                                defaultValue={product.description}
-                                              >
-                                                <FormControl>
-                                                  <SelectTrigger>
-                                                    <SelectValue placeholder="Selecione o departamento" />
-                                                  </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                  {["FRIOS/LACTICNIOS/CONGELADOS", "MERCEARIA", "BEBIDAS", "LIMPEZA", "HORTIFRUTI"].map((dept) => (
-                                                    <SelectItem key={dept} value={dept}>
-                                                      {dept}
-                                                    </SelectItem>
-                                                  ))}
-                                                </SelectContent>
-                                              </Select>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                        <FormField
-                                          control={form.control}
-                                          name="grupo"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Grupo</FormLabel>
-                                              <FormControl>
-                                                <Input {...field} defaultValue={product.grupo} placeholder="Digite o grupo do produto" />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                        <Button type="submit" className="w-full" disabled={updateProductMutation.isPending}>
-                                          Salvar Alterações
-                                        </Button>
-                                      </form>
-                                    </Form>
+                                    <EditProductDialog product={product} onClose={() => {}} />
                                   </DialogContent>
                                 </Dialog>
                               </CardContent>
