@@ -31,9 +31,18 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Mail, Plus, Truck, User, Package, Upload, UserPlus } from "lucide-react";
+import { Phone, Mail, Plus, Truck, User, Package, Upload, UserPlus, Pen } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { ColumnMapping } from "@/components/products/column-mapping";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Folder, FolderOpen } from "lucide-react";
+
 
 interface CreateUserDialogProps {
   distributorId: number;
@@ -135,6 +144,27 @@ export default function DistributorsPage() {
   const [fileData, setFileData] = useState<any[]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({});
 
+  // Adicionar a mutação de atualização dentro do componente
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ id, description, grupo }: { id: number, description: string, grupo: string }) => {
+      const res = await apiRequest("PATCH", `/api/products/${id}`, { description, grupo });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({
+        title: "Produto atualizado",
+        description: "As categorias foram atualizadas com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar produto",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
 
   // Buscar distribuidores
   const { data: distributors, isLoading } = useQuery<Distributor[]>({
@@ -385,11 +415,11 @@ export default function DistributorsPage() {
       // Filtrar produtos válidos e verificar campos obrigatórios
       const validProducts = transformedProducts.filter((product, index) => {
         const isValid = product.name &&
-                       product.itemCode &&
-                       product.description && // Garantir que o departamento está preenchido
-                       product.grupo && // Garantir que o grupo está preenchido
-                       product.supplierCode &&
-                       product.barCode;
+                         product.itemCode &&
+                         product.description && // Garantir que o departamento está preenchido
+                         product.grupo && // Garantir que o grupo está preenchido
+                         product.supplierCode &&
+                         product.barCode;
 
         if (!isValid) {
           console.log(`Produto ${index + 1} inválido:`, {
@@ -676,8 +706,15 @@ export default function DistributorsPage() {
                                 <CardDescription>Code: {product.itemCode}</CardDescription>
                               </CardHeader>
                               <CardContent className="space-y-2">
-                                <div className="text-sm text-muted-foreground">
-                                  {product.description}
+                                <div className="text-sm space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                                    <span>Departamento: {product.description}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Folder className="h-4 w-4 text-muted-foreground" />
+                                    <span>Grupo: {product.grupo}</span>
+                                  </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-sm">
                                   <div>
@@ -695,6 +732,78 @@ export default function DistributorsPage() {
                                     <span className="font-semibold">Unit:</span> {product.unit}
                                   </div>
                                 </div>
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm" className="w-full mt-2">
+                                      <Pen className="h-4 w-4 mr-2" />
+                                      Editar Categorias
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Editar Categorias do Produto</DialogTitle>
+                                      <DialogDescription>
+                                        Atualize o departamento e grupo deste produto.
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <Form {...form}>
+                                      <form
+                                        onSubmit={form.handleSubmit((data) => {
+                                          updateProductMutation.mutate({
+                                            id: product.id,
+                                            description: data.description,
+                                            grupo: data.grupo
+                                          });
+                                        })}
+                                        className="space-y-4"
+                                      >
+                                        <FormField
+                                          control={form.control}
+                                          name="description"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Departamento</FormLabel>
+                                              <Select
+                                                onValueChange={field.onChange}
+                                                defaultValue={product.description}
+                                              >
+                                                <FormControl>
+                                                  <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione o departamento" />
+                                                  </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                  {["FRIOS/LACTICNIOS/CONGELADOS", "MERCEARIA", "BEBIDAS", "LIMPEZA", "HORTIFRUTI"].map((dept) => (
+                                                    <SelectItem key={dept} value={dept}>
+                                                      {dept}
+                                                    </SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                        <FormField
+                                          control={form.control}
+                                          name="grupo"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Grupo</FormLabel>
+                                              <FormControl>
+                                                <Input {...field} defaultValue={product.grupo} placeholder="Digite o grupo do produto" />
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                        <Button type="submit" className="w-full" disabled={updateProductMutation.isPending}>
+                                          Salvar Alterações
+                                        </Button>
+                                      </form>
+                                    </Form>
+                                  </DialogContent>
+                                </Dialog>
                               </CardContent>
                             </Card>
                           ))
