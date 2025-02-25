@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Mail, Plus, Truck, User, Package, Upload, UserPlus, Pen } from "lucide-react";
+import { Phone, Mail, Plus, Truck, User, Package, Upload, UserPlus, Pen, Share2 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { ColumnMapping } from "@/components/products/column-mapping";
 import {
@@ -43,94 +43,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Folder, FolderOpen } from "lucide-react";
-
-
-interface CreateUserDialogProps {
-  distributorId: number;
-  onClose: () => void;
-}
-
-function CreateUserDialog({ distributorId, onClose }: CreateUserDialogProps) {
-  const { toast } = useToast();
-  const form = useForm<InsertUser>({
-    resolver: zodResolver(insertUserSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-      role: "distributor",
-      distributorId
-    }
-  });
-
-  const createUserMutation = useMutation({
-    mutationFn: async (data: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register/distributor", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "User created",
-        description: "Distributor user has been created successfully",
-      });
-      onClose();
-      form.reset();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error creating user",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-
-  return (
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>Create Distributor User</DialogTitle>
-        <DialogDescription>
-          Create a user account for this distributor to manage their products and orders.
-        </DialogDescription>
-      </DialogHeader>
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit((data) => createUserMutation.mutate(data))}
-          className="space-y-4"
-        >
-          <FormField
-            control={form.control}
-            name="username"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Username</FormLabel>
-                <FormControl>
-                  <Input {...field} autoComplete="username" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input type="password" {...field} autoComplete="new-password" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" className="w-full" disabled={createUserMutation.isPending}>
-            Create User
-          </Button>
-        </form>
-      </Form>
-    </DialogContent>
-  );
-}
+import { useLocation, useSearch } from "wouter";
 
 // Add product edit schema
 const editProductSchema = z.object({
@@ -231,6 +144,75 @@ function EditProductDialog({ product, onClose }: { product: Product, onClose: ()
     </Form>
   );
 }
+
+function ProductCard({ product, isVendorView = false }: { product: Product, isVendorView?: boolean }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">{product.name}</CardTitle>
+        <CardDescription>
+          {isVendorView ? (
+            <>Código do Fornecedor: {product.supplierCode}</>
+          ) : (
+            <>
+              Código: {product.itemCode} |
+              Fornecedor: {product.supplierCode} |
+              Barcode: {product.barCode}
+            </>
+          )}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="text-sm space-y-2">
+          <div className="flex items-center gap-2">
+            <FolderOpen className="h-4 w-4 text-muted-foreground" />
+            <span>Subcategoria: {product.description}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Folder className="h-4 w-4 text-muted-foreground" />
+            <span>Grupo: {product.grupo}</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <span className="font-semibold">Preço Unit:</span> ${product.unitPrice}
+          </div>
+          {product.boxPrice && (
+            <div>
+              <span className="font-semibold">Preço Caixa:</span> ${product.boxPrice}
+            </div>
+          )}
+          <div>
+            <span className="font-semibold">Qtd. Caixa:</span> {product.boxQuantity}
+          </div>
+          <div>
+            <span className="font-semibold">Unidade:</span> {product.unit}
+          </div>
+        </div>
+        {!isVendorView && (
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full mt-2">
+                <Pen className="h-4 w-4 mr-2" />
+                Editar Categorias
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Editar Categorias do Produto</DialogTitle>
+                <DialogDescription>
+                  Atualize as categorias deste produto.
+                </DialogDescription>
+              </DialogHeader>
+              <EditProductDialog product={product} onClose={() => { }} />
+            </DialogContent>
+          </Dialog>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 
 export default function DistributorsPage() {
   const { toast } = useToast();
@@ -395,7 +377,7 @@ export default function DistributorsPage() {
 
           // Extract headers with detailed logging
           for (let C = range.s.c; C <= range.e.c; ++C) {
-            const cell = worksheet[XLSX.utils.encode_cell({r: 0, c: C})];
+            const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c: C })];
             if (cell && cell.v) {
               const header = String(cell.v).trim();
               headers.push(header);
@@ -521,11 +503,11 @@ export default function DistributorsPage() {
       // Filtrar produtos válidos e verificar campos obrigatórios
       const validProducts = transformedProducts.filter((product, index) => {
         const isValid = product.name &&
-                         product.itemCode &&
-                         product.description && // Garantir que o departamento está preenchido
-                         product.grupo && // Garantir que o grupo está preenchido
-                         product.supplierCode &&
-                         product.barCode;
+          product.itemCode &&
+          product.description && // Garantir que o departamento está preenchido
+          product.grupo && // Garantir que o grupo está preenchido
+          product.supplierCode &&
+          product.barCode;
 
         if (!isValid) {
           console.log(`Produto ${index + 1} inválido:`, {
@@ -555,7 +537,7 @@ export default function DistributorsPage() {
 
       for (let i = 0; i < validProducts.length; i += batchSize) {
         const batch = validProducts.slice(i, i + batchSize);
-        console.log(`Enviando lote ${Math.floor(i/batchSize) + 1}:`, batch);
+        console.log(`Enviando lote ${Math.floor(i / batchSize) + 1}:`, batch);
 
         const result = await importProductsMutation.mutateAsync(batch);
         processedCount += result.productsImported;
@@ -598,6 +580,16 @@ export default function DistributorsPage() {
     const startIndex = (page - 1) * ITEMS_PER_PAGE;
     return products.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   };
+
+  const [, setLocation] = useLocation();
+  const search = useSearch();
+  const isVendorView = new URLSearchParams(search).get('view') === 'vendor';
+
+  const getShareableLink = (distributorId: number) => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/distributors?view=vendor&distributor=${distributorId}`;
+  };
+
 
   if (isLoading) {
     return (
@@ -763,10 +755,30 @@ export default function DistributorsPage() {
                   </DialogTrigger>
                   <DialogContent className="max-w-4xl">
                     <DialogHeader>
-                      <DialogTitle>Catálogo de Produtos - {distributor.name}</DialogTitle>
-                      <DialogDescription>
-                        Gerencie os produtos deste distribuidor e importe novos itens.
-                      </DialogDescription>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <DialogTitle>Catálogo de Produtos - {distributor.name}</DialogTitle>
+                          <DialogDescription>
+                            Gerencie os produtos deste distribuidor e importe novos itens.
+                          </DialogDescription>
+                        </div>
+                        {!isVendorView && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(getShareableLink(distributor.id));
+                              toast({
+                                title: "Link copiado",
+                                description: "Link para visualização do vendedor foi copiado para a área de transferência.",
+                              });
+                            }}
+                          >
+                            <Share2 className="h-4 w-4 mr-2" />
+                            Compartilhar com Vendedor
+                          </Button>
+                        )}
+                      </div>
                     </DialogHeader>
                     <div className="flex justify-between items-center mb-4">
                       <div className="relative">
@@ -806,57 +818,11 @@ export default function DistributorsPage() {
                           ))
                         ) : (
                           getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => (
-                            <Card key={product.id}>
-                              <CardHeader>
-                                <CardTitle className="text-lg">{product.name}</CardTitle>
-                                <CardDescription>Code: {product.itemCode}</CardDescription>
-                              </CardHeader>
-                              <CardContent className="space-y-2">
-                                <div className="text-sm space-y-2">
-                                  <div className="flex items-center gap-2">
-                                    <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                                    <span>Departamento: {product.description}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Folder className="h-4 w-4 text-muted-foreground" />
-                                    <span>Grupo: {product.grupo}</span>
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 text-sm">
-                                  <div>
-                                    <span className="font-semibold">Unit Price:</span> ${product.unitPrice}
-                                  </div>
-                                  {product.boxPrice && (
-                                    <div>
-                                      <span className="font-semibold">Box Price:</span> ${product.boxPrice}
-                                    </div>
-                                  )}
-                                  <div>
-                                    <span className="font-semibold">Box Quantity:</span> {product.boxQuantity}
-                                  </div>
-                                  <div>
-                                    <span className="font-semibold">Unit:</span> {product.unit}
-                                  </div>
-                                </div>
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm" className="w-full mt-2">
-                                      <Pen className="h-4 w-4 mr-2" />
-                                      Editar Categorias
-                                    </Button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader>
-                                      <DialogTitle>Editar Categorias do Produto</DialogTitle>
-                                      <DialogDescription>
-                                        Atualize o departamento e grupo deste produto.
-                                      </DialogDescription>
-                                    </DialogHeader>
-                                    <EditProductDialog product={product} onClose={() => {}} />
-                                  </DialogContent>
-                                </Dialog>
-                              </CardContent>
-                            </Card>
+                            <ProductCard
+                              key={product.id}
+                              product={product}
+                              isVendorView={isVendorView}
+                            />
                           ))
                         )}
                       </div>
