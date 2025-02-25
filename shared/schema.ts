@@ -39,11 +39,11 @@ export const products = pgTable("products", {
   barCode: text("bar_code"),
   name: text("name").notNull(),
   description: text("description"),
-  grupo: text("grupo"), // Novo campo para grupo
-  unitPrice: decimal("unit_price").notNull(),
-  previousUnitPrice: decimal("previous_unit_price"),
-  boxPrice: decimal("box_price"),
-  previousBoxPrice: decimal("previous_box_price"),
+  grupo: text("grupo"),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  previousUnitPrice: decimal("previous_unit_price", { precision: 10, scale: 2 }),
+  boxPrice: decimal("box_price", { precision: 10, scale: 2 }),
+  previousBoxPrice: decimal("previous_box_price", { precision: 10, scale: 2 }),
   boxQuantity: integer("box_quantity").notNull(),
   unit: text("unit").notNull(),
   imageUrl: text("image_url"),
@@ -58,7 +58,7 @@ export const orders = pgTable("orders", {
   distributorId: integer("distributor_id").notNull().references(() => distributors.id),
   storeId: integer("store_id").notNull().references(() => stores.id),
   status: text("status").notNull().default('pending'),
-  total: decimal("total").notNull(),
+  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -66,18 +66,27 @@ export const orderItems = pgTable("order_items", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id").notNull().references(() => orders.id),
   productId: integer("product_id").notNull().references(() => products.id),
-  quantity: decimal("quantity").notNull(),
-  price: decimal("price").notNull(),
-  total: decimal("total").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
 });
 
-// Insert Schemas
+// Zod schemas for product creation/update with proper type coercion
+const productInsertSchema = createInsertSchema(products).extend({
+  unitPrice: z.number().or(z.string().transform(val => parseFloat(val.replace(',', '.')))),
+  boxQuantity: z.number().or(z.string().transform(val => parseInt(val))),
+  boxPrice: z.number().nullable().or(z.string().transform(val => parseFloat(val.replace(',', '.')))).nullable(),
+});
+
+// Other insert schemas
 export const insertUserSchema = createInsertSchema(users);
 export const insertStoreSchema = createInsertSchema(stores);
 export const insertDistributorSchema = createInsertSchema(distributors);
-export const insertProductSchema = createInsertSchema(products);
 export const insertOrderSchema = createInsertSchema(orders);
 export const insertOrderItemSchema = createInsertSchema(orderItems);
+
+// Export the product schema
+export const insertProductSchema = productInsertSchema;
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;

@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Mail, Plus, Truck, User, Package, Upload, UserPlus } from "lucide-react";
 import * as XLSX from 'xlsx';
-
+import { ColumnMapping } from "@/components/products/column-mapping";
 
 interface CreateUserDialogProps {
   distributorId: number;
@@ -133,6 +133,8 @@ export default function DistributorsPage() {
   const [excelColumns, setExcelColumns] = useState<string[]>([]);
   const [showMapping, setShowMapping] = useState(false);
   const [fileData, setFileData] = useState<any[]>([]);
+  const [mapping, setMapping] = useState<Record<string, string>>({});
+
 
   // Buscar distribuidores
   const { data: distributors, isLoading } = useQuery<Distributor[]>({
@@ -239,80 +241,171 @@ export default function DistributorsPage() {
 
   // Atualizar a função handleFileUpload
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, distributorId: number) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    try {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      console.log('Iniciando processamento do arquivo:', file.name);
 
-        // Converter para JSON com cabeçalhos
-        const products = XLSX.utils.sheet_to_json(worksheet);
-        console.log('Produtos do Excel:', products);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-        // Transformar os dados para o formato esperado
-        const transformedProducts = products.map((row: any) => ({
-          name: row['Nome'] || row['Produto'] || row['Descrição'] || '',
-          itemCode: row['Código'] || row['Cod'] || row['SKU'] || '',
-          supplierCode: row['Cód.Forn.'] || row['Código Fornecedor'] || '',
-          barCode: row['Cód.Barra'] || row['EAN'] || '',
-          description: row['Departamento'] || row['Categoria'] || '',
-          unitPrice: typeof row['Preço'] === 'number' ? row['Preço'] :
-                        parseFloat(String(row['Preço'] || '0').replace(',', '.')) || 0,
-          boxQuantity: typeof row['Quantidade'] === 'number' ? row['Quantidade'] :
-                        parseFloat(String(row['Quantidade'] || '1').replace(',', '.')) || 1,
-          unit: row['Unid.'] || row['Unidade'] || 'un',
-          distributorId: distributorId,
+          // Extrair cabeçalhos
+          const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+          const headers: string[] = [];
+
+          for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cell = worksheet[XLSX.utils.encode_cell({r: 0, c: C})];
+            if (cell && cell.v) {
+              headers.push(String(cell.v).trim());
+            }
+          }
+
+          console.log('Cabeçalhos encontrados:', headers);
+
+          // Converter para JSON usando os cabeçalhos encontrados
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          console.log('Primeira linha de dados:', jsonData[0]);
+
+          setSelectedDistributor(distributorId);
+          setExcelColumns(headers);
+          setFileData(jsonData);
+          setShowMapping(true);
+
+        } catch (error) {
+          console.error('Erro ao processar arquivo:', error);
+          toast({
+            title: "Erro ao processar arquivo",
+            description: "Verifique se o arquivo está no formato correto",
+            variant: "destructive",
+          });
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    } catch (error) {
+      console.error('Erro ao ler arquivo:', error);
+      toast({
+        title: "Erro ao ler arquivo",
+        description: "Não foi possível ler o arquivo selecionado",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMappingComplete = async (mapping: Record<string, string>) => {
+    try {
+      console.log('Iniciando importação com mapeamento:', mapping);
+      console.log('Amostra dos dados do arquivo:', fileData[0]);
+
+      const transformedProducts = fileData.map((row: any, index: number) => {
+        // Criar produto com valores mapeados
+        let product = {
+          name: '',
+          itemCode: '',
+          unitPrice: 0,
+          distributorId: selectedDistributor!,
+          // Campos com valores padrão
+          supplierCode: '',
+          barCode: '',
+          description: '',
+          boxQuantity: 1,
+          unit: 'un',
           imageUrl: null,
           isSpecialOffer: false,
           boxPrice: null
-        })).filter(product => product.name && product.itemCode);
+        };
 
-        console.log('Produtos transformados:', transformedProducts);
-
-        if (transformedProducts.length === 0) {
-          throw new Error('Nenhum produto válido encontrado no arquivo');
+        // Mapear nome
+        if (mapping.name !== '_EMPTY') {
+          product.name = String(row[mapping.name] || '').trim();
+          console.log(`Nome mapeado (${mapping.name}):`, product.name);
         }
 
-        // Importar em lotes
-        const batchSize = 50;
-        let processedCount = 0;
+        // Mapear código
+        if (mapping.itemCode !== '_EMPTY') {
+          product.itemCode = String(row[mapping.itemCode] || '').trim();
+          console.log(`Código mapeado (${mapping.itemCode}):`, product.itemCode);
+        }
 
-        for (let i = 0; i < transformedProducts.length; i += batchSize) {
-          const batch = transformedProducts.slice(i, i + batchSize);
-          await importProductsMutation.mutateAsync(batch);
-          processedCount += batch.length;
+        // Mapear preço
+        if (mapping.unitPrice !== '_EMPTY') {
+          const rawPrice = row[mapping.unitPrice];
+          if (typeof rawPrice === 'number') {
+            product.unitPrice = rawPrice;
+          } else if (typeof rawPrice === 'string') {
+            product.unitPrice = parseFloat(rawPrice.replace(',', '.')) || 0;
+          }
+          console.log(`Preço mapeado (${mapping.unitPrice}):`, product.unitPrice);
+        }
 
-          toast({
-            title: "Importando produtos",
-            description: `Processados ${processedCount} de ${transformedProducts.length} produtos...`,
+        console.log(`Produto ${index + 1} processado:`, product);
+        return product;
+      });
+
+      // Filtrar produtos válidos
+      const validProducts = transformedProducts.filter((product, index) => {
+        const isValid = product.name && product.itemCode;
+        if (!isValid) {
+          console.log(`Produto ${index + 1} inválido:`, {
+            produto: product,
+            motivo: {
+              semNome: !product.name,
+              semCodigo: !product.itemCode
+            }
           });
         }
+        return isValid;
+      });
+
+      console.log('Total de produtos válidos:', validProducts.length);
+
+      if (validProducts.length === 0) {
+        throw new Error('Nenhum produto válido encontrado. Verifique se as colunas Nome do Produto e Código do Item foram mapeadas corretamente.');
+      }
+
+      // Importar em lotes
+      const batchSize = 50;
+      let processedCount = 0;
+
+      for (let i = 0; i < validProducts.length; i += batchSize) {
+        const batch = validProducts.slice(i, i + batchSize);
+        console.log(`Enviando lote ${Math.floor(i/batchSize) + 1}:`, batch);
+
+        const result = await importProductsMutation.mutateAsync(batch);
+        processedCount += result.productsImported;
 
         toast({
-          title: "Importação concluída",
-          description: `${processedCount} produtos foram importados com sucesso!`,
-        });
-
-        // Atualizar a lista de produtos
-        await queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-
-      } catch (error) {
-        console.error('Erro ao processar arquivo:', error);
-        toast({
-          title: "Erro na importação",
-          description: error instanceof Error ? error.message : "Erro ao processar o arquivo Excel",
-          variant: "destructive",
+          title: "Importando produtos",
+          description: `Processados ${processedCount} de ${validProducts.length} produtos...`,
         });
       }
-    };
 
-    reader.readAsArrayBuffer(file);
+      // Atualizar a lista de produtos
+      await queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+
+      toast({
+        title: "Importação concluída",
+        description: `${processedCount} produtos foram importados com sucesso!`,
+      });
+
+      setShowMapping(false);
+      setFileData([]);
+      setExcelColumns([]);
+
+    } catch (error) {
+      console.error('Erro ao importar produtos:', error);
+      toast({
+        title: "Erro na importação",
+        description: error instanceof Error ? error.message : "Erro ao importar produtos",
+        variant: "destructive",
+      });
+    }
   };
-
 
   const getDistributorProducts = (distributorId: number) => {
     if (!products) return [];
@@ -508,49 +601,57 @@ export default function DistributorsPage() {
                         </Button>
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
-                      {loadingProducts ? (
-                        // Loading skeleton
-                        [...Array(4)].map((_, i) => (
-                          <Card key={i} className="animate-pulse">
-                            <CardContent className="p-4 space-y-2">
-                              <div className="h-4 bg-muted rounded w-3/4" />
-                              <div className="h-4 bg-muted rounded w-1/2" />
-                            </CardContent>
-                          </Card>
-                        ))
-                      ) : (
-                        getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => (
-                          <Card key={product.id}>
-                            <CardHeader>
-                              <CardTitle className="text-lg">{product.name}</CardTitle>
-                              <CardDescription>Code: {product.itemCode}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-2">
-                              <div className="text-sm text-muted-foreground">
-                                {product.description}
-                              </div>
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                <div>
-                                  <span className="font-semibold">Unit Price:</span> ${product.unitPrice}
+                    {showMapping && (
+                      <div>
+                        {/* Column Mapping Component */}
+                        <ColumnMapping columns={excelColumns} onMappingComplete={handleMappingComplete} />
+                      </div>
+                    )}
+                    {!showMapping && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
+                        {loadingProducts ? (
+                          // Loading skeleton
+                          [...Array(4)].map((_, i) => (
+                            <Card key={i} className="animate-pulse">
+                              <CardContent className="p-4 space-y-2">
+                                <div className="h-4 bg-muted rounded w-3/4" />
+                                <div className="h-4 bg-muted rounded w-1/2" />
+                              </CardContent>
+                            </Card>
+                          ))
+                        ) : (
+                          getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => (
+                            <Card key={product.id}>
+                              <CardHeader>
+                                <CardTitle className="text-lg">{product.name}</CardTitle>
+                                <CardDescription>Code: {product.itemCode}</CardDescription>
+                              </CardHeader>
+                              <CardContent className="space-y-2">
+                                <div className="text-sm text-muted-foreground">
+                                  {product.description}
                                 </div>
-                                {product.boxPrice && (
+                                <div className="grid grid-cols-2 gap-2 text-sm">
                                   <div>
-                                    <span className="font-semibold">Box Price:</span> ${product.boxPrice}
+                                    <span className="font-semibold">Unit Price:</span> ${product.unitPrice}
                                   </div>
-                                )}
-                                <div>
-                                  <span className="font-semibold">Box Quantity:</span> {product.boxQuantity}
+                                  {product.boxPrice && (
+                                    <div>
+                                      <span className="font-semibold">Box Price:</span> ${product.boxPrice}
+                                    </div>
+                                  )}
+                                  <div>
+                                    <span className="font-semibold">Box Quantity:</span> {product.boxQuantity}
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Unit:</span> {product.unit}
+                                  </div>
                                 </div>
-                                <div>
-                                  <span className="font-semibold">Unit:</span> {product.unit}
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))
-                      )}
-                    </div>
+                              </CardContent>
+                            </Card>
+                          ))
+                        )}
+                      </div>
+                    )}
                     {/* Paginação */}
                     {getDistributorProducts(distributor.id).length > ITEMS_PER_PAGE && (
                       <div className="flex justify-center gap-2 mt-4">

@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 
 interface ColumnMappingProps {
@@ -23,6 +24,7 @@ interface ColumnMappingProps {
   isLoading?: boolean;
 }
 
+// Campos essenciais para o sistema
 const SYSTEM_FIELDS = [
   { 
     key: "name", 
@@ -39,105 +41,42 @@ const SYSTEM_FIELDS = [
     alternatives: ["Cod", "Codigo", "Código Produto", "Codigo Produto", "SKU", "Referência", "Ref"] 
   },
   { 
-    key: "supplierCode", 
-    label: "Código do Fornecedor", 
-    defaultColumn: "Cód.Forn.",
-    required: false,
-    alternatives: ["Código Fornecedor", "Cod Forn", "Codigo Fornecedor", "Ref Fornecedor"] 
-  },
-  { 
-    key: "barCode", 
-    label: "Código de Barras", 
-    defaultColumn: "Cód.Barra",
-    required: false,
-    alternatives: ["EAN", "Código EAN", "Codigo Barras", "Código Barras", "GTIN", "Cod Barras"] 
-  },
-  { 
-    key: "description", 
-    label: "Departamento/Categoria", 
-    defaultColumn: "Departamento",
-    required: false,
-    alternatives: ["Categoria", "Setor", "Grupo Produto", "Tipo", "Linha"] 
-  },
-  { 
     key: "unitPrice", 
     label: "Preço Unitário", 
-    defaultColumn: "Preço Custo",
-    required: false,
-    alternatives: ["Preco", "Preço", "Valor", "Custo", "Preço Unit", "Preco Unitario", "Valor Unitário", "Custo Unit"] 
-  },
-  { 
-    key: "boxQuantity", 
-    label: "Quantidade por Caixa/Grupo", 
-    defaultColumn: "Grupo",
-    required: false,
-    alternatives: ["Qtd Grupo", "Qtd Caixa", "Quantidade Grupo", "Quantidade", "Qtd", "Qtd por Caixa", "Qtd/Cx"] 
-  },
-  { 
-    key: "unit", 
-    label: "Unidade de Medida", 
-    defaultColumn: "Unid.",
-    required: false,
-    alternatives: ["Unidade", "UN", "Medida", "UND", "Unid", "Un Medida"] 
-  },
+    defaultColumn: "Preço",
+    required: true,
+    alternatives: ["Preco", "Preço", "Valor", "Custo", "Preço Unit", "Preco Unitario"] 
+  }
 ];
 
 export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = false }: ColumnMappingProps) {
   const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     if (!excelColumns.length) return;
 
     const initialMapping: Record<string, string> = {};
-
-    // Log das colunas do Excel para debug
-    console.log("Colunas disponíveis no Excel:", excelColumns);
+    console.log("Colunas disponíveis:", excelColumns);
 
     SYSTEM_FIELDS.forEach(({ key, defaultColumn, alternatives }) => {
-      // Normaliza o texto para comparação (remove acentos e converte para minúsculas)
+      // Normaliza o texto para comparação
       const normalize = (text: string) => text.toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]/g, ''); // Remove todos os caracteres especiais
+        .replace(/[^a-z0-9]/g, '');
 
-      // Tenta encontrar a coluna exata primeiro
-      let matchingColumn = excelColumns.find(col => 
-        normalize(col) === normalize(defaultColumn)
-      );
-
-      console.log(`Procurando correspondência para ${key}:`, {
-        defaultColumn,
-        normalized: normalize(defaultColumn),
-        matchingColumn
+      // Tenta encontrar uma correspondência
+      let matchingColumn = excelColumns.find(col => {
+        const normalizedCol = normalize(col);
+        return [defaultColumn, ...(alternatives || [])].some(alt => 
+          normalizedCol.includes(normalize(alt)) || 
+          normalize(alt).includes(normalizedCol)
+        );
       });
 
-      // Se não encontrar, tenta as alternativas
-      if (!matchingColumn && alternatives) {
-        matchingColumn = excelColumns.find(col => 
-          alternatives.some(alt => normalize(col) === normalize(alt))
-        );
-
-        if (matchingColumn) {
-          console.log(`Encontrado através de alternativas para ${key}:`, matchingColumn);
-        }
-      }
-
-      // Se ainda não encontrar, tenta por similaridade parcial
-      if (!matchingColumn) {
-        matchingColumn = excelColumns.find(col => {
-          const normalizedCol = normalize(col);
-          return [defaultColumn, ...(alternatives || [])].some(alt => 
-            normalizedCol.includes(normalize(alt)) || 
-            normalize(alt).includes(normalizedCol)
-          );
-        });
-
-        if (matchingColumn) {
-          console.log(`Encontrado através de similaridade parcial para ${key}:`, matchingColumn);
-        }
-      }
-
       if (matchingColumn) {
+        console.log(`Mapeamento encontrado para ${key}:`, matchingColumn);
         initialMapping[key] = matchingColumn;
       } else {
         console.log(`Nenhuma correspondência encontrada para ${key}`);
@@ -149,32 +88,23 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
     setMapping(initialMapping);
   }, [excelColumns]);
 
-  const handleMappingChange = (systemField: string, excelColumn: string) => {
-    console.log(`Alterando mapeamento: ${systemField} -> ${excelColumn}`);
-    setMapping(prev => ({
-      ...prev,
-      [systemField]: excelColumn
-    }));
-  };
-
   const handleComplete = () => {
-    // Verificar campos obrigatórios
+    // Verifica se todos os campos obrigatórios foram mapeados
     const missingRequired = SYSTEM_FIELDS
       .filter(field => field.required)
       .filter(field => mapping[field.key] === "_EMPTY");
 
     if (missingRequired.length > 0) {
+      const missingFields = missingRequired.map(field => field.label).join(", ");
+      setError(`Campos obrigatórios não mapeados: ${missingFields}`);
       console.error("Campos obrigatórios não mapeados:", missingRequired);
       return;
     }
 
+    setError("");
     console.log("Mapeamento final:", mapping);
     onMappingComplete(mapping);
   };
-
-  const isMappingComplete = SYSTEM_FIELDS
-    .filter(field => field.required)
-    .every(({ key }) => mapping[key] && mapping[key] !== "_EMPTY");
 
   if (isLoading) {
     return (
@@ -187,10 +117,18 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
   return (
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground mb-4">
-        Por favor, mapeie as colunas do seu arquivo Excel para os campos correspondentes do sistema.
-        Os campos marcados com * são obrigatórios.
-        Selecione a coluna do seu arquivo que corresponde a cada campo necessário.
+        <p>Mapeie as colunas do seu arquivo Excel com os campos do sistema.</p>
+        <p>Os campos marcados com * são obrigatórios.</p>
+        <p className="text-xs mt-1">
+          Dica: O sistema tentará mapear automaticamente as colunas com base nos nomes mais comuns.
+        </p>
       </div>
+
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <Table>
         <TableHeader>
@@ -208,7 +146,14 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
               <TableCell>
                 <Select
                   value={mapping[key] || "_EMPTY"}
-                  onValueChange={(value) => handleMappingChange(key, value)}
+                  onValueChange={(value) => {
+                    console.log(`Alterando mapeamento de ${key} para:`, value);
+                    setMapping(prev => ({
+                      ...prev,
+                      [key]: value
+                    }));
+                    setError("");
+                  }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione uma coluna" />
@@ -228,14 +173,15 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
         </TableBody>
       </Table>
 
-      <div className="flex justify-end">
-        <Button
-          onClick={handleComplete}
-          disabled={!isMappingComplete}
-        >
-          Confirmar Mapeamento
-        </Button>
-      </div>
+      <Button 
+        onClick={handleComplete}
+        disabled={SYSTEM_FIELDS
+          .filter(field => field.required)
+          .some(field => !mapping[field.key] || mapping[field.key] === "_EMPTY")}
+        className="w-full"
+      >
+        Confirmar Mapeamento
+      </Button>
     </div>
   );
 }
