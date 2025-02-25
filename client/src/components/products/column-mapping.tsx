@@ -31,49 +31,49 @@ const SYSTEM_FIELDS = [
     label: "Nome do Produto", 
     defaultColumn: "DESCRICAO",
     required: true,
-    alternatives: ["DESCR", "DESC", "NOME", "PRODUTO"] 
+    alternatives: ["DESCR", "DESC"] 
   },
   { 
     key: "itemCode", 
     label: "Código do Item", 
     defaultColumn: "CODIGO",
     required: true,
-    alternatives: ["COD", "REFERENCIA", "REF"] 
+    alternatives: ["COD"] 
   },
   { 
     key: "supplierCode", 
     label: "Código do Fornecedor", 
     defaultColumn: "CODFORN",
     required: true,
-    alternatives: ["COD_FORN", "FORNECEDOR", "CODFORNECEDOR"] 
+    alternatives: ["COD_FORN"] 
   },
   { 
     key: "barCode", 
     label: "Código de Barras", 
     defaultColumn: "GTIN",
     required: true,
-    alternatives: ["EAN", "CODBARRAS", "COD_BARRAS"] 
+    alternatives: ["EAN", "CODBARRAS"] 
   },
   { 
     key: "description", 
     label: "Departamento", 
     defaultColumn: "DEPARTAMENTO",
     required: true,
-    alternatives: ["DEPTO", "SETOR", "SECAO"] 
+    alternatives: ["DEPTO"] 
   },
   { 
     key: "grupo", 
-    label: "Grupo", 
+    label: "Grupo de Produtos", 
     defaultColumn: "GRUPO",
     required: true,
-    alternatives: ["CATEGORIA", "LINHA", "FAMILIA"] 
+    alternatives: ["CATEGORIA"] 
   },
   { 
     key: "unitPrice", 
     label: "Preço Unitário", 
     defaultColumn: "PRECO",
     required: true,
-    alternatives: ["VALOR", "CUSTO", "PRECOUNIT"] 
+    alternatives: ["VALOR", "CUSTO"] 
   }
 ];
 

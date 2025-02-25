@@ -317,8 +317,8 @@ export default function DistributorsPage() {
           // Campos com valores padrão
           supplierCode: '',
           barCode: '',
-          description: '',
-          grupo: '',
+          description: '', // Departamento
+          grupo: '', // Grupo de produtos
           boxQuantity: 1,
           unit: 'un',
           imageUrl: null,
@@ -326,19 +326,19 @@ export default function DistributorsPage() {
           boxPrice: null
         };
 
-        // Mapear nome
+        // Mapear nome do produto (que vem da coluna DESCRICAO)
         if (mapping.name !== '_EMPTY') {
           product.name = String(row[mapping.name] || '').trim();
-          console.log(`Nome mapeado (${mapping.name}):`, product.name);
+          console.log(`Nome do produto mapeado (${mapping.name}):`, product.name);
         }
 
-        // Mapear código
+        // Mapear código do item
         if (mapping.itemCode !== '_EMPTY') {
           product.itemCode = String(row[mapping.itemCode] || '').trim();
-          console.log(`Código mapeado (${mapping.itemCode}):`, product.itemCode);
+          console.log(`Código do item mapeado (${mapping.itemCode}):`, product.itemCode);
         }
 
-        // Mapear código de fornecedor
+        // Mapear código do fornecedor
         if (mapping.supplierCode !== '_EMPTY') {
           product.supplierCode = String(row[mapping.supplierCode] || '').trim();
           console.log(`Código do fornecedor mapeado (${mapping.supplierCode}):`, product.supplierCode);
@@ -350,16 +350,16 @@ export default function DistributorsPage() {
           console.log(`Código de barras mapeado (${mapping.barCode}):`, product.barCode);
         }
 
-        // Mapear grupo
-        if (mapping.grupo !== '_EMPTY') {
-          product.grupo = String(row[mapping.grupo] || '').trim();
-          console.log(`Grupo mapeado (${mapping.grupo}):`, product.grupo);
-        }
-
-        // Mapear departamento/descrição
+        // Mapear departamento
         if (mapping.description !== '_EMPTY') {
           product.description = String(row[mapping.description] || '').trim();
           console.log(`Departamento mapeado (${mapping.description}):`, product.description);
+        }
+
+        // Mapear grupo de produtos
+        if (mapping.grupo !== '_EMPTY') {
+          product.grupo = String(row[mapping.grupo] || '').trim();
+          console.log(`Grupo mapeado (${mapping.grupo}):`, product.grupo);
         }
 
         // Mapear preço
