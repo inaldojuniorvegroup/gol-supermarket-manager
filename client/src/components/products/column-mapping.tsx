@@ -50,26 +50,8 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
       if (!matchingColumn) {
         matchingColumn = excelColumns.find(col => {
           const colLower = col.toLowerCase();
-          switch (key) {
-            case "name":
-              return colLower.includes("nome");
-            case "itemCode":
-              return colLower.includes("código") || colLower.includes("codigo");
-            case "supplierCode":
-              return colLower.includes("forn");
-            case "barCode":
-              return colLower.includes("barra");
-            case "description":
-              return colLower.includes("depart");
-            case "unitPrice":
-              return colLower.includes("preço") || colLower.includes("preco") || colLower.includes("custo");
-            case "boxQuantity":
-              return colLower.includes("grupo") || colLower.includes("quant");
-            case "unit":
-              return colLower.includes("unid");
-            default:
-              return false;
-          }
+          const defaultLower = defaultColumn.toLowerCase();
+          return colLower.includes(defaultLower) || defaultLower.includes(colLower);
         });
       }
 
