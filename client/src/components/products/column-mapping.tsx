@@ -31,49 +31,49 @@ const SYSTEM_FIELDS = [
     label: "Nome do Produto", 
     defaultColumn: "DESCRICAO",
     required: true,
-    alternatives: ["Descrição", "Descricao", "Nome", "Produto", "DESC", "NOME PRODUTO"] 
+    alternatives: ["DESCR", "DESC", "NOME", "PRODUTO"] 
   },
   { 
     key: "itemCode", 
     label: "Código do Item", 
     defaultColumn: "CODIGO",
     required: true,
-    alternatives: ["Cod", "Codigo", "COD", "REF", "REFERENCIA", "ID"] 
+    alternatives: ["COD", "REFERENCIA", "REF"] 
   },
   { 
     key: "supplierCode", 
     label: "Código do Fornecedor", 
     defaultColumn: "CODFORN",
-    required: false,
-    alternatives: ["CodForn", "Cod_Forn", "Codigo Fornecedor", "COD FORN", "REF FORN"] 
+    required: true,
+    alternatives: ["COD_FORN", "FORNECEDOR", "CODFORNECEDOR"] 
   },
   { 
     key: "barCode", 
     label: "Código de Barras", 
     defaultColumn: "GTIN",
-    required: false,
-    alternatives: ["EAN", "CODBAR", "Cod_Barras", "Código de Barras", "COD_BARRAS"] 
+    required: true,
+    alternatives: ["EAN", "CODBARRAS", "COD_BARRAS"] 
   },
   { 
     key: "description", 
     label: "Departamento", 
     defaultColumn: "DEPARTAMENTO",
-    required: false,
-    alternatives: ["DEPTO", "Depto", "Setor", "SETOR", "Departamento"] 
+    required: true,
+    alternatives: ["DEPTO", "SETOR", "SECAO"] 
   },
   { 
     key: "grupo", 
     label: "Grupo", 
     defaultColumn: "GRUPO",
-    required: false,
-    alternatives: ["Grupo", "CATEGORIA", "Categoria", "LINHA", "Linha"] 
+    required: true,
+    alternatives: ["CATEGORIA", "LINHA", "FAMILIA"] 
   },
   { 
     key: "unitPrice", 
     label: "Preço Unitário", 
     defaultColumn: "PRECO",
     required: true,
-    alternatives: ["Preço", "VALOR", "Valor", "CUSTO", "Custo", "PRECO UNIT"] 
+    alternatives: ["VALOR", "CUSTO", "PRECOUNIT"] 
   }
 ];
 
@@ -85,7 +85,7 @@ export function ColumnMapping({ excelColumns = [], onMappingComplete, isLoading 
     if (!excelColumns || excelColumns.length === 0) return;
 
     const initialMapping: Record<string, string> = {};
-    console.log("Colunas disponíveis:", excelColumns);
+    console.log("Colunas disponíveis no Excel:", excelColumns);
 
     SYSTEM_FIELDS.forEach(({ key, defaultColumn, alternatives }) => {
       // Normaliza o texto para comparação
@@ -94,14 +94,15 @@ export function ColumnMapping({ excelColumns = [], onMappingComplete, isLoading 
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]/g, '');
 
-      // Tenta encontrar uma correspondência
+      // Tenta encontrar uma correspondência exata ou parcial
       let matchingColumn = excelColumns.find(col => {
         const normalizedCol = normalize(col);
-        return [defaultColumn, ...(alternatives || [])].some(alt => 
-          normalizedCol === normalize(alt) ||
-          normalizedCol.includes(normalize(alt)) || 
-          normalize(alt).includes(normalizedCol)
-        );
+        return [defaultColumn, ...(alternatives || [])].some(alt => {
+          const normalizedAlt = normalize(alt);
+          return normalizedCol === normalizedAlt || 
+                 normalizedCol.includes(normalizedAlt) || 
+                 normalizedAlt.includes(normalizedCol);
+        });
       });
 
       if (matchingColumn) {
@@ -147,7 +148,7 @@ export function ColumnMapping({ excelColumns = [], onMappingComplete, isLoading 
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground mb-4">
         <p>Mapeie as colunas do seu arquivo Excel com os campos do sistema.</p>
-        <p>Os campos marcados com * são obrigatórios.</p>
+        <p>Todos os campos são obrigatórios para garantir a qualidade dos dados.</p>
         <p className="text-xs mt-1">
           Dica: O sistema tentará mapear automaticamente as colunas com base nos nomes mais comuns.
         </p>
