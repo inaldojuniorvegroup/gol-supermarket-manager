@@ -179,7 +179,7 @@ function EditProductDialog({ product, onClose }: { product: Product, onClose: ()
           updateProductMutation.mutate({
             id: product.id,
             description: data.description,
-            grupo: data.grupo
+            grupo: data.grupo.toUpperCase()
           });
         })}
         className="space-y-4"
@@ -218,7 +218,7 @@ function EditProductDialog({ product, onClose }: { product: Product, onClose: ()
             <FormItem>
               <FormLabel>Grupo</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Digite o grupo do produto" />
+                <Input {...field} placeholder="Digite o grupo do produto (ex: MASSA DE PASTEL)" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -496,7 +496,10 @@ export default function DistributorsPage() {
 
         // Mapear grupo (subcategoria)
         if (mapping.grupo !== '_EMPTY') {
-          product.grupo = String(row[mapping.grupo] || '').trim();
+          // Pegar o grupo do Excel e remover o prefixo (N) se existir
+          let grupo = String(row[mapping.grupo] || '').trim().toUpperCase();
+          grupo = grupo.replace(/^\(N\)\s*/, '');
+          product.grupo = grupo;
           console.log(`Grupo mapeado (${mapping.grupo}):`, product.grupo);
         }
 
