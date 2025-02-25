@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Mail, Plus, Truck, User, Package, Upload, UserPlus } from "lucide-react";
 import * as XLSX from 'xlsx';
+import { ColumnMapping } from "@/components/products/column-mapping";
 
 interface CreateUserDialogProps {
   distributorId: number;
@@ -129,6 +130,9 @@ export default function DistributorsPage() {
   const { user } = useAuth();
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+  const [excelColumns, setExcelColumns] = useState<string[]>([]);
+  const [showMapping, setShowMapping] = useState(false);
+  const [fileData, setFileData] = useState<any[]>([]);
 
   // Buscar distribuidores
   const { data: distributors, isLoading } = useQuery<Distributor[]>({
@@ -233,7 +237,7 @@ export default function DistributorsPage() {
     }
   });
 
-  // Ajustando a função handleFileUpload para tratar os dados do arquivo PANAMERICAN.xlsx
+  // Atualizar a função handleFileUpload
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, distributorId: number) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -247,67 +251,11 @@ export default function DistributorsPage() {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        const batchSize = 100;
-        const batches = [];
-
-        for (let i = 0; i < jsonData.length; i += batchSize) {
-          const batch = jsonData.slice(i, i + batchSize).map((rawProduct: any) => {
-            const name = rawProduct.Nome?.toString() || "";
-            const itemCode = rawProduct.Código?.toString() || "";
-
-            // Se não tiver nome ou código, pula este produto
-            if (!name || !itemCode) {
-              console.log("Produto ignorado por falta de nome ou código:", rawProduct);
-              return null;
-            }
-
-            const mappedProduct = {
-              name,
-              itemCode,
-              supplierCode: rawProduct["Cód.Forn."]?.toString() || "",
-              barCode: rawProduct["Cód.Barra"]?.toString() || "",
-              description: name, // Usando o nome como descrição
-              unitPrice: parseFloat(rawProduct["Preço Custo"]?.toString().replace(",", ".") || "0"),
-              boxQuantity: parseFloat(rawProduct.Quantidade?.toString() || "1"),
-              unit: rawProduct.Unid || "ea",
-              distributorId: distributorId,
-              grupo: rawProduct.Departamento?.toString() || "",
-              imageUrl: "",
-              isSpecialOffer: false
-            };
-
-            return mappedProduct;
-          }).filter(Boolean); // Remove os produtos null
-
-          if (batch.length > 0) {
-            batches.push(batch);
-          }
-        }
-
-        let processedCount = 0;
-        for (const batch of batches) {
-          try {
-            await importProductsMutation.mutateAsync(batch);
-            processedCount += batch.length;
-
-            toast({
-              title: "Importando produtos",
-              description: `Processados ${processedCount} de ${jsonData.length} produtos...`,
-            });
-          } catch (error) {
-            console.error("Erro ao importar lote:", error);
-            throw error;
-          }
-        }
-
-        // Forçar atualização dos dados
-        await queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-
-        toast({
-          title: "Importação concluída",
-          description: `${processedCount} produtos foram importados com sucesso!`,
-        });
-
+        // Extrair os nomes das colunas do arquivo Excel
+        const excelColumns = Object.keys(jsonData[0] || {});
+        setExcelColumns(excelColumns);
+        setShowMapping(true);
+        setFileData(jsonData);
       } catch (error) {
         console.error('Erro ao processar arquivo:', error);
         toast({
@@ -319,6 +267,72 @@ export default function DistributorsPage() {
     };
 
     reader.readAsArrayBuffer(file);
+  };
+
+
+  const handleMappingComplete = async (mapping: Record<string, string>, distributorId: number) => {
+    try {
+      const batchSize = 100;
+      const batches = [];
+
+      for (let i = 0; i < fileData.length; i += batchSize) {
+        const batch = fileData.slice(i, i + batchSize).map((rawProduct: any) => {
+          const mappedProduct = {
+            name: rawProduct[mapping.name]?.toString() || "",
+            itemCode: rawProduct[mapping.itemCode]?.toString() || "",
+            supplierCode: rawProduct[mapping.supplierCode]?.toString() || "",
+            barCode: rawProduct[mapping.barCode]?.toString() || "",
+            description: rawProduct[mapping.description]?.toString() || "",
+            unitPrice: parseFloat(rawProduct[mapping.unitPrice]?.toString().replace(",", ".") || "0"),
+            boxQuantity: parseFloat(rawProduct[mapping.boxQuantity]?.toString() || "1"),
+            unit: rawProduct[mapping.unit] || "un",
+            distributorId: distributorId,
+            imageUrl: "",
+            isSpecialOffer: false
+          };
+
+          // Se não tiver nome ou código, pula este produto
+          if (!mappedProduct.name || !mappedProduct.itemCode) {
+            return null;
+          }
+
+          return mappedProduct;
+        }).filter(Boolean);
+
+        if (batch.length > 0) {
+          batches.push(batch);
+        }
+      }
+
+      let processedCount = 0;
+      for (const batch of batches) {
+        await importProductsMutation.mutateAsync(batch);
+        processedCount += batch.length;
+
+        toast({
+          title: "Importando produtos",
+          description: `Processados ${processedCount} de ${fileData.length} produtos...`,
+        });
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+
+      toast({
+        title: "Importação concluída",
+        description: `${processedCount} produtos foram importados com sucesso!`,
+      });
+
+      setShowMapping(false);
+      setFileData([]);
+      setExcelColumns([]);
+    } catch (error) {
+      console.error("Erro ao importar produtos:", error);
+      toast({
+        title: "Erro na importação",
+        description: error instanceof Error ? error.message : "Erro ao importar produtos",
+        variant: "destructive",
+      });
+    }
   };
 
   const getDistributorProducts = (distributorId: number) => {
@@ -515,6 +529,13 @@ export default function DistributorsPage() {
                         </Button>
                       </div>
                     </div>
+                    {showMapping && (
+                      <ColumnMapping
+                        excelColumns={excelColumns}
+                        onMappingComplete={(mapping) => handleMappingComplete(mapping, distributor.id)}
+                        isLoading={importProductsMutation.isPending}
+                      />
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
                       {loadingProducts ? (
                         // Loading skeleton
