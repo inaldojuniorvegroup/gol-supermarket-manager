@@ -377,15 +377,25 @@ export default function DistributorsPage() {
         return product;
       });
 
-      // Filtrar produtos válidos
+      // Filtrar produtos válidos e verificar campos obrigatórios
       const validProducts = transformedProducts.filter((product, index) => {
-        const isValid = product.name && product.itemCode;
+        const isValid = product.name && 
+                       product.itemCode && 
+                       product.description && // Garantir que o departamento está preenchido
+                       product.grupo && // Garantir que o grupo está preenchido
+                       product.supplierCode && 
+                       product.barCode;
+
         if (!isValid) {
           console.log(`Produto ${index + 1} inválido:`, {
             produto: product,
             motivo: {
               semNome: !product.name,
-              semCodigo: !product.itemCode
+              semCodigo: !product.itemCode,
+              semDepartamento: !product.description,
+              semGrupo: !product.grupo,
+              semCodigoFornecedor: !product.supplierCode,
+              semCodigoBarras: !product.barCode
             }
           });
         }
@@ -395,7 +405,7 @@ export default function DistributorsPage() {
       console.log('Total de produtos válidos:', validProducts.length);
 
       if (validProducts.length === 0) {
-        throw new Error('Nenhum produto válido encontrado. Verifique se as colunas Nome do Produto e Código do Item foram mapeadas corretamente.');
+        throw new Error('Nenhum produto válido encontrado. Verifique se todos os campos obrigatórios foram mapeados corretamente.');
       }
 
       // Importar em lotes
