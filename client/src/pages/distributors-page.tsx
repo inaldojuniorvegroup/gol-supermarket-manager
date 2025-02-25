@@ -241,6 +241,9 @@ export default function DistributorsPage() {
       description: "Isso pode levar alguns segundos...",
     });
 
+    // Log do ID do distribuidor para debug
+    console.log("ID do distribuidor:", distributorId);
+
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
@@ -267,7 +270,10 @@ export default function DistributorsPage() {
               codigo: rawProduct.Código
             });
 
-            return {
+            // Log do distribuidor ID para cada produto
+            console.log("ID do distribuidor:", distributorId);
+
+            const mappedProduct = {
               name: rawProduct.Nome || "", // Nome do produto
               itemCode: rawProduct.Código || "",
               supplierCode: rawProduct["Cód.Forn."] || "",
@@ -281,12 +287,12 @@ export default function DistributorsPage() {
               imageUrl: "",
               isSpecialOffer: false
             };
-          });
 
-          // Log do primeiro produto do lote antes de enviar
-          if (batch.length > 0) {
-            console.log("Exemplo de produto processado:", batch[0]);
-          }
+            // Log do produto mapeado
+            console.log("Dados mapeados do produto:", mappedProduct);
+
+            return mappedProduct;
+          });
 
           batches.push(batch);
         }
@@ -306,6 +312,10 @@ export default function DistributorsPage() {
           title: "Importação concluída",
           description: `${jsonData.length} produtos foram importados com sucesso!`,
         });
+
+        // Atualizar a lista de produtos
+        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+
       } catch (error) {
         console.error('Erro ao processar arquivo:', error);
         console.log('Dados do erro:', error);
