@@ -293,58 +293,72 @@ export default function DistributorsPage() {
       console.log('Iniciando importação com mapeamento:', mapping);
       console.log('Dados do arquivo:', fileData);
 
-      const batchSize = 100;
+      // Transform data based on mapping
+      const transformedData = fileData.map((row: any) => {
+        // Create a new object with mapped values
+        const mappedProduct: any = {};
+
+        // Map each field according to the mapping configuration
+        Object.entries(mapping).forEach(([systemField, excelColumn]) => {
+          if (excelColumn !== '_EMPTY') {
+            let value = row[excelColumn];
+
+            // Handle numeric values
+            if (systemField === 'unitPrice' || systemField === 'boxQuantity') {
+              // Convert string numbers (both with . and ,) to actual numbers
+              if (typeof value === 'string') {
+                value = parseFloat(value.replace(',', '.')) || 0;
+              } else if (typeof value === 'number') {
+                value = value;
+              } else {
+                value = 0;
+              }
+            }
+
+            // Handle string values
+            if (['name', 'itemCode', 'supplierCode', 'barCode', 'description', 'unit'].includes(systemField)) {
+              value = value ? String(value).trim() : '';
+            }
+
+            mappedProduct[systemField] = value;
+          }
+        });
+
+        // Add required fields
+        mappedProduct.distributorId = selectedDistributor;
+        mappedProduct.isSpecialOffer = false;
+        mappedProduct.imageUrl = null;
+        mappedProduct.boxPrice = null;
+
+        // Ensure required fields have default values
+        mappedProduct.unitPrice = mappedProduct.unitPrice || 0;
+        mappedProduct.boxQuantity = mappedProduct.boxQuantity || 1;
+        mappedProduct.unit = mappedProduct.unit || 'un';
+        mappedProduct.description = mappedProduct.description || '';
+        mappedProduct.supplierCode = mappedProduct.supplierCode || '';
+        mappedProduct.barCode = mappedProduct.barCode || '';
+
+        return mappedProduct;
+      }).filter((product: any) => {
+        // Filter out invalid products
+        const isValid = product.name && product.itemCode && product.distributorId;
+        if (!isValid) {
+          console.log('Produto inválido removido:', product);
+        }
+        return isValid;
+      });
+
+      console.log('Dados transformados:', transformedData);
+
+      if (transformedData.length === 0) {
+        throw new Error('Nenhum produto válido encontrado após o mapeamento');
+      }
+
+      const batchSize = 50;
       const batches = [];
 
-      for (let i = 0; i < fileData.length; i += batchSize) {
-        const batch = fileData.slice(i, i + batchSize).map((rawProduct: any) => {
-          console.log('Processando produto raw:', rawProduct);
-
-          // Verificar se o campo existe no mapeamento antes de acessar
-          const mappedProduct = {
-            name: mapping.name !== '_EMPTY' ? String(rawProduct[mapping.name] || '') : '',
-            itemCode: mapping.itemCode !== '_EMPTY' ? String(rawProduct[mapping.itemCode] || '') : '',
-            supplierCode: mapping.supplierCode !== '_EMPTY' ? String(rawProduct[mapping.supplierCode] || '') : '',
-            barCode: mapping.barCode !== '_EMPTY' ? String(rawProduct[mapping.barCode] || '') : '',
-            description: mapping.description !== '_EMPTY' ? String(rawProduct[mapping.description] || '') : '',
-            unitPrice: 0,
-            boxQuantity: 1,
-            unit: 'un',
-            distributorId: selectedDistributor!,
-            imageUrl: '',
-            isSpecialOffer: false
-          };
-
-          // Tratamento especial para valores numéricos
-          if (mapping.unitPrice !== '_EMPTY' && rawProduct[mapping.unitPrice]) {
-            const priceStr = String(rawProduct[mapping.unitPrice]).replace(',', '.');
-            mappedProduct.unitPrice = parseFloat(priceStr) || 0;
-          }
-
-          if (mapping.boxQuantity !== '_EMPTY' && rawProduct[mapping.boxQuantity]) {
-            const qtyStr = String(rawProduct[mapping.boxQuantity]).replace(',', '.');
-            mappedProduct.boxQuantity = parseFloat(qtyStr) || 1;
-          }
-
-          if (mapping.unit !== '_EMPTY') {
-            mappedProduct.unit = String(rawProduct[mapping.unit] || 'un');
-          }
-
-          console.log('Produto mapeado:', mappedProduct);
-
-          // Se não tiver nome ou código, pula este produto
-          if (!mappedProduct.name || !mappedProduct.itemCode) {
-            console.log('Produto ignorado - dados obrigatórios faltando:', mappedProduct);
-            return null;
-          }
-
-          return mappedProduct;
-        }).filter(Boolean); // Remove null entries
-
-        if (batch.length > 0) {
-          console.log(`Adicionando lote de ${batch.length} produtos para importação`);
-          batches.push(batch);
-        }
+      for (let i = 0; i < transformedData.length; i += batchSize) {
+        batches.push(transformedData.slice(i, i + batchSize));
       }
 
       console.log('Total de lotes para importação:', batches.length);
@@ -352,12 +366,12 @@ export default function DistributorsPage() {
       let processedCount = 0;
       for (const batch of batches) {
         console.log('Enviando lote para API:', batch);
-        await importProductsMutation.mutateAsync(batch);
-        processedCount += batch.length;
+        const result = await importProductsMutation.mutateAsync(batch);
+        processedCount += result.productsImported;
 
         toast({
           title: "Importando produtos",
-          description: `Processados ${processedCount} de ${fileData.length} produtos...`,
+          description: `Processados ${processedCount} de ${transformedData.length} produtos...`,
         });
       }
 
