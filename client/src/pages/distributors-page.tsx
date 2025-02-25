@@ -254,22 +254,27 @@ export default function DistributorsPage() {
           const workbook = XLSX.read(data, { type: 'array' });
           const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-          // Extrair cabeçalhos
+          // Logging worksheet information
+          console.log('Sheet names:', workbook.SheetNames);
+          console.log('Current sheet:', workbook.SheetNames[0]);
+
+          // Get the range of cells
           const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
           const headers: string[] = [];
 
+          // Extract headers with detailed logging
           for (let C = range.s.c; C <= range.e.c; ++C) {
             const cell = worksheet[XLSX.utils.encode_cell({r: 0, c: C})];
             if (cell && cell.v) {
-              headers.push(String(cell.v).trim());
+              const header = String(cell.v).trim();
+              headers.push(header);
+              console.log(`Found header [${C}]:`, header);
             }
           }
 
-          console.log('Cabeçalhos encontrados:', headers);
-
-          // Converter para JSON usando os cabeçalhos encontrados
+          // Convert to JSON with headers
           const jsonData = XLSX.utils.sheet_to_json(worksheet);
-          console.log('Primeira linha de dados:', jsonData[0]);
+          console.log('Estrutura do primeiro item:', JSON.stringify(jsonData[0], null, 2));
 
           setSelectedDistributor(distributorId);
           setExcelColumns(headers);

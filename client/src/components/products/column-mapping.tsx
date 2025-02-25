@@ -29,51 +29,51 @@ const SYSTEM_FIELDS = [
   { 
     key: "name", 
     label: "Nome do Produto", 
-    defaultColumn: "Nome",
+    defaultColumn: "DESCRICAO",
     required: true,
-    alternatives: ["Nome Produto", "Produto", "Descrição", "Descricao", "Item", "Nome Item"] 
+    alternatives: ["Descrição", "Descricao", "Nome", "Produto", "DESC", "NOME PRODUTO"] 
   },
   { 
     key: "itemCode", 
     label: "Código do Item", 
-    defaultColumn: "Código",
+    defaultColumn: "CODIGO",
     required: true,
-    alternatives: ["Cod", "Codigo", "Código Produto", "Codigo Produto", "SKU", "Referência", "Ref"] 
+    alternatives: ["Cod", "Codigo", "COD", "REF", "REFERENCIA", "ID"] 
   },
   { 
     key: "supplierCode", 
     label: "Código do Fornecedor", 
-    defaultColumn: "Cód.Forn.",
+    defaultColumn: "CODFORN",
     required: false,
-    alternatives: ["Código Fornecedor", "Cod Forn", "Codigo Fornecedor", "Ref Fornecedor", "CodFor"] 
+    alternatives: ["CodForn", "Cod_Forn", "Codigo Fornecedor", "COD FORN", "REF FORN"] 
   },
   { 
     key: "barCode", 
     label: "Código de Barras", 
-    defaultColumn: "Cód.Barra",
+    defaultColumn: "GTIN",
     required: false,
-    alternatives: ["EAN", "Código EAN", "Codigo Barras", "Código Barras", "GTIN", "Cod Barras", "CodBar"] 
-  },
-  { 
-    key: "grupo", 
-    label: "Grupo", 
-    defaultColumn: "Grupo",
-    required: false,
-    alternatives: ["Grupo Produto", "Categoria", "Linha", "Familia"] 
+    alternatives: ["EAN", "CODBAR", "Cod_Barras", "Código de Barras", "COD_BARRAS"] 
   },
   { 
     key: "description", 
     label: "Departamento", 
-    defaultColumn: "Departamento",
+    defaultColumn: "DEPARTAMENTO",
     required: false,
-    alternatives: ["Depto", "Setor", "Area", "Segmento"] 
+    alternatives: ["DEPTO", "Depto", "Setor", "SETOR", "Departamento"] 
+  },
+  { 
+    key: "grupo", 
+    label: "Grupo", 
+    defaultColumn: "GRUPO",
+    required: false,
+    alternatives: ["Grupo", "CATEGORIA", "Categoria", "LINHA", "Linha"] 
   },
   { 
     key: "unitPrice", 
     label: "Preço Unitário", 
-    defaultColumn: "Preço",
+    defaultColumn: "PRECO",
     required: true,
-    alternatives: ["Preco", "Preço", "Valor", "Custo", "Preço Unit", "Preco Unitario"] 
+    alternatives: ["Preço", "VALOR", "Valor", "CUSTO", "Custo", "PRECO UNIT"] 
   }
 ];
 
@@ -98,6 +98,7 @@ export function ColumnMapping({ excelColumns = [], onMappingComplete, isLoading 
       let matchingColumn = excelColumns.find(col => {
         const normalizedCol = normalize(col);
         return [defaultColumn, ...(alternatives || [])].some(alt => 
+          normalizedCol === normalize(alt) ||
           normalizedCol.includes(normalize(alt)) || 
           normalize(alt).includes(normalizedCol)
         );
