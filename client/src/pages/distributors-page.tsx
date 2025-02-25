@@ -235,9 +235,6 @@ export default function DistributorsPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Log do ID do distribuidor para debug
-    console.log("ID do distribuidor para importação:", distributorId);
-
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
@@ -249,55 +246,52 @@ export default function DistributorsPage() {
 
         console.log("Total de produtos encontrados no Excel:", jsonData.length);
         console.log("Primeiro produto do Excel:", jsonData[0]);
-        console.log("Colunas encontradas:", Object.keys(jsonData[0]));
 
         const batchSize = 100;
         const batches = [];
 
         for (let i = 0; i < jsonData.length; i += batchSize) {
           const batch = jsonData.slice(i, i + batchSize).map((rawProduct: any) => {
-            // Log detalhado de cada produto
-            console.log("Processando produto:", {
-              nome: rawProduct.Nome,
-              codigo: rawProduct.Código,
-              departamento: rawProduct.Departamento,
-              preco: rawProduct["Preço Custo"],
-              distribuidor: distributorId
-            });
+            const name = rawProduct.Nome?.toString() || "";
+            const itemCode = rawProduct.Código?.toString() || "";
+
+            // Se não tiver nome ou código, pula este produto
+            if (!name || !itemCode) {
+              console.log("Produto ignorado por falta de nome ou código:", rawProduct);
+              return null;
+            }
 
             const mappedProduct = {
-              name: rawProduct.Nome || "",
-              itemCode: rawProduct.Código || "",
-              supplierCode: rawProduct["Cód.Forn."] || "",
-              barCode: rawProduct["Cód.Barra"] || "",
-              description: rawProduct.Nome || "",
+              name,
+              itemCode,
+              supplierCode: rawProduct["Cód.Forn."]?.toString() || "",
+              barCode: rawProduct["Cód.Barra"]?.toString() || "",
+              description: name, // Usando o nome como descrição
               unitPrice: parseFloat(rawProduct["Preço Custo"]?.toString().replace(",", ".") || "0"),
               boxQuantity: parseFloat(rawProduct.Quantidade?.toString() || "1"),
               unit: rawProduct.Unid || "ea",
-              distributorId: distributorId, // Garantindo que o ID do distribuidor está sendo passado
-              grupo: rawProduct.Departamento || "",
+              distributorId: distributorId,
+              grupo: rawProduct.Departamento?.toString() || "",
               imageUrl: "",
               isSpecialOffer: false
             };
 
-            // Log do produto após mapeamento
-            console.log("Produto mapeado para importação:", mappedProduct);
-
+            // Log do produto mapeado
+            console.log("Produto mapeado:", mappedProduct);
             return mappedProduct;
-          });
+          }).filter(Boolean); // Remove os produtos null
 
-          batches.push(batch);
+          if (batch.length > 0) {
+            batches.push(batch);
+          }
         }
 
         let processedCount = 0;
         for (const batch of batches) {
           try {
-            // Log antes de enviar o lote
-            console.log(`Enviando lote de ${batch.length} produtos para importação`);
-            const response = await importProductsMutation.mutateAsync(batch);
-            console.log("Resposta da importação:", response);
-
+            await importProductsMutation.mutateAsync(batch);
             processedCount += batch.length;
+
             toast({
               title: "Importando produtos",
               description: `Processados ${processedCount} de ${jsonData.length} produtos...`,
@@ -308,12 +302,12 @@ export default function DistributorsPage() {
           }
         }
 
-        // Atualizar a lista de produtos
-        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+        // Forçar atualização dos dados
+        await queryClient.invalidateQueries({ queryKey: ["/api/products"] });
 
         toast({
           title: "Importação concluída",
-          description: `${jsonData.length} produtos foram importados com sucesso!`,
+          description: `${processedCount} produtos foram importados com sucesso!`,
         });
 
       } catch (error) {
@@ -330,18 +324,24 @@ export default function DistributorsPage() {
   };
 
   const getDistributorProducts = (distributorId: number) => {
+    if (!products) return [];
+
     console.log("Buscando produtos para o distribuidor:", distributorId);
-    console.log("Total de produtos disponíveis:", products?.length);
-    const filteredProducts = products?.filter(product => {
-      console.log("Comparando produto:", {
-        produtoId: product.id,
-        produtoDistribuidor: product.distributorId,
-        distribuidorAtual: distributorId,
-        match: product.distributorId === distributorId
-      });
-      return product.distributorId === distributorId;
-    }) ?? [];
-    console.log("Produtos filtrados:", filteredProducts.length);
+    console.log("Total de produtos disponíveis:", products.length);
+
+    const filteredProducts = products.filter(product => {
+      const matches = product.distributorId === distributorId;
+      if (matches) {
+        console.log("Produto encontrado:", {
+          id: product.id,
+          nome: product.name,
+          distributorId: product.distributorId
+        });
+      }
+      return matches;
+    });
+
+    console.log("Total de produtos filtrados:", filteredProducts.length);
     return filteredProducts;
   };
 
