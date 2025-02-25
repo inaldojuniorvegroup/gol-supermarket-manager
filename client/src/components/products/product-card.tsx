@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Product } from "@shared/schema";
-import { Package, Tag, DollarSign, ShoppingCart, Barcode, FileImage, Box, Info } from "lucide-react";
+import { Package, Tag, DollarSign, ShoppingCart, Barcode, FileImage, Box, Info, FolderOpen, Folder } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -65,9 +65,9 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
       <Card className="group relative h-full overflow-hidden hover:shadow-lg transition-all duration-200">
         {/* Badges no topo do card */}
         <div className="absolute top-2 left-2 right-2 z-10 flex justify-between items-center gap-2">
-          {product.grupo && (
+          {product.description && (
             <Badge variant="secondary" className="flex-shrink-0">
-              {product.grupo}
+              {product.description}
             </Badge>
           )}
           {product.isSpecialOffer && (
@@ -116,16 +116,14 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
                       <Tag className="h-4 w-4" />
                       <span>Supplier Code: {product.supplierCode}</span>
                     </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <FolderOpen className="h-4 w-4" />
+                      <span>Departamento: {product.description}</span>
+                    </div>
                     {product.grupo && (
-                      <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                        <Package className="h-4 w-4" />
-                        <span>{product.grupo}</span>
-                      </div>
-                    )}
-                    {product.description && (
                       <div className="flex items-center gap-2 text-sm">
-                        <FileImage className="h-4 w-4" />
-                        <span>Description: {product.description}</span>
+                        <Folder className="h-4 w-4" />
+                        <span>Grupo: {product.grupo}</span>
                       </div>
                     )}
                     {product.barCode && (
@@ -150,13 +148,21 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
           </div>
 
           <div className="space-y-2">
-            {product.description && (
-              <p className="text-sm text-muted-foreground line-clamp-1">
+            {/* Mostrar o Departamento e Grupo */}
+            <div className="flex flex-col gap-1">
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <FolderOpen className="h-4 w-4" />
                 {product.description}
               </p>
-            )}
+              {product.grupo && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Folder className="h-4 w-4" />
+                  {product.grupo}
+                </p>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
-              Supplier Code: {product.supplierCode}
+              Código: {product.itemCode}
             </p>
           </div>
 
