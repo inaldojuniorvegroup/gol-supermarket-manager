@@ -41,7 +41,7 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
   useEffect(() => {
     const initialMapping: Record<string, string> = {};
     SYSTEM_FIELDS.forEach(({ key }) => {
-      const matchingColumn = excelColumns.find(col => 
+      const matchingColumn = excelColumns.find(col =>
         col.toLowerCase().includes(key.toLowerCase())
       );
       if (matchingColumn) {
@@ -76,6 +76,7 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground mb-4">
         Por favor, mapeie as colunas do seu arquivo Excel para os campos correspondentes do sistema.
+        Cada campo do sistema precisa ser associado a uma coluna do seu arquivo.
       </div>
 
       <Table>
@@ -91,14 +92,13 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
               <TableCell>{label}</TableCell>
               <TableCell>
                 <Select
-                  value={mapping[key] || ""}
+                  value={mapping[key] || excelColumns[0]}
                   onValueChange={(value) => handleMappingChange(key, value)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione uma coluna" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Selecione...</SelectItem>
                     {excelColumns.map((column) => (
                       <SelectItem key={column} value={column}>
                         {column}
