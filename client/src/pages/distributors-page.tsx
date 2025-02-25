@@ -245,22 +245,40 @@ export default function DistributorsPage() {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
+        console.log('Processando arquivo Excel...');
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
+
+        console.log('Sheets disponíveis:', workbook.SheetNames);
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        // Extrair os nomes das colunas do arquivo Excel
-        const excelColumns = Object.keys(jsonData[0] || {});
-        setExcelColumns(excelColumns);
-        setShowMapping(true);
+        // Extrair cabeçalhos primeiro
+        const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+        const headers: string[] = [];
+
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cell = worksheet[XLSX.utils.encode_cell({r: 0, c: C})];
+          if (cell && cell.v) {
+            headers.push(String(cell.v).trim());
+          }
+        }
+
+        console.log('Cabeçalhos encontrados:', headers);
+
+        // Converter para JSON usando os cabeçalhos encontrados
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: headers });
+        console.log('Primeira linha de dados:', jsonData[0]);
+
+        setExcelColumns(headers);
         setFileData(jsonData);
+        setShowMapping(true);
+
       } catch (error) {
         console.error('Erro ao processar arquivo:', error);
         toast({
           title: "Erro ao processar arquivo",
-          description: error instanceof Error ? error.message : "Erro ao importar produtos",
+          description: error instanceof Error ? error.message : "Erro ao processar o arquivo Excel",
           variant: "destructive",
         });
       }
