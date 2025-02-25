@@ -24,14 +24,54 @@ interface ColumnMappingProps {
 }
 
 const SYSTEM_FIELDS = [
-  { key: "name", label: "Nome do Produto", defaultColumn: "Nome" },
-  { key: "itemCode", label: "Código do Item", defaultColumn: "Código" },
-  { key: "supplierCode", label: "Código do Fornecedor", defaultColumn: "Cód.Forn." },
-  { key: "barCode", label: "Código de Barras", defaultColumn: "Cód.Barra" },
-  { key: "description", label: "Departamento", defaultColumn: "Departamento" },
-  { key: "unitPrice", label: "Preço Unitário", defaultColumn: "Preço Custo" },
-  { key: "boxQuantity", label: "Quantidade por Caixa", defaultColumn: "Grupo" },
-  { key: "unit", label: "Unidade", defaultColumn: "Unid." },
+  { 
+    key: "name", 
+    label: "Nome do Produto", 
+    defaultColumn: "Nome",
+    alternatives: ["Nome Produto", "Produto", "Descrição", "Descricao"] 
+  },
+  { 
+    key: "itemCode", 
+    label: "Código do Item", 
+    defaultColumn: "Código",
+    alternatives: ["Cod", "Codigo", "Código Produto", "Codigo Produto"] 
+  },
+  { 
+    key: "supplierCode", 
+    label: "Código do Fornecedor", 
+    defaultColumn: "Cód.Forn.",
+    alternatives: ["Código Fornecedor", "Cod Forn", "Codigo Fornecedor"] 
+  },
+  { 
+    key: "barCode", 
+    label: "Código de Barras", 
+    defaultColumn: "Cód.Barra",
+    alternatives: ["EAN", "Código EAN", "Codigo Barras", "Código Barras"] 
+  },
+  { 
+    key: "description", 
+    label: "Departamento/Categoria", 
+    defaultColumn: "Departamento",
+    alternatives: ["Categoria", "Setor", "Grupo Produto"] 
+  },
+  { 
+    key: "unitPrice", 
+    label: "Preço Unitário", 
+    defaultColumn: "Preço Custo",
+    alternatives: ["Preco", "Preço", "Valor", "Custo", "Preço Unit", "Preco Unitario"] 
+  },
+  { 
+    key: "boxQuantity", 
+    label: "Quantidade por Caixa/Grupo", 
+    defaultColumn: "Grupo",
+    alternatives: ["Qtd Grupo", "Qtd Caixa", "Quantidade Grupo", "Quantidade", "Qtd"] 
+  },
+  { 
+    key: "unit", 
+    label: "Unidade de Medida", 
+    defaultColumn: "Unid.",
+    alternatives: ["Unidade", "UN", "Medida", "UND"] 
+  },
 ];
 
 export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = false }: ColumnMappingProps) {
@@ -42,16 +82,32 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
     if (!excelColumns.length) return;
 
     const initialMapping: Record<string, string> = {};
-    SYSTEM_FIELDS.forEach(({ key, defaultColumn }) => {
-      // Tenta encontrar a coluna exata primeiro
-      let matchingColumn = excelColumns.find(col => col === defaultColumn);
+    SYSTEM_FIELDS.forEach(({ key, defaultColumn, alternatives }) => {
+      // Normaliza o texto para comparação (remove acentos e converte para minúsculas)
+      const normalize = (text: string) => text.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
 
-      // Se não encontrar a coluna exata, tenta encontrar por similaridade
+      // Tenta encontrar a coluna exata primeiro
+      let matchingColumn = excelColumns.find(col => 
+        normalize(col) === normalize(defaultColumn)
+      );
+
+      // Se não encontrar, tenta as alternativas
+      if (!matchingColumn && alternatives) {
+        matchingColumn = excelColumns.find(col => 
+          alternatives.some(alt => normalize(col) === normalize(alt))
+        );
+      }
+
+      // Se ainda não encontrar, tenta por similaridade parcial
       if (!matchingColumn) {
         matchingColumn = excelColumns.find(col => {
-          const colLower = col.toLowerCase();
-          const defaultLower = defaultColumn.toLowerCase();
-          return colLower.includes(defaultLower) || defaultLower.includes(colLower);
+          const normalizedCol = normalize(col);
+          return alternatives?.some(alt => 
+            normalizedCol.includes(normalize(alt)) || 
+            normalize(alt).includes(normalizedCol)
+          );
         });
       }
 
@@ -95,7 +151,8 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground mb-4">
         Por favor, mapeie as colunas do seu arquivo Excel para os campos correspondentes do sistema.
-        Cada campo do sistema precisa ser associado a uma coluna do seu arquivo.
+        Selecione a coluna do seu arquivo que corresponde a cada campo necessário.
+        Se algum campo não existir no seu arquivo, selecione "_EMPTY".
       </div>
 
       <Table>
@@ -108,7 +165,7 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
         <TableBody>
           {SYSTEM_FIELDS.map(({ key, label }) => (
             <TableRow key={key}>
-              <TableCell>{label}</TableCell>
+              <TableCell className="font-medium">{label}</TableCell>
               <TableCell>
                 <Select
                   value={mapping[key] || "_EMPTY"}
@@ -118,7 +175,7 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
                     <SelectValue placeholder="Selecione uma coluna" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="_EMPTY">_EMPTY</SelectItem>
+                    <SelectItem value="_EMPTY">Não mapear este campo</SelectItem>
                     {excelColumns.map((column) => (
                       <SelectItem key={column} value={column}>
                         {column}
