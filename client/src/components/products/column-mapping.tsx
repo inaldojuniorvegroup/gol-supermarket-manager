@@ -55,11 +55,11 @@ const SYSTEM_FIELDS = [
     alternatives: ["GTIN", "EAN", "CODBARRAS", "COD_BARRAS", "CODBARRA"] 
   },
   { 
-    key: "description", 
-    label: "Departamento (ex: FRIOS/LACTICNIOS/CONGELADOS)", 
-    defaultColumn: "DEPARTAMENTO",
+    key: "subcategory", 
+    label: "Subcategoria (ex: FRIOS/LACTICNIOS/CONGELADOS)", 
+    defaultColumn: "SUBCATEGORIA",
     required: true,
-    alternatives: ["DEPTO", "SETOR", "SECAO", "CATEGORIA"] 
+    alternatives: ["SETOR", "SECAO", "DEPARTAMENTO", "DEPTO"] 
   },
   { 
     key: "grupo", 

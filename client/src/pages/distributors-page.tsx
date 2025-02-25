@@ -134,7 +134,7 @@ function CreateUserDialog({ distributorId, onClose }: CreateUserDialogProps) {
 
 // Add product edit schema
 const editProductSchema = z.object({
-  description: z.string().min(1, "Departamento é obrigatório"),
+  subcategory: z.string().min(1, "Subcategoria é obrigatória"),
   grupo: z.string().min(1, "Grupo é obrigatório"),
 });
 
@@ -145,14 +145,14 @@ function EditProductDialog({ product, onClose }: { product: Product, onClose: ()
   const form = useForm<EditProductForm>({
     resolver: zodResolver(editProductSchema),
     defaultValues: {
-      description: product.description || "",
+      subcategory: product.description || "",
       grupo: product.grupo || "",
     }
   });
 
   const updateProductMutation = useMutation({
-    mutationFn: async ({ id, description, grupo }: { id: number, description: string, grupo: string }) => {
-      const res = await apiRequest("PATCH", `/api/products/${id}`, { description, grupo });
+    mutationFn: async ({ id, subcategory, grupo }: { id: number, subcategory: string, grupo: string }) => {
+      const res = await apiRequest("PATCH", `/api/products/${id}`, { description: subcategory, grupo });
       return res.json();
     },
     onSuccess: () => {
@@ -178,7 +178,7 @@ function EditProductDialog({ product, onClose }: { product: Product, onClose: ()
         onSubmit={form.handleSubmit((data) => {
           updateProductMutation.mutate({
             id: product.id,
-            description: data.description,
+            subcategory: data.subcategory,
             grupo: data.grupo.toUpperCase()
           });
         })}
@@ -186,17 +186,17 @@ function EditProductDialog({ product, onClose }: { product: Product, onClose: ()
       >
         <FormField
           control={form.control}
-          name="description"
+          name="subcategory"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Departamento</FormLabel>
+              <FormLabel>Subcategoria</FormLabel>
               <Select
                 onValueChange={field.onChange}
                 value={field.value}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o departamento" />
+                    <SelectValue placeholder="Selecione a subcategoria" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -481,20 +481,20 @@ export default function DistributorsPage() {
           console.log(`Código de barras mapeado (${mapping.barCode}):`, product.barCode);
         }
 
-        // Mapear departamento (categoria principal)
-        if (mapping.description !== '_EMPTY') {
-          let dept = String(row[mapping.description] || '').trim().toUpperCase();
+        // Mapear subcategoria (categoria principal)
+        if (mapping.subcategory !== '_EMPTY') {
+          let subcategory = String(row[mapping.subcategory] || '').trim().toUpperCase();
           // Remover o prefixo "(N)" se existir
-          dept = dept.replace(/^\(N\)\s*/, '');
-          product.description = dept;
+          subcategory = subcategory.replace(/^\(N\)\s*/, '');
+          product.description = subcategory;
 
           if (!["FRIOS/LACTICNIOS/CONGELADOS", "MERCEARIA", "BEBIDAS", "LIMPEZA", "HORTIFRUTI"].includes(product.description)) {
-            console.log(`Aviso: Departamento inválido "${product.description}", será necessário editar manualmente.`);
+            console.log(`Aviso: Subcategoria inválida "${product.description}", será necessário editar manualmente.`);
           }
-          console.log(`Departamento mapeado (${mapping.description}):`, product.description);
+          console.log(`Subcategoria mapeada (${mapping.subcategory}):`, product.description);
         }
 
-        // Mapear grupo (subcategoria)
+        // Mapear grupo (subcategoria específica)
         if (mapping.grupo !== '_EMPTY') {
           // Pegar o grupo do Excel e remover o prefixo (N) se existir
           let grupo = String(row[mapping.grupo] || '').trim().toUpperCase();
