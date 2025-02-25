@@ -230,7 +230,7 @@ export default function DistributorsPage() {
     }
   });
 
-  // Ajustando a função handleFileUpload para lidar com o campo grupo e melhorar o debug
+  // Ajustando a função handleFileUpload para lidar com o campo Departamento
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, distributorId: number) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -250,10 +250,9 @@ export default function DistributorsPage() {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        // Log do primeiro produto e suas colunas para debug
+        // Log detalhado do primeiro produto para debug
         console.log("Primeiro produto do Excel:", jsonData[0]);
         console.log("Nomes das colunas:", Object.keys(jsonData[0]));
-        console.log(`Valor do grupo:`, jsonData[0].grupo || jsonData[0].Grupo || jsonData[0].GRUPO || jsonData[0].grupo_produto || jsonData[0].GRUPO_PRODUTO || jsonData[0].GrupoProduto || "");
 
         // Processar em lotes de 100 produtos
         const batchSize = 100;
@@ -261,24 +260,22 @@ export default function DistributorsPage() {
 
         for (let i = 0; i < jsonData.length; i += batchSize) {
           const batch = jsonData.slice(i, i + batchSize).map((rawProduct: any) => {
-            // Log para debug
-            console.log(`Produto: ${rawProduct.name || rawProduct.NOME || ""}`);
-            console.log(`Campos disponíveis:`, Object.keys(rawProduct));
-            console.log(`Valor do grupo:`, rawProduct.grupo || rawProduct.Grupo || rawProduct.GRUPO || rawProduct.grupo_produto || rawProduct.GRUPO_PRODUTO || rawProduct.GrupoProduto || "");
+            // Log para debug de cada produto
+            console.log("Processando produto:", rawProduct);
 
             return {
-              name: rawProduct.name || rawProduct.NOME || rawProduct.Nome || "",
-              itemCode: rawProduct.itemCode || rawProduct.CODIGO || rawProduct.Codigo || rawProduct.item_code || "",
-              supplierCode: rawProduct.supplierCode || rawProduct.supplier_code || "",
-              barCode: rawProduct.barCode || rawProduct.bar_code || "",
-              description: rawProduct.description || rawProduct.DESCRICAO || rawProduct.Descricao || "",
-              unitPrice: rawProduct.unitPrice || rawProduct.PRECO || rawProduct.Preco || rawProduct.unit_price || "0",
-              boxQuantity: rawProduct.boxQuantity || rawProduct.QUANTIDADE || rawProduct.Quantidade || rawProduct.box_quantity || 1,
-              unit: rawProduct.unit || rawProduct.UNIDADE || rawProduct.Unidade || "UN",
+              name: rawProduct.Nome || "", // Nome do produto
+              itemCode: rawProduct.Código || "",
+              supplierCode: rawProduct["Cód.Forn."] || "",
+              barCode: rawProduct["Cód.Barra"] || "",
+              description: rawProduct.Nome || "", // Nome do produto como descrição
+              unitPrice: rawProduct["Preço Custo"] || 0,
+              boxQuantity: rawProduct.Unid === "case" ? rawProduct.Quantidade || 1 : 1,
+              unit: rawProduct.Unid || "UN",
               distributorId,
-              grupo: (rawProduct.grupo || rawProduct.Grupo || rawProduct.GRUPO || rawProduct.grupo_produto || rawProduct.GRUPO_PRODUTO || rawProduct.GrupoProduto)?.toString().trim() || null,
-              imageUrl: rawProduct.imageUrl || rawProduct.image_url || "",
-              isSpecialOffer: rawProduct.isSpecialOffer || false
+              grupo: rawProduct.Departamento || "", // Campo Departamento como grupo
+              imageUrl: "",
+              isSpecialOffer: false
             };
           });
 
@@ -295,7 +292,6 @@ export default function DistributorsPage() {
           await importProductsMutation.mutateAsync(batch);
           processedCount += batch.length;
 
-          // Atualizar progresso
           toast({
             title: "Importando produtos",
             description: `Processados ${processedCount} de ${jsonData.length} produtos...`,
@@ -315,14 +311,6 @@ export default function DistributorsPage() {
           variant: "destructive",
         });
       }
-    };
-
-    reader.onerror = () => {
-      toast({
-        title: "Erro ao ler arquivo",
-        description: "Não foi possível ler o arquivo selecionado",
-        variant: "destructive",
-      });
     };
 
     reader.readAsArrayBuffer(file);

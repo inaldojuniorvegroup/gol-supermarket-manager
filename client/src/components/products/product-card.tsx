@@ -119,13 +119,13 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
                     {product.grupo && (
                       <div className="flex items-center gap-2 text-sm font-medium text-primary">
                         <Package className="h-4 w-4" />
-                        <span>Categoria: {product.grupo}</span>
+                        <span>Department: {product.grupo}</span>
                       </div>
                     )}
                     {product.description && (
                       <div className="flex items-center gap-2 text-sm">
                         <FileImage className="h-4 w-4" />
-                        <span>Department: {product.description}</span>
+                        <span>Description: {product.description}</span>
                       </div>
                     )}
                     {product.barCode && (
@@ -150,18 +150,13 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
           </div>
 
           <div className="space-y-2">
-            {product.grupo && (
-              <p className="text-sm font-medium text-primary">
-                Categoria: {product.grupo}
-              </p>
-            )}
             {product.description && (
               <p className="text-sm text-muted-foreground line-clamp-1">
                 {product.description}
               </p>
             )}
             <p className="text-sm text-muted-foreground">
-              Código Fornecedor: {product.supplierCode}
+              Supplier Code: {product.supplierCode}
             </p>
           </div>
 
