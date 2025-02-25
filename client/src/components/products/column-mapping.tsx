@@ -39,19 +39,38 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
 
   // Inicializar mapeamento tentando encontrar correspondências por similaridade
   useEffect(() => {
+    if (!excelColumns.length) return;
+
     const initialMapping: Record<string, string> = {};
     SYSTEM_FIELDS.forEach(({ key }) => {
-      const matchingColumn = excelColumns.find(col =>
-        col.toLowerCase().includes(key.toLowerCase())
+      // Tenta encontrar uma coluna que corresponda ao campo do sistema
+      const matchingColumn = excelColumns.find(col => 
+        col.toLowerCase().includes(key.toLowerCase()) ||
+        (key === "name" && col.toLowerCase().includes("nome")) ||
+        (key === "itemCode" && (col.toLowerCase().includes("código") || col.toLowerCase().includes("codigo"))) ||
+        (key === "supplierCode" && col.toLowerCase().includes("forn")) ||
+        (key === "barCode" && col.toLowerCase().includes("barra")) ||
+        (key === "description" && col.toLowerCase().includes("depart")) ||
+        (key === "unitPrice" && (col.toLowerCase().includes("preço") || col.toLowerCase().includes("preco"))) ||
+        (key === "boxQuantity" && col.toLowerCase().includes("quant")) ||
+        (key === "unit" && col.toLowerCase().includes("unid"))
       );
+
       if (matchingColumn) {
         initialMapping[key] = matchingColumn;
+      } else {
+        // Se não encontrar correspondência, use a primeira coluna como fallback
+        initialMapping[key] = excelColumns[0];
       }
     });
+
+    console.log("Colunas do Excel:", excelColumns);
+    console.log("Mapeamento inicial:", initialMapping);
     setMapping(initialMapping);
   }, [excelColumns]);
 
   const handleMappingChange = (systemField: string, excelColumn: string) => {
+    console.log(`Alterando mapeamento: ${systemField} -> ${excelColumn}`);
     setMapping(prev => ({
       ...prev,
       [systemField]: excelColumn
@@ -59,6 +78,7 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
   };
 
   const handleComplete = () => {
+    console.log("Mapeamento final:", mapping);
     onMappingComplete(mapping);
   };
 
@@ -92,7 +112,7 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
               <TableCell>{label}</TableCell>
               <TableCell>
                 <Select
-                  value={mapping[key] || excelColumns[0]}
+                  value={mapping[key] || ""}
                   onValueChange={(value) => handleMappingChange(key, value)}
                 >
                   <SelectTrigger className="w-full">
