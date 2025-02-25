@@ -230,7 +230,7 @@ export default function DistributorsPage() {
     }
   });
 
-  // Ajustando a função handleFileUpload para lidar com o campo Departamento
+  // Ajustando a função handleFileUpload para tratar os dados do arquivo PANAMERICAN.xlsx
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, distributorId: number) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -242,7 +242,7 @@ export default function DistributorsPage() {
     });
 
     // Log do ID do distribuidor para debug
-    console.log("ID do distribuidor:", distributorId);
+    console.log("ID do distribuidor para importação:", distributorId);
 
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -253,7 +253,7 @@ export default function DistributorsPage() {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        // Log detalhado do primeiro produto para debug
+        // Log do primeiro produto e suas colunas para debug
         console.log("Primeiro produto do Excel:", jsonData[0]);
         console.log("Nomes das colunas:", Object.keys(jsonData[0]));
 
@@ -266,30 +266,28 @@ export default function DistributorsPage() {
             // Log para debug de cada produto
             console.log("Processando produto:", {
               nome: rawProduct.Nome,
+              codigo: rawProduct.Código,
               departamento: rawProduct.Departamento,
-              codigo: rawProduct.Código
+              preco: rawProduct["Preço Custo"]
             });
 
-            // Log do distribuidor ID para cada produto
-            console.log("ID do distribuidor:", distributorId);
-
             const mappedProduct = {
-              name: rawProduct.Nome || "", // Nome do produto
+              name: rawProduct.Nome || "",
               itemCode: rawProduct.Código || "",
               supplierCode: rawProduct["Cód.Forn."] || "",
               barCode: rawProduct["Cód.Barra"] || "",
-              description: rawProduct.Nome || "", // Usando o nome do produto como descrição
-              unitPrice: parseFloat(rawProduct["Preço Custo"]?.toString() || "0"),
+              description: rawProduct.Nome || "",
+              unitPrice: parseFloat(rawProduct["Preço Custo"]?.toString().replace(",", ".") || "0"),
               boxQuantity: parseFloat(rawProduct.Quantidade?.toString() || "1"),
               unit: rawProduct.Unid || "ea",
               distributorId,
-              grupo: rawProduct.Departamento || "", // Campo Departamento exatamente como está no Excel
+              grupo: rawProduct.Departamento || "",
               imageUrl: "",
               isSpecialOffer: false
             };
 
             // Log do produto mapeado
-            console.log("Dados mapeados do produto:", mappedProduct);
+            console.log("Produto mapeado:", mappedProduct);
 
             return mappedProduct;
           });
@@ -318,10 +316,9 @@ export default function DistributorsPage() {
 
       } catch (error) {
         console.error('Erro ao processar arquivo:', error);
-        console.log('Dados do erro:', error);
         toast({
           title: "Erro ao processar arquivo",
-          description: error instanceof Error ? error.message : "Falha ao ler o arquivo Excel",
+          description: error instanceof Error ? error.message : "Erro ao importar produtos",
           variant: "destructive",
         });
       }
