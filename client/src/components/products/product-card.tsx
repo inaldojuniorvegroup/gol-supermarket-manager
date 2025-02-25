@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Product } from "@shared/schema";
-import { Package, Tag, DollarSign, ImageOff, ShoppingCart, Barcode, FileImage, Box, Info } from "lucide-react";
+import { Package, Tag, DollarSign, ShoppingCart, Barcode, FileImage, Box, Info } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -63,14 +63,19 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
       transition={{ duration: 0.2 }}
     >
       <Card className="group relative h-full overflow-hidden hover:shadow-lg transition-all duration-200">
-        {product.isSpecialOffer && (
-          <Badge
-            variant="destructive"
-            className="absolute top-2 right-2 z-10"
-          >
-            Special Offer
-          </Badge>
-        )}
+        {/* Badges no topo do card */}
+        <div className="absolute top-2 left-2 right-2 z-10 flex justify-between items-center gap-2">
+          {product.grupo && (
+            <Badge variant="secondary" className="flex-shrink-0">
+              {product.grupo}
+            </Badge>
+          )}
+          {product.isSpecialOffer && (
+            <Badge variant="destructive" className="flex-shrink-0">
+              Special Offer
+            </Badge>
+          )}
+        </div>
 
         <CardHeader className="p-0">
           {product.imageUrl && !imageError ? (
