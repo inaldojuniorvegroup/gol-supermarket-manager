@@ -1,0 +1,64 @@
+Uncaught TypeError: Cannot read properties of undefined (reading 'map')
+    at column-mapping.tsx:163:35
+    at Array.map (<anonymous>)
+    at ColumnMapping (column-mapping.tsx:141:26)
+(anonymous)	@	column-mapping.tsx:163
+ColumnMapping	@	column-mapping.tsx:141
+
+column-mapping.tsx:163 Uncaught TypeError: Cannot read properties of undefined (reading 'map')
+    at column-mapping.tsx:163:35
+    at Array.map (<anonymous>)
+    at ColumnMapping (column-mapping.tsx:141:26)
+hook.js:608 The above error occurred in the <ColumnMapping> component:
+
+    at ColumnMapping (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.dev/src/components/products/column-mapping.tsx:60:33)
+    at div
+    at div
+    at https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-EQMXVWD2.js?v=cb71ac25:41:13
+    at https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…runner/workspace/node_modules/.vite/deps/chunk-HW6NHSKD.js?v=cb71ac25:59:7
+    at https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-S7F25QQB.js?v=cb71ac25:52:11
+    at https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-S7F25QQB.js?v=cb71ac25:33:11
+    at https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-EQMXVWD2.js?v=cb71ac25:41:13
+    at https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…runner/workspace/node_modules/.vite/deps/chunk-G4BE4HMB.js?v=cb71ac25:63:5
+    at https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…kspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=cb71ac25:231:13
+    at https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…kspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=cb71ac25:154:58
+    at Presence (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-BOFGIFGP.js?v=cb71ac25:24:11)
+    at https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…kspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=cb71ac25:145:64
+    at https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-S7F25QQB.js?v=cb71ac25:52:11
+    at https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-S7F25QQB.js?v=cb71ac25:33:11
+    at https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-EQMXVWD2.js?v=cb71ac25:41:13
+    at https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…nner/workspace/node_modules/.vite/deps/chunk-HW6NHSKD.js?v=cb71ac25:258:22
+    at Presence (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-BOFGIFGP.js?v=cb71ac25:24:11)
+    at Provider (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-2EKZ3NIK.js?v=cb71ac25:48:15)
+    at DialogPortal (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…kspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=cb71ac25:108:11)
+    at _c3 (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.dev/src/components/ui/dialog.tsx:51:12)
+    at Provider (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-2EKZ3NIK.js?v=cb71ac25:48:15)
+    at Dialog (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…orkspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=cb71ac25:49:5)
+    at div
+    at div
+    at _c9 (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at div
+    at DistributorsPage (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.dev/src/pages/distributors-page.tsx:228:21)
+    at main
+    at div
+    at div
+    at Dashboard (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.dev/src/components/layout/dashboard.tsx:46:37)
+    at component
+    at Route (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=cb71ac25:338:16)
+    at ProtectedRoute (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.dev/src/lib/protected-route.tsx:21:34)
+    at Switch (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=cb71ac25:394:17)
+    at Router
+    at CartProvider (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.dev/src/contexts/cart-context.tsx:20:32)
+    at AuthProvider (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.dev/src/hooks/use-auth.tsx:26:32)
+    at QueryClientProvider (https://26a55ed7-01d3-4ab1-9c0b-e06dd9cb08a8-00-1cap61iawwydu.spock.replit.…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=cb71ac25:2844:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+react-dom.development.js:26962 Uncaught TypeError: Cannot read properties of undefined (reading 'map')
+    at column-mapping.tsx:163:35
+    at Array.map (<anonymous>)
+    at ColumnMapping (column-mapping.tsx:141:26)

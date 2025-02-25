@@ -49,12 +49,12 @@ const SYSTEM_FIELDS = [
   }
 ];
 
-export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = false }: ColumnMappingProps) {
+export function ColumnMapping({ excelColumns = [], onMappingComplete, isLoading = false }: ColumnMappingProps) {
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    if (!excelColumns.length) return;
+    if (!excelColumns || excelColumns.length === 0) return;
 
     const initialMapping: Record<string, string> = {};
     console.log("Colunas disponíveis:", excelColumns);
@@ -92,7 +92,7 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
     // Verifica se todos os campos obrigatórios foram mapeados
     const missingRequired = SYSTEM_FIELDS
       .filter(field => field.required)
-      .filter(field => mapping[field.key] === "_EMPTY");
+      .filter(field => !mapping[field.key] || mapping[field.key] === "_EMPTY");
 
     if (missingRequired.length > 0) {
       const missingFields = missingRequired.map(field => field.label).join(", ");

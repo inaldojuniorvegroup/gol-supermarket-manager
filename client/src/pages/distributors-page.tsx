@@ -604,7 +604,11 @@ export default function DistributorsPage() {
                     {showMapping && (
                       <div>
                         {/* Column Mapping Component */}
-                        <ColumnMapping columns={excelColumns} onMappingComplete={handleMappingComplete} />
+                        <ColumnMapping
+                          excelColumns={excelColumns}
+                          onMappingComplete={handleMappingComplete}
+                          isLoading={importProductsMutation.isPending}
+                        />
                       </div>
                     )}
                     {!showMapping && (
