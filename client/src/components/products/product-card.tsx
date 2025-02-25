@@ -63,16 +63,21 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
       transition={{ duration: 0.2 }}
     >
       <Card className="group relative h-full overflow-hidden hover:shadow-lg transition-all duration-200">
-        {/* Badges no topo do card */}
-        <div className="absolute top-2 left-2 right-2 z-10 flex justify-between items-center gap-2">
-          {product.description && (
-            <Badge variant="secondary" className="flex-shrink-0">
+        {/* Badges mostrando Departamento e Grupo */}
+        <div className="absolute top-2 left-2 right-2 z-10 flex flex-col gap-1">
+          <div className="flex justify-between items-center gap-2">
+            <Badge variant="outline" className="flex items-center gap-1">
+              <FolderOpen className="h-3 w-3" />
               {product.description}
             </Badge>
-          )}
-          {product.isSpecialOffer && (
-            <Badge variant="destructive" className="flex-shrink-0">
-              Special Offer
+            {product.isSpecialOffer && (
+              <Badge variant="destructive">Oferta Especial</Badge>
+            )}
+          </div>
+          {product.grupo && (
+            <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+              <Folder className="h-3 w-3" />
+              {product.grupo}
             </Badge>
           )}
         </div>
@@ -148,22 +153,20 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
           </div>
 
           <div className="space-y-2">
-            {/* Mostrar o Departamento e Grupo */}
-            <div className="flex flex-col gap-1">
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <FolderOpen className="h-4 w-4" />
-                {product.description}
-              </p>
-              {product.grupo && (
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Folder className="h-4 w-4" />
-                  {product.grupo}
-                </p>
-              )}
+            <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Tag className="h-4 w-4" />
+                <span>Código: {product.itemCode}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Barcode className="h-4 w-4" />
+                <span>EAN: {product.barCode}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Box className="h-4 w-4" />
+                <span>Qtd: {product.boxQuantity} {product.unit}</span>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Código: {product.itemCode}
-            </p>
           </div>
 
           <div className="flex items-center justify-between pt-2">
