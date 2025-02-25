@@ -28,7 +28,7 @@ interface ColumnMappingProps {
 const SYSTEM_FIELDS = [
   { 
     key: "name", 
-    label: "Nome do Produto", 
+    label: "Nome do Produto (DESCRICAO)", 
     defaultColumn: "DESCRICAO",
     required: true,
     alternatives: ["DESCR", "DESC"] 
@@ -56,14 +56,14 @@ const SYSTEM_FIELDS = [
   },
   { 
     key: "description", 
-    label: "Departamento", 
+    label: "Departamento (Categoria)", 
     defaultColumn: "DEPARTAMENTO",
     required: true,
     alternatives: ["DEPTO"] 
   },
   { 
     key: "grupo", 
-    label: "Grupo de Produtos", 
+    label: "Grupo do Produto (Subcategoria)", 
     defaultColumn: "GRUPO",
     required: true,
     alternatives: ["CATEGORIA"] 
