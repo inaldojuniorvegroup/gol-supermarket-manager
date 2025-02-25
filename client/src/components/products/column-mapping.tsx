@@ -27,9 +27,9 @@ interface ColumnMappingProps {
 // Campos essenciais para o sistema
 const SYSTEM_FIELDS = [
   { 
-    key: "name", 
-    label: "Nome do Produto", 
-    defaultColumn: "DESCRICAO",
+    key: "description", 
+    label: "Nome do Produto (campo DESCRIPTION)", 
+    defaultColumn: "DESCRIPTION",
     required: true,
     alternatives: ["DESCR", "DESC", "NOME", "PRODUTO"] 
   },
@@ -55,7 +55,7 @@ const SYSTEM_FIELDS = [
     alternatives: ["EAN", "CODBARRAS", "COD_BARRAS"] 
   },
   { 
-    key: "description", 
+    key: "departamento", 
     label: "Departamento (FRIOS/LACTICNIOS/CONGELADOS, MERCEARIA, etc)", 
     defaultColumn: "DEPARTAMENTO",
     required: true,

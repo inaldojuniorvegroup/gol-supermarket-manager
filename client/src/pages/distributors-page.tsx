@@ -459,8 +459,8 @@ export default function DistributorsPage() {
 
         // Mapear nome do produto (que vem da coluna DESCRICAO)
         if (mapping.name !== '_EMPTY') {
-          product.name = String(row[mapping.name] || '').trim();
-          console.log(`Nome do produto mapeado (${mapping.name}):`, product.name);
+          product.name = String(row[mapping.description] || '').trim();
+          console.log(`Nome do produto mapeado (${mapping.description}):`, product.name);
         }
 
         // Mapear código do item
@@ -483,11 +483,11 @@ export default function DistributorsPage() {
 
         // Mapear departamento (categoria principal)
         if (mapping.description !== '_EMPTY') {
-          product.description = String(row[mapping.description] || '').trim().toUpperCase();
+          product.description = String(row[mapping.departamento] || '').trim().toUpperCase();
           if (!["FRIOS/LACTICNIOS/CONGELADOS", "MERCEARIA", "BEBIDAS", "LIMPEZA", "HORTIFRUTI"].includes(product.description)) {
             console.log(`Aviso: Departamento inválido "${product.description}", será necessário editar manualmente.`);
           }
-          console.log(`Departamento mapeado (${mapping.description}):`, product.description);
+          console.log(`Departamento mapeado (${mapping.departamento}):`, product.description);
         }
 
         // Mapear grupo (subcategoria)
