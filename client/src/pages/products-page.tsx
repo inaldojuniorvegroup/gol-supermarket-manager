@@ -31,17 +31,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Package, Plus } from "lucide-react";
+import { Package, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { useToast } from "@/hooks/use-toast";
 import { ProductCard } from "@/components/products/product-card";
+
+const ITEMS_PER_PAGE = 20; // Mostrar 20 produtos por página
 
 export default function ProductsPage() {
   const [open, setOpen] = useState(false);
   const [selectedDistributor, setSelectedDistributor] = useState<string>("all");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
 
   const { addToCart } = useCart();
   const { toast } = useToast();
@@ -95,7 +98,7 @@ export default function ProductsPage() {
     }
   });
 
-  // Filtra os produtos baseado no papel do usuário
+  // Filtra os produtos baseado no papel do usuário e nos filtros selecionados
   const filteredProducts = products?.filter(product => {
     // Se for um distribuidor, mostrar apenas seus próprios produtos
     if (user?.role === 'distributor') {
@@ -110,6 +113,15 @@ export default function ProductsPage() {
       product.itemCode.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesDistributor && matchesDepartment && matchesSearch;
   });
+
+  // Calcula o total de páginas
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+
+  // Obtém os produtos da página atual
+  const paginatedProducts = filteredProducts.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
 
   const departments = Array.from(new Set(products?.map(p => p.description).filter(Boolean) || []));
 
@@ -321,13 +333,19 @@ export default function ProductsPage() {
               <Input
                 placeholder="Search products..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1); // Reset to first page on search
+                }}
                 className="w-full"
               />
             </div>
             <Select
               value={selectedDepartment}
-              onValueChange={setSelectedDepartment}
+              onValueChange={(value) => {
+                setSelectedDepartment(value);
+                setPage(1); // Reset to first page on filter change
+              }}
             >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by department" />
@@ -343,7 +361,10 @@ export default function ProductsPage() {
             </Select>
             <Select
               value={selectedDistributor}
-              onValueChange={setSelectedDistributor}
+              onValueChange={(value) => {
+                setSelectedDistributor(value);
+                setPage(1); // Reset to first page on filter change
+              }}
             >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by distributor" />
@@ -361,14 +382,41 @@ export default function ProductsPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {filteredProducts?.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onAddToCart={() => addToCart(product)}
-          />
-        ))}
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {paginatedProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onAddToCart={() => addToCart(product)}
+            />
+          ))}
+        </div>
+
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Previous
+            </Button>
+            <span className="flex items-center px-4">
+              Page {page} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
