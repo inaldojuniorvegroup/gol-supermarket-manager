@@ -119,7 +119,7 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
                     {product.grupo && (
                       <div className="flex items-center gap-2 text-sm font-medium text-primary">
                         <Package className="h-4 w-4" />
-                        <span>Department: {product.grupo}</span>
+                        <span>{product.grupo}</span>
                       </div>
                     )}
                     {product.description && (

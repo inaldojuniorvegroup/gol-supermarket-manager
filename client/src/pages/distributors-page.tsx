@@ -261,19 +261,23 @@ export default function DistributorsPage() {
         for (let i = 0; i < jsonData.length; i += batchSize) {
           const batch = jsonData.slice(i, i + batchSize).map((rawProduct: any) => {
             // Log para debug de cada produto
-            console.log("Processando produto:", rawProduct);
+            console.log("Processando produto:", {
+              nome: rawProduct.Nome,
+              departamento: rawProduct.Departamento,
+              codigo: rawProduct.Código
+            });
 
             return {
               name: rawProduct.Nome || "", // Nome do produto
               itemCode: rawProduct.Código || "",
               supplierCode: rawProduct["Cód.Forn."] || "",
               barCode: rawProduct["Cód.Barra"] || "",
-              description: rawProduct.Nome || "", // Nome do produto como descrição
-              unitPrice: rawProduct["Preço Custo"] || 0,
-              boxQuantity: rawProduct.Unid === "case" ? rawProduct.Quantidade || 1 : 1,
-              unit: rawProduct.Unid || "UN",
+              description: rawProduct.Nome || "", // Usando o nome do produto como descrição
+              unitPrice: parseFloat(rawProduct["Preço Custo"]?.toString() || "0"),
+              boxQuantity: parseFloat(rawProduct.Quantidade?.toString() || "1"),
+              unit: rawProduct.Unid || "ea",
               distributorId,
-              grupo: rawProduct.Departamento || "", // Campo Departamento como grupo
+              grupo: rawProduct.Departamento || "", // Campo Departamento exatamente como está no Excel
               imageUrl: "",
               isSpecialOffer: false
             };
