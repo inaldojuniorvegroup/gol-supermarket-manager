@@ -24,14 +24,14 @@ interface ColumnMappingProps {
 }
 
 const SYSTEM_FIELDS = [
-  { key: "name", label: "Nome do Produto" },
-  { key: "itemCode", label: "Código do Item" },
-  { key: "supplierCode", label: "Código do Fornecedor" },
-  { key: "barCode", label: "Código de Barras" },
-  { key: "description", label: "Departamento" },
-  { key: "unitPrice", label: "Preço Unitário" },
-  { key: "boxQuantity", label: "Quantidade por Caixa" },
-  { key: "unit", label: "Unidade" },
+  { key: "name", label: "Nome do Produto", defaultColumn: "Nome" },
+  { key: "itemCode", label: "Código do Item", defaultColumn: "Código" },
+  { key: "supplierCode", label: "Código do Fornecedor", defaultColumn: "Cód.Forn." },
+  { key: "barCode", label: "Código de Barras", defaultColumn: "Cód.Barra" },
+  { key: "description", label: "Departamento", defaultColumn: "Departamento" },
+  { key: "unitPrice", label: "Preço Unitário", defaultColumn: "Preço Custo" },
+  { key: "boxQuantity", label: "Quantidade por Caixa", defaultColumn: "Grupo" },
+  { key: "unit", label: "Unidade", defaultColumn: "Unid." },
 ];
 
 export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = false }: ColumnMappingProps) {
@@ -42,25 +42,39 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
     if (!excelColumns.length) return;
 
     const initialMapping: Record<string, string> = {};
-    SYSTEM_FIELDS.forEach(({ key }) => {
-      // Tenta encontrar uma coluna que corresponda ao campo do sistema
-      const matchingColumn = excelColumns.find(col => 
-        col.toLowerCase().includes(key.toLowerCase()) ||
-        (key === "name" && col.toLowerCase().includes("nome")) ||
-        (key === "itemCode" && (col.toLowerCase().includes("código") || col.toLowerCase().includes("codigo"))) ||
-        (key === "supplierCode" && col.toLowerCase().includes("forn")) ||
-        (key === "barCode" && col.toLowerCase().includes("barra")) ||
-        (key === "description" && col.toLowerCase().includes("depart")) ||
-        (key === "unitPrice" && (col.toLowerCase().includes("preço") || col.toLowerCase().includes("preco"))) ||
-        (key === "boxQuantity" && col.toLowerCase().includes("quant")) ||
-        (key === "unit" && col.toLowerCase().includes("unid"))
-      );
+    SYSTEM_FIELDS.forEach(({ key, defaultColumn }) => {
+      // Tenta encontrar a coluna exata primeiro
+      let matchingColumn = excelColumns.find(col => col === defaultColumn);
+
+      // Se não encontrar a coluna exata, tenta encontrar por similaridade
+      if (!matchingColumn) {
+        matchingColumn = excelColumns.find(col => {
+          const colLower = col.toLowerCase();
+          switch (key) {
+            case "name":
+              return colLower.includes("nome");
+            case "itemCode":
+              return colLower.includes("código") || colLower.includes("codigo");
+            case "supplierCode":
+              return colLower.includes("forn");
+            case "barCode":
+              return colLower.includes("barra");
+            case "description":
+              return colLower.includes("depart");
+            case "unitPrice":
+              return colLower.includes("preço") || colLower.includes("preco") || colLower.includes("custo");
+            case "boxQuantity":
+              return colLower.includes("grupo") || colLower.includes("quant");
+            case "unit":
+              return colLower.includes("unid");
+            default:
+              return false;
+          }
+        });
+      }
 
       if (matchingColumn) {
         initialMapping[key] = matchingColumn;
-      } else {
-        // Se não encontrar correspondência, use a primeira coluna como fallback
-        initialMapping[key] = excelColumns[0];
       }
     });
 
