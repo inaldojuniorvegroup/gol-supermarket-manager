@@ -75,6 +75,9 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
 
       if (matchingColumn) {
         initialMapping[key] = matchingColumn;
+      } else {
+        // Se não encontrar correspondência, use _EMPTY como valor padrão
+        initialMapping[key] = "_EMPTY";
       }
     });
 
@@ -126,13 +129,14 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
               <TableCell>{label}</TableCell>
               <TableCell>
                 <Select
-                  value={mapping[key] || ""}
+                  value={mapping[key] || "_EMPTY"}
                   onValueChange={(value) => handleMappingChange(key, value)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione uma coluna" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="_EMPTY">_EMPTY</SelectItem>
                     {excelColumns.map((column) => (
                       <SelectItem key={column} value={column}>
                         {column}
