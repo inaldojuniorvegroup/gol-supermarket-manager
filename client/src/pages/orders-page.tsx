@@ -38,9 +38,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  FileText, Plus, ShoppingCart, Store as StoreIcon, 
-  Package, Share2 
+import {
+  FileText, Plus, ShoppingCart, Store as StoreIcon,
+  Package, Share2
 } from "lucide-react";
 
 // Interface para os dados do pedido
@@ -73,17 +73,17 @@ export default function OrdersPage() {
   const [open, setOpen] = useState(false);
 
   const handleShareOrder = async (orderId: number) => {
-    const shareUrl = `${window.location.origin}/orders/share/${orderId}`;
+    const shareUrl = `${window.location.origin}/orders/share/${orderId}?view=vendor`;
     try {
       await navigator.clipboard.writeText(shareUrl);
       toast({
-        title: "Link copied",
-        description: "Share link has been copied to clipboard",
+        title: "Link copiado",
+        description: "Link para visualização do vendedor foi copiado para a área de transferência.",
       });
     } catch (err) {
       toast({
-        title: "Error",
-        description: "Failed to copy link to clipboard",
+        title: "Erro",
+        description: "Não foi possível copiar o link para a área de transferência",
         variant: "destructive",
       });
     }
@@ -147,7 +147,7 @@ export default function OrdersPage() {
         <p className="text-muted-foreground">
           Ocorreu um erro ao carregar os pedidos. Por favor, tente novamente mais tarde.
         </p>
-        <Button 
+        <Button
           onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/orders"] })}
           variant="outline"
         >
@@ -297,9 +297,9 @@ export default function OrdersPage() {
                       fileName={`pedido-${order.id}.pdf`}
                     >
                       {({ loading }) => (
-                        <Button 
-                          variant="outline" 
-                          size="icon" 
+                        <Button
+                          variant="outline"
+                          size="icon"
                           disabled={loading}
                           title="Download PDF"
                         >

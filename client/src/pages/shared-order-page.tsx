@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Order } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useParams } from "wouter";
+import { useParams, useSearch } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ShoppingCart, Store as StoreIcon, Package } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,6 +31,8 @@ interface OrderWithDetails extends Order {
       id: number;
       name: string;
       itemCode: string;
+      supplierCode: string;
+      barCode: string;
     } | null;
   }> | null;
 }
@@ -39,6 +41,8 @@ export default function SharedOrderPage() {
   const { id } = useParams<{ id: string }>();
   const orderId = parseInt(id);
   const { toast } = useToast();
+  const search = useSearch();
+  const isVendorView = new URLSearchParams(search).get('view') === 'vendor';
   const [editedItems, setEditedItems] = useState<{[key: number]: { quantity: string; price: string }}>({});
 
   const { data: order, isLoading, error } = useQuery<OrderWithDetails>({
@@ -150,7 +154,17 @@ export default function SharedOrderPage() {
                   <div key={item.id} className="flex items-center gap-4 p-2 rounded-lg border">
                     <div className="flex-1">
                       <p className="font-medium">{item.product?.name || "Product not found"}</p>
-                      <p className="text-sm text-muted-foreground">Code: {item.product?.itemCode}</p>
+                      {isVendorView ? (
+                        <p className="text-sm text-muted-foreground">
+                          Código do Fornecedor: {item.product?.supplierCode}
+                        </p>
+                      ) : (
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <p>Código: {item.product?.itemCode}</p>
+                          <p>Código do Fornecedor: {item.product?.supplierCode}</p>
+                          <p>Código de Barras: {item.product?.barCode}</p>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Input
