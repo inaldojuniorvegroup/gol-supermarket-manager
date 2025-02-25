@@ -253,6 +253,7 @@ export default function DistributorsPage() {
         // Log do primeiro produto e suas colunas para debug
         console.log("Primeiro produto do Excel:", jsonData[0]);
         console.log("Nomes das colunas:", Object.keys(jsonData[0]));
+        console.log(`Valor do grupo:`, jsonData[0].grupo || jsonData[0].Grupo || jsonData[0].GRUPO || jsonData[0].grupo_produto || jsonData[0].GRUPO_PRODUTO || jsonData[0].GrupoProduto || "");
 
         // Processar em lotes de 100 produtos
         const batchSize = 100;
@@ -263,7 +264,7 @@ export default function DistributorsPage() {
             // Log para debug
             console.log(`Produto: ${rawProduct.name || rawProduct.NOME || ""}`);
             console.log(`Campos disponíveis:`, Object.keys(rawProduct));
-            console.log(`Valor do grupo:`, rawProduct.grupo || rawProduct.Grupo || rawProduct.GRUPO || "");
+            console.log(`Valor do grupo:`, rawProduct.grupo || rawProduct.Grupo || rawProduct.GRUPO || rawProduct.grupo_produto || rawProduct.GRUPO_PRODUTO || rawProduct.GrupoProduto || "");
 
             return {
               name: rawProduct.name || rawProduct.NOME || rawProduct.Nome || "",
@@ -275,7 +276,7 @@ export default function DistributorsPage() {
               boxQuantity: rawProduct.boxQuantity || rawProduct.QUANTIDADE || rawProduct.Quantidade || rawProduct.box_quantity || 1,
               unit: rawProduct.unit || rawProduct.UNIDADE || rawProduct.Unidade || "UN",
               distributorId,
-              grupo: (rawProduct.grupo || rawProduct.Grupo || rawProduct.GRUPO)?.toString().trim() || null,
+              grupo: (rawProduct.grupo || rawProduct.Grupo || rawProduct.GRUPO || rawProduct.grupo_produto || rawProduct.GRUPO_PRODUTO || rawProduct.GrupoProduto)?.toString().trim() || null,
               imageUrl: rawProduct.imageUrl || rawProduct.image_url || "",
               isSpecialOffer: rawProduct.isSpecialOffer || false
             };
