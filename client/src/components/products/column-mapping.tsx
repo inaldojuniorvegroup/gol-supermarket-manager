@@ -27,53 +27,53 @@ interface ColumnMappingProps {
 // Campos essenciais para o sistema
 const SYSTEM_FIELDS = [
   { 
-    key: "description", 
-    label: "Nome do Produto (campo DESCRIPTION)", 
+    key: "name", 
+    label: "Nome do Produto", 
     defaultColumn: "DESCRIPTION",
     required: true,
-    alternatives: ["DESCR", "DESC", "NOME", "PRODUTO"] 
+    alternatives: ["DESCR", "DESC", "DESCRICAO", "NOME", "PRODUTO"] 
   },
   { 
     key: "itemCode", 
     label: "Código do Item", 
     defaultColumn: "CODIGO",
     required: true,
-    alternatives: ["COD", "REFERENCIA", "REF"] 
+    alternatives: ["COD", "REFERENCIA", "REF", "CODE"] 
   },
   { 
     key: "supplierCode", 
     label: "Código do Fornecedor", 
-    defaultColumn: "CODFORN",
+    defaultColumn: "COD.FORN",
     required: true,
-    alternatives: ["COD_FORN", "FORNECEDOR", "CODFORNECEDOR"] 
+    alternatives: ["CODFORN", "COD_FORN", "FORNECEDOR", "CODFORNECEDOR"] 
   },
   { 
     key: "barCode", 
     label: "Código de Barras", 
-    defaultColumn: "GTIN",
+    defaultColumn: "COD.BARRA",
     required: true,
-    alternatives: ["EAN", "CODBARRAS", "COD_BARRAS"] 
+    alternatives: ["GTIN", "EAN", "CODBARRAS", "COD_BARRAS", "CODBARRA"] 
   },
   { 
-    key: "departamento", 
-    label: "Departamento (FRIOS/LACTICNIOS/CONGELADOS, MERCEARIA, etc)", 
+    key: "description", 
+    label: "Departamento (ex: FRIOS/LACTICNIOS/CONGELADOS)", 
     defaultColumn: "DEPARTAMENTO",
     required: true,
-    alternatives: ["DEPTO", "SETOR", "SECAO"] 
+    alternatives: ["DEPTO", "SETOR", "SECAO", "CATEGORIA"] 
   },
   { 
     key: "grupo", 
-    label: "Grupo do Produto (Subcategoria)", 
+    label: "Grupo do Produto (ex: MASSA DE PASTEL)", 
     defaultColumn: "GRUPO",
     required: true,
-    alternatives: ["CATEGORIA", "LINHA", "FAMILIA"] 
+    alternatives: ["CATEGORIA", "LINHA", "FAMILIA", "SUBCATEGORIA"] 
   },
   { 
     key: "unitPrice", 
     label: "Preço Unitário", 
-    defaultColumn: "PRECO",
+    defaultColumn: "PRECO CUSTO",
     required: true,
-    alternatives: ["VALOR", "CUSTO", "PRECOUNIT"] 
+    alternatives: ["VALOR", "CUSTO", "PRECOUNIT", "PRECO", "PRICE"] 
   }
 ];
 
