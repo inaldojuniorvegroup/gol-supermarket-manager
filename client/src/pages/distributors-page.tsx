@@ -260,13 +260,10 @@ export default function DistributorsPage() {
 
         for (let i = 0; i < jsonData.length; i += batchSize) {
           const batch = jsonData.slice(i, i + batchSize).map((rawProduct: any) => {
-            // Garante que o campo grupo seja incluído corretamente
-            const grupo = rawProduct.grupo || rawProduct.Grupo || rawProduct.GRUPO || "";
-
             // Log para debug
             console.log(`Produto: ${rawProduct.name || rawProduct.NOME || ""}`);
             console.log(`Campos disponíveis:`, Object.keys(rawProduct));
-            console.log(`Valor do grupo:`, grupo);
+            console.log(`Valor do grupo:`, rawProduct.grupo || rawProduct.Grupo || rawProduct.GRUPO || "");
 
             return {
               name: rawProduct.name || rawProduct.NOME || rawProduct.Nome || "",
@@ -278,7 +275,7 @@ export default function DistributorsPage() {
               boxQuantity: rawProduct.boxQuantity || rawProduct.QUANTIDADE || rawProduct.Quantidade || rawProduct.box_quantity || 1,
               unit: rawProduct.unit || rawProduct.UNIDADE || rawProduct.Unidade || "UN",
               distributorId,
-              grupo: grupo || null, // Garantir que grupo seja explicitamente null se vazio
+              grupo: (rawProduct.grupo || rawProduct.Grupo || rawProduct.GRUPO)?.toString().trim() || null,
               imageUrl: rawProduct.imageUrl || rawProduct.image_url || "",
               isSpecialOffer: rawProduct.isSpecialOffer || false
             };
