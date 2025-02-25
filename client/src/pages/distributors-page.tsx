@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Distributor, InsertDistributor, insertDistributorSchema, Product, InsertUser, insertUserSchema } from "@shared/schema";
+import { Distributor, InsertDistributor, Product, InsertUser, insertUserSchema, insertDistributorSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -127,6 +127,8 @@ export default function DistributorsPage() {
   const [selectedDistributor, setSelectedDistributor] = useState<number | null>(null);
   const [createUserOpen, setCreateUserOpen] = useState<number | null>(null);
   const { user } = useAuth();
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Buscar distribuidores
   const { data: distributors, isLoading } = useQuery<Distributor[]>({
@@ -138,11 +140,12 @@ export default function DistributorsPage() {
     if (user?.role === 'distributor') {
       return distributor.id === user.distributorId;
     }
-    return true; // Para usuários do Gol Supermarket, mostrar todos
+    return true;
   });
 
-  const { data: products } = useQuery<Product[]>({
-    queryKey: ["/api/products"],
+  // Buscar produtos apenas para o distribuidor selecionado
+  const { data: products, isLoading: loadingProducts } = useQuery<Product[]>({
+    queryKey: ["/api/products", selectedDistributor],
     enabled: selectedDistributor !== null,
   });
 
@@ -244,9 +247,6 @@ export default function DistributorsPage() {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        console.log("Total de produtos encontrados no Excel:", jsonData.length);
-        console.log("Primeiro produto do Excel:", jsonData[0]);
-
         const batchSize = 100;
         const batches = [];
 
@@ -276,8 +276,6 @@ export default function DistributorsPage() {
               isSpecialOffer: false
             };
 
-            // Log do produto mapeado
-            console.log("Produto mapeado:", mappedProduct);
             return mappedProduct;
           }).filter(Boolean); // Remove os produtos null
 
@@ -325,24 +323,13 @@ export default function DistributorsPage() {
 
   const getDistributorProducts = (distributorId: number) => {
     if (!products) return [];
+    return products.filter(product => product.distributorId === distributorId);
+  };
 
-    console.log("Buscando produtos para o distribuidor:", distributorId);
-    console.log("Total de produtos disponíveis:", products.length);
-
-    const filteredProducts = products.filter(product => {
-      const matches = product.distributorId === distributorId;
-      if (matches) {
-        console.log("Produto encontrado:", {
-          id: product.id,
-          nome: product.name,
-          distributorId: product.distributorId
-        });
-      }
-      return matches;
-    });
-
-    console.log("Total de produtos filtrados:", filteredProducts.length);
-    return filteredProducts;
+  // Função para paginar os produtos
+  const getPaginatedProducts = (products: Product[]) => {
+    const startIndex = (page - 1) * ITEMS_PER_PAGE;
+    return products.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   };
 
   if (isLoading) {
@@ -498,7 +485,10 @@ export default function DistributorsPage() {
                     <Button
                       variant="outline"
                       className="flex-1"
-                      onClick={() => setSelectedDistributor(distributor.id)}
+                      onClick={() => {
+                        setSelectedDistributor(distributor.id);
+                        setPage(1); // Reset página ao abrir novo distribuidor
+                      }}
                     >
                       <Package className="h-4 w-4 mr-2" />
                       Ver Catálogo
@@ -511,7 +501,7 @@ export default function DistributorsPage() {
                         Gerencie os produtos deste distribuidor e importe novos itens.
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="flex justify-end mb-4">
+                    <div className="flex justify-between items-center mb-4">
                       <div className="relative">
                         <input
                           type="file"
@@ -526,36 +516,67 @@ export default function DistributorsPage() {
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
-                      {getDistributorProducts(distributor.id).map((product) => (
-                        <Card key={product.id}>
-                          <CardHeader>
-                            <CardTitle className="text-lg">{product.name}</CardTitle>
-                            <CardDescription>Code: {product.itemCode}</CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-2">
-                            <div className="text-sm text-muted-foreground">
-                              {product.description}
-                            </div>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div>
-                                <span className="font-semibold">Unit Price:</span> ${product.unitPrice}
+                      {loadingProducts ? (
+                        // Loading skeleton
+                        [...Array(4)].map((_, i) => (
+                          <Card key={i} className="animate-pulse">
+                            <CardContent className="p-4 space-y-2">
+                              <div className="h-4 bg-muted rounded w-3/4" />
+                              <div className="h-4 bg-muted rounded w-1/2" />
+                            </CardContent>
+                          </Card>
+                        ))
+                      ) : (
+                        getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => (
+                          <Card key={product.id}>
+                            <CardHeader>
+                              <CardTitle className="text-lg">{product.name}</CardTitle>
+                              <CardDescription>Code: {product.itemCode}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-2">
+                              <div className="text-sm text-muted-foreground">
+                                {product.description}
                               </div>
-                              {product.boxPrice && (
+                              <div className="grid grid-cols-2 gap-2 text-sm">
                                 <div>
-                                  <span className="font-semibold">Box Price:</span> ${product.boxPrice}
+                                  <span className="font-semibold">Unit Price:</span> ${product.unitPrice}
                                 </div>
-                              )}
-                              <div>
-                                <span className="font-semibold">Box Quantity:</span> {product.boxQuantity}
+                                {product.boxPrice && (
+                                  <div>
+                                    <span className="font-semibold">Box Price:</span> ${product.boxPrice}
+                                  </div>
+                                )}
+                                <div>
+                                  <span className="font-semibold">Box Quantity:</span> {product.boxQuantity}
+                                </div>
+                                <div>
+                                  <span className="font-semibold">Unit:</span> {product.unit}
+                                </div>
                               </div>
-                              <div>
-                                <span className="font-semibold">Unit:</span> {product.unit}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
                     </div>
+                    {/* Paginação */}
+                    {getDistributorProducts(distributor.id).length > ITEMS_PER_PAGE && (
+                      <div className="flex justify-center gap-2 mt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => setPage(p => Math.max(1, p - 1))}
+                          disabled={page === 1}
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setPage(p => p + 1)}
+                          disabled={page * ITEMS_PER_PAGE >= getDistributorProducts(distributor.id).length}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    )}
                   </DialogContent>
                 </Dialog>
 

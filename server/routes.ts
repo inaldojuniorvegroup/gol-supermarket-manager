@@ -127,9 +127,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Products
-  app.get("/api/products", async (_req, res) => {
-    const products = await storage.getProducts();
-    res.json(products);
+  app.get("/api/products", async (req, res) => {
+    try {
+      const distributorId = req.query.distributorId ? Number(req.query.distributorId) : undefined;
+      const products = await storage.getProducts(distributorId);
+      res.json(products);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   app.post("/api/products", async (req, res) => {
