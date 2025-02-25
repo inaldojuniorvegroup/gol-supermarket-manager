@@ -313,6 +313,7 @@ export default function DistributorsPage() {
           supplierCode: '',
           barCode: '',
           description: '',
+          grupo: '',
           boxQuantity: 1,
           unit: 'un',
           imageUrl: null,
@@ -330,6 +331,30 @@ export default function DistributorsPage() {
         if (mapping.itemCode !== '_EMPTY') {
           product.itemCode = String(row[mapping.itemCode] || '').trim();
           console.log(`Código mapeado (${mapping.itemCode}):`, product.itemCode);
+        }
+
+        // Mapear código de fornecedor
+        if (mapping.supplierCode !== '_EMPTY') {
+          product.supplierCode = String(row[mapping.supplierCode] || '').trim();
+          console.log(`Código do fornecedor mapeado (${mapping.supplierCode}):`, product.supplierCode);
+        }
+
+        // Mapear código de barras
+        if (mapping.barCode !== '_EMPTY') {
+          product.barCode = String(row[mapping.barCode] || '').trim();
+          console.log(`Código de barras mapeado (${mapping.barCode}):`, product.barCode);
+        }
+
+        // Mapear grupo
+        if (mapping.grupo !== '_EMPTY') {
+          product.grupo = String(row[mapping.grupo] || '').trim();
+          console.log(`Grupo mapeado (${mapping.grupo}):`, product.grupo);
+        }
+
+        // Mapear departamento/descrição
+        if (mapping.description !== '_EMPTY') {
+          product.description = String(row[mapping.description] || '').trim();
+          console.log(`Departamento mapeado (${mapping.description}):`, product.description);
         }
 
         // Mapear preço

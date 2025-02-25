@@ -41,6 +41,34 @@ const SYSTEM_FIELDS = [
     alternatives: ["Cod", "Codigo", "Código Produto", "Codigo Produto", "SKU", "Referência", "Ref"] 
   },
   { 
+    key: "supplierCode", 
+    label: "Código do Fornecedor", 
+    defaultColumn: "Cód.Forn.",
+    required: false,
+    alternatives: ["Código Fornecedor", "Cod Forn", "Codigo Fornecedor", "Ref Fornecedor", "CodFor"] 
+  },
+  { 
+    key: "barCode", 
+    label: "Código de Barras", 
+    defaultColumn: "Cód.Barra",
+    required: false,
+    alternatives: ["EAN", "Código EAN", "Codigo Barras", "Código Barras", "GTIN", "Cod Barras", "CodBar"] 
+  },
+  { 
+    key: "grupo", 
+    label: "Grupo", 
+    defaultColumn: "Grupo",
+    required: false,
+    alternatives: ["Grupo Produto", "Categoria", "Linha", "Familia"] 
+  },
+  { 
+    key: "description", 
+    label: "Departamento", 
+    defaultColumn: "Departamento",
+    required: false,
+    alternatives: ["Depto", "Setor", "Area", "Segmento"] 
+  },
+  { 
     key: "unitPrice", 
     label: "Preço Unitário", 
     defaultColumn: "Preço",
