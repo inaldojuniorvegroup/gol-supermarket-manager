@@ -230,7 +230,7 @@ export default function DistributorsPage() {
     }
   });
 
-  // Ajustando a função handleFileUpload para lidar com o campo grupo
+  // Ajustando a função handleFileUpload para lidar com o campo grupo e melhorar o debug
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, distributorId: number) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -250,17 +250,45 @@ export default function DistributorsPage() {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
+        // Log do primeiro produto e suas colunas para debug
+        console.log("Primeiro produto do Excel:", jsonData[0]);
+        console.log("Nomes das colunas:", Object.keys(jsonData[0]));
+
         // Processar em lotes de 100 produtos
         const batchSize = 100;
         const batches = [];
 
         for (let i = 0; i < jsonData.length; i += batchSize) {
-          const batch = jsonData.slice(i, i + batchSize).map((rawProduct: any) => ({
-            ...rawProduct,
-            distributorId,
-            // Garante que o campo grupo seja incluído se existir no Excel
-            grupo: rawProduct.grupo || rawProduct.Grupo || null,
-          }));
+          const batch = jsonData.slice(i, i + batchSize).map((rawProduct: any) => {
+            // Garante que o campo grupo seja incluído corretamente
+            const grupo = rawProduct.grupo || rawProduct.Grupo || rawProduct.GRUPO || "";
+
+            // Log para debug
+            console.log(`Produto: ${rawProduct.name || rawProduct.NOME || ""}`);
+            console.log(`Campos disponíveis:`, Object.keys(rawProduct));
+            console.log(`Valor do grupo:`, grupo);
+
+            return {
+              name: rawProduct.name || rawProduct.NOME || rawProduct.Nome || "",
+              itemCode: rawProduct.itemCode || rawProduct.CODIGO || rawProduct.Codigo || rawProduct.item_code || "",
+              supplierCode: rawProduct.supplierCode || rawProduct.supplier_code || "",
+              barCode: rawProduct.barCode || rawProduct.bar_code || "",
+              description: rawProduct.description || rawProduct.DESCRICAO || rawProduct.Descricao || "",
+              unitPrice: rawProduct.unitPrice || rawProduct.PRECO || rawProduct.Preco || rawProduct.unit_price || "0",
+              boxQuantity: rawProduct.boxQuantity || rawProduct.QUANTIDADE || rawProduct.Quantidade || rawProduct.box_quantity || 1,
+              unit: rawProduct.unit || rawProduct.UNIDADE || rawProduct.Unidade || "UN",
+              distributorId,
+              grupo: grupo || null, // Garantir que grupo seja explicitamente null se vazio
+              imageUrl: rawProduct.imageUrl || rawProduct.image_url || "",
+              isSpecialOffer: rawProduct.isSpecialOffer || false
+            };
+          });
+
+          // Log do primeiro produto do lote antes de enviar
+          if (batch.length > 0) {
+            console.log("Exemplo de produto processado:", batch[0]);
+          }
+
           batches.push(batch);
         }
 
@@ -281,7 +309,8 @@ export default function DistributorsPage() {
           description: `${jsonData.length} produtos foram importados com sucesso!`,
         });
       } catch (error) {
-        console.error('Error reading file:', error);
+        console.error('Erro ao processar arquivo:', error);
+        console.log('Dados do erro:', error);
         toast({
           title: "Erro ao processar arquivo",
           description: error instanceof Error ? error.message : "Falha ao ler o arquivo Excel",

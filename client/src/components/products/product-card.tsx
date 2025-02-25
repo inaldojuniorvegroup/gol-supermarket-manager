@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Product } from "@shared/schema";
 import { Package, Tag, DollarSign, ImageOff, ShoppingCart, Barcode, FileImage, Box, Info } from "lucide-react";
 import { motion } from "framer-motion";
@@ -108,15 +108,15 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
                       <span>Item Code: {product.itemCode}</span>
                     </div>
                     {product.grupo && (
-                      <div className="flex items-center gap-2 text-sm">
+                      <div className="flex items-center gap-2 text-sm font-medium text-primary">
                         <Package className="h-4 w-4" />
                         <span>Grupo: {product.grupo}</span>
                       </div>
                     )}
-                    {product.supplierCode && (
+                    {product.description && (
                       <div className="flex items-center gap-2 text-sm">
                         <FileImage className="h-4 w-4" />
-                        <span>Supplier Code: {product.supplierCode}</span>
+                        <span>Department: {product.description}</span>
                       </div>
                     )}
                     {product.barCode && (
@@ -129,13 +129,6 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
                       <Box className="h-4 w-4" />
                       <span>Box Quantity: {product.boxQuantity} {product.unit}</span>
                     </div>
-                    {product.description && (
-                      <div className="pt-2 border-t">
-                        <p className="text-sm text-muted-foreground">
-                          Department: {product.description}
-                        </p>
-                      </div>
-                    )}
                     <div className="pt-2 border-t">
                       <p className="text-xs text-muted-foreground">
                         Last updated {formatDistanceToNow(new Date(product.updatedAt), { addSuffix: true })}
@@ -147,11 +140,18 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
             </div>
           </div>
 
-          {product.description && (
-            <p className="text-sm text-muted-foreground line-clamp-1">
-              {product.description}
-            </p>
-          )}
+          <div className="space-y-2">
+            {product.grupo && (
+              <p className="text-sm font-medium text-primary">
+                Grupo: {product.grupo}
+              </p>
+            )}
+            {product.description && (
+              <p className="text-sm text-muted-foreground line-clamp-1">
+                {product.description}
+              </p>
+            )}
+          </div>
 
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center gap-1">
