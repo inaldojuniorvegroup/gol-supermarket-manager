@@ -64,8 +64,8 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
     >
       <Card className="group relative h-full overflow-hidden hover:shadow-lg transition-all duration-200">
         {product.isSpecialOffer && (
-          <Badge 
-            variant="destructive" 
+          <Badge
+            variant="destructive"
             className="absolute top-2 right-2 z-10"
           >
             Special Offer
@@ -107,6 +107,12 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
                       <Tag className="h-4 w-4" />
                       <span>Item Code: {product.itemCode}</span>
                     </div>
+                    {product.grupo && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Package className="h-4 w-4" />
+                        <span>Grupo: {product.grupo}</span>
+                      </div>
+                    )}
                     {product.supplierCode && (
                       <div className="flex items-center gap-2 text-sm">
                         <FileImage className="h-4 w-4" />

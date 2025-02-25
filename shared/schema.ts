@@ -39,6 +39,7 @@ export const products = pgTable("products", {
   barCode: text("bar_code"),
   name: text("name").notNull(),
   description: text("description"),
+  grupo: text("grupo"), // Novo campo para grupo
   unitPrice: decimal("unit_price").notNull(),
   previousUnitPrice: decimal("previous_unit_price"),
   boxPrice: decimal("box_price"),

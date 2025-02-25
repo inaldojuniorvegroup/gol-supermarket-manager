@@ -230,7 +230,7 @@ export default function DistributorsPage() {
     }
   });
 
-  // Ajustando a função handleFileUpload para lidar melhor com o arquivo
+  // Ajustando a função handleFileUpload para lidar com o campo grupo
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, distributorId: number) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -255,9 +255,11 @@ export default function DistributorsPage() {
         const batches = [];
 
         for (let i = 0; i < jsonData.length; i += batchSize) {
-          const batch = jsonData.slice(i, i + batchSize).map(product => ({
-            ...product,
-            distributorId
+          const batch = jsonData.slice(i, i + batchSize).map((rawProduct: any) => ({
+            ...rawProduct,
+            distributorId,
+            // Garante que o campo grupo seja incluído se existir no Excel
+            grupo: rawProduct.grupo || rawProduct.Grupo || null,
           }));
           batches.push(batch);
         }
@@ -526,9 +528,9 @@ export default function DistributorsPage() {
                       </Button>
                     </DialogTrigger>
                     {createUserOpen === distributor.id && (
-                      <CreateUserDialog 
-                        distributorId={distributor.id} 
-                        onClose={() => setCreateUserOpen(null)} 
+                      <CreateUserDialog
+                        distributorId={distributor.id}
+                        onClose={() => setCreateUserOpen(null)}
                       />
                     )}
                   </Dialog>
