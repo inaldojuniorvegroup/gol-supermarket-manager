@@ -457,23 +457,7 @@ export default function DistributorsPage() {
           boxPrice: null
         };
 
-        // Mapear departamento (categoria principal)
-        if (mapping.description !== '_EMPTY') {
-          product.description = String(row[mapping.description] || '').trim();
-          // Garantir que o departamento esteja em maiúsculas e seja uma categoria válida
-          if (product.description.includes('(N)')) {
-            product.description = product.description.replace('(N)', '').trim();
-          }
-          console.log(`Departamento mapeado (${mapping.description}):`, product.description);
-        }
-
-        // Mapear grupo (subcategoria)
-        if (mapping.grupo !== '_EMPTY') {
-          product.grupo = String(row[mapping.grupo] || '').trim();
-          console.log(`Subcategoria mapeada (${mapping.grupo}):`, product.grupo);
-        }
-
-        // Mapear nome do produto (da coluna DESCRICAO)
+        // Mapear nome do produto (que vem da coluna DESCRICAO)
         if (mapping.name !== '_EMPTY') {
           product.name = String(row[mapping.name] || '').trim();
           console.log(`Nome do produto mapeado (${mapping.name}):`, product.name);
@@ -497,6 +481,20 @@ export default function DistributorsPage() {
           console.log(`Código de barras mapeado (${mapping.barCode}):`, product.barCode);
         }
 
+        // Mapear departamento (categoria principal)
+        if (mapping.description !== '_EMPTY') {
+          product.description = String(row[mapping.description] || '').trim().toUpperCase();
+          if (!["FRIOS/LACTICNIOS/CONGELADOS", "MERCEARIA", "BEBIDAS", "LIMPEZA", "HORTIFRUTI"].includes(product.description)) {
+            console.log(`Aviso: Departamento inválido "${product.description}", será necessário editar manualmente.`);
+          }
+          console.log(`Departamento mapeado (${mapping.description}):`, product.description);
+        }
+
+        // Mapear grupo (subcategoria)
+        if (mapping.grupo !== '_EMPTY') {
+          product.grupo = String(row[mapping.grupo] || '').trim();
+          console.log(`Grupo mapeado (${mapping.grupo}):`, product.grupo);
+        }
 
         // Mapear preço
         if (mapping.unitPrice !== '_EMPTY') {

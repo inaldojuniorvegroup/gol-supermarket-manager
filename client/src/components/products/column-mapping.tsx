@@ -28,52 +28,52 @@ interface ColumnMappingProps {
 const SYSTEM_FIELDS = [
   { 
     key: "name", 
-    label: "Nome do Produto (DESCRICAO)", 
+    label: "Nome do Produto", 
     defaultColumn: "DESCRICAO",
     required: true,
-    alternatives: ["DESCR", "DESC"] 
+    alternatives: ["DESCR", "DESC", "NOME", "PRODUTO"] 
   },
   { 
     key: "itemCode", 
     label: "Código do Item", 
     defaultColumn: "CODIGO",
     required: true,
-    alternatives: ["COD"] 
+    alternatives: ["COD", "REFERENCIA", "REF"] 
   },
   { 
     key: "supplierCode", 
     label: "Código do Fornecedor", 
     defaultColumn: "CODFORN",
     required: true,
-    alternatives: ["COD_FORN"] 
+    alternatives: ["COD_FORN", "FORNECEDOR", "CODFORNECEDOR"] 
   },
   { 
     key: "barCode", 
     label: "Código de Barras", 
     defaultColumn: "GTIN",
     required: true,
-    alternatives: ["EAN", "CODBARRAS"] 
+    alternatives: ["EAN", "CODBARRAS", "COD_BARRAS"] 
   },
   { 
     key: "description", 
-    label: "Departamento (ex: FRIOS/LACTICNIOS/CONGELADOS)", 
+    label: "Departamento (FRIOS/LACTICNIOS/CONGELADOS, MERCEARIA, etc)", 
     defaultColumn: "DEPARTAMENTO",
     required: true,
-    alternatives: ["DEPTO"] 
+    alternatives: ["DEPTO", "SETOR", "SECAO"] 
   },
   { 
     key: "grupo", 
-    label: "Grupo (Subcategoria do Produto)", 
+    label: "Grupo do Produto (Subcategoria)", 
     defaultColumn: "GRUPO",
     required: true,
-    alternatives: ["CATEGORIA"] 
+    alternatives: ["CATEGORIA", "LINHA", "FAMILIA"] 
   },
   { 
     key: "unitPrice", 
     label: "Preço Unitário", 
     defaultColumn: "PRECO",
     required: true,
-    alternatives: ["VALOR", "CUSTO"] 
+    alternatives: ["VALOR", "CUSTO", "PRECOUNIT"] 
   }
 ];
 
