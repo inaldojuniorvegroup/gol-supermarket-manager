@@ -288,7 +288,7 @@ export default function DistributorsPage() {
   };
 
 
-  const handleMappingComplete = async (mapping: Record<string, string>, distributorId: number) => {
+  const handleMappingComplete = async (mapping: Record<string, string>) => {
     try {
       console.log('Iniciando importação com mapeamento:', mapping);
       console.log('Dados do arquivo:', fileData);
@@ -298,43 +298,37 @@ export default function DistributorsPage() {
 
       for (let i = 0; i < fileData.length; i += batchSize) {
         const batch = fileData.slice(i, i + batchSize).map((rawProduct: any) => {
-          console.log('Processando produto:', rawProduct);
+          console.log('Processando produto raw:', rawProduct);
 
           // Verificar se o campo existe no mapeamento antes de acessar
-          const name = mapping.name !== '_EMPTY' ? rawProduct[mapping.name]?.toString() : '';
-          const itemCode = mapping.itemCode !== '_EMPTY' ? rawProduct[mapping.itemCode]?.toString() : '';
-          const supplierCode = mapping.supplierCode !== '_EMPTY' ? rawProduct[mapping.supplierCode]?.toString() : '';
-          const barCode = mapping.barCode !== '_EMPTY' ? rawProduct[mapping.barCode]?.toString() : '';
-          const description = mapping.description !== '_EMPTY' ? rawProduct[mapping.description]?.toString() : '';
-
-          // Tratamento especial para valores numéricos
-          let unitPrice = 0;
-          if (mapping.unitPrice !== '_EMPTY' && rawProduct[mapping.unitPrice]) {
-            const priceStr = rawProduct[mapping.unitPrice].toString().replace(',', '.');
-            unitPrice = parseFloat(priceStr) || 0;
-          }
-
-          let boxQuantity = 1;
-          if (mapping.boxQuantity !== '_EMPTY' && rawProduct[mapping.boxQuantity]) {
-            const qtyStr = rawProduct[mapping.boxQuantity].toString().replace(',', '.');
-            boxQuantity = parseFloat(qtyStr) || 1;
-          }
-
-          const unit = mapping.unit !== '_EMPTY' ? rawProduct[mapping.unit]?.toString() || 'un' : 'un';
-
           const mappedProduct = {
-            name,
-            itemCode,
-            supplierCode,
-            barCode,
-            description,
-            unitPrice,
-            boxQuantity,
-            unit,
-            distributorId,
+            name: mapping.name !== '_EMPTY' ? String(rawProduct[mapping.name] || '') : '',
+            itemCode: mapping.itemCode !== '_EMPTY' ? String(rawProduct[mapping.itemCode] || '') : '',
+            supplierCode: mapping.supplierCode !== '_EMPTY' ? String(rawProduct[mapping.supplierCode] || '') : '',
+            barCode: mapping.barCode !== '_EMPTY' ? String(rawProduct[mapping.barCode] || '') : '',
+            description: mapping.description !== '_EMPTY' ? String(rawProduct[mapping.description] || '') : '',
+            unitPrice: 0,
+            boxQuantity: 1,
+            unit: 'un',
+            distributorId: selectedDistributor!,
             imageUrl: '',
             isSpecialOffer: false
           };
+
+          // Tratamento especial para valores numéricos
+          if (mapping.unitPrice !== '_EMPTY' && rawProduct[mapping.unitPrice]) {
+            const priceStr = String(rawProduct[mapping.unitPrice]).replace(',', '.');
+            mappedProduct.unitPrice = parseFloat(priceStr) || 0;
+          }
+
+          if (mapping.boxQuantity !== '_EMPTY' && rawProduct[mapping.boxQuantity]) {
+            const qtyStr = String(rawProduct[mapping.boxQuantity]).replace(',', '.');
+            mappedProduct.boxQuantity = parseFloat(qtyStr) || 1;
+          }
+
+          if (mapping.unit !== '_EMPTY') {
+            mappedProduct.unit = String(rawProduct[mapping.unit] || 'un');
+          }
 
           console.log('Produto mapeado:', mappedProduct);
 
@@ -345,17 +339,19 @@ export default function DistributorsPage() {
           }
 
           return mappedProduct;
-        }).filter(Boolean);
+        }).filter(Boolean); // Remove null entries
 
         if (batch.length > 0) {
-          console.log(`Adicionando lote de ${batch.length} produtos`);
+          console.log(`Adicionando lote de ${batch.length} produtos para importação`);
           batches.push(batch);
         }
       }
 
+      console.log('Total de lotes para importação:', batches.length);
+
       let processedCount = 0;
       for (const batch of batches) {
-        console.log('Enviando lote para importação:', batch);
+        console.log('Enviando lote para API:', batch);
         await importProductsMutation.mutateAsync(batch);
         processedCount += batch.length;
 
@@ -582,7 +578,7 @@ export default function DistributorsPage() {
                     {showMapping && (
                       <ColumnMapping
                         excelColumns={excelColumns}
-                        onMappingComplete={(mapping) => handleMappingComplete(mapping, distributor.id)}
+                        onMappingComplete={(mapping) => handleMappingComplete(mapping)}
                         isLoading={importProductsMutation.isPending}
                       />
                     )}

@@ -77,7 +77,6 @@ const SYSTEM_FIELDS = [
 export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = false }: ColumnMappingProps) {
   const [mapping, setMapping] = useState<Record<string, string>>({});
 
-  // Inicializar mapeamento tentando encontrar correspondências por similaridade
   useEffect(() => {
     if (!excelColumns.length) return;
 
@@ -152,7 +151,7 @@ export function ColumnMapping({ excelColumns, onMappingComplete, isLoading = fal
       <div className="text-sm text-muted-foreground mb-4">
         Por favor, mapeie as colunas do seu arquivo Excel para os campos correspondentes do sistema.
         Selecione a coluna do seu arquivo que corresponde a cada campo necessário.
-        Se algum campo não existir no seu arquivo, selecione "_EMPTY".
+        Se algum campo não existir no seu arquivo, selecione "Não mapear este campo".
       </div>
 
       <Table>
