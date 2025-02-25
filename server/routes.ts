@@ -160,36 +160,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const batch = products.slice(i, i + batchSize);
         for (const product of batch) {
           try {
-            // Mapear campos do Excel para o nosso schema
-            const productData = {
-              name: product.Nome || product.name || '',
-              itemCode: (product.Código || product.itemCode || '').toString(),
-              supplierCode: (product['Cód.Forn.'] || product.supplierCode || '').toString(),
-              barCode: (product['Cód.Barra'] || product.barCode || '').toString(),
-              distributorId: Number(product.distributorId),
-              unitPrice: (product['Preço Custo'] || product.unitPrice || '0').toString(),
-              boxPrice: null,
-              boxQuantity: Number(product.Quantidade || product.boxQuantity || 1),
-              unit: product.Unid || product.unit || 'un',
-              description: product.Departamento || product.description || '',
-              imageUrl: null,
-              isSpecialOffer: false,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            };
-
-            console.log('Dados mapeados do produto:', productData);
-            console.log('ID do distribuidor:', productData.distributorId);
-
-            // Validar dados obrigatórios
-            if (!productData.name || !productData.itemCode) {
+            // Verificar dados obrigatórios
+            if (!product.name || !product.itemCode || !product.distributorId) {
               console.log('Produto ignorado - dados obrigatórios faltando:', product);
               continue;
             }
 
+            // Garantir que os tipos estejam corretos
+            const productData = {
+              name: String(product.name),
+              itemCode: String(product.itemCode),
+              supplierCode: String(product.supplierCode || ''),
+              barCode: String(product.barCode || ''),
+              distributorId: Number(product.distributorId),
+              unitPrice: Number(product.unitPrice || 0),
+              boxPrice: null,
+              boxQuantity: Number(product.boxQuantity || 1),
+              unit: String(product.unit || 'un'),
+              description: String(product.description || ''),
+              imageUrl: null,
+              isSpecialOffer: false
+            };
+
+            console.log('Dados do produto para inserção:', productData);
+
             const parsed = insertProductSchema.parse(productData);
             const savedProduct = await storage.createProduct(parsed);
             importedProducts.push(savedProduct);
+            console.log('Produto importado com sucesso:', savedProduct.id);
           } catch (error) {
             console.error('Error importing product:', product, error);
             // Continue com o próximo produto mesmo se um falhar
