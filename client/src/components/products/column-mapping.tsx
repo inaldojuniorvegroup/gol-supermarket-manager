@@ -56,14 +56,14 @@ const SYSTEM_FIELDS = [
   },
   { 
     key: "description", 
-    label: "Departamento (Categoria)", 
+    label: "Departamento (ex: FRIOS/LACTICNIOS/CONGELADOS)", 
     defaultColumn: "DEPARTAMENTO",
     required: true,
     alternatives: ["DEPTO"] 
   },
   { 
     key: "grupo", 
-    label: "Grupo do Produto (Subcategoria)", 
+    label: "Grupo (Subcategoria do Produto)", 
     defaultColumn: "GRUPO",
     required: true,
     alternatives: ["CATEGORIA"] 

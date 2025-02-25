@@ -326,7 +326,23 @@ export default function DistributorsPage() {
           boxPrice: null
         };
 
-        // Mapear nome do produto (que vem da coluna DESCRICAO)
+        // Mapear departamento (categoria principal)
+        if (mapping.description !== '_EMPTY') {
+          product.description = String(row[mapping.description] || '').trim();
+          // Garantir que o departamento esteja em maiúsculas e seja uma categoria válida
+          if (product.description.includes('(N)')) {
+            product.description = product.description.replace('(N)', '').trim();
+          }
+          console.log(`Departamento mapeado (${mapping.description}):`, product.description);
+        }
+
+        // Mapear grupo (subcategoria)
+        if (mapping.grupo !== '_EMPTY') {
+          product.grupo = String(row[mapping.grupo] || '').trim();
+          console.log(`Subcategoria mapeada (${mapping.grupo}):`, product.grupo);
+        }
+
+        // Mapear nome do produto (da coluna DESCRICAO)
         if (mapping.name !== '_EMPTY') {
           product.name = String(row[mapping.name] || '').trim();
           console.log(`Nome do produto mapeado (${mapping.name}):`, product.name);
@@ -350,17 +366,6 @@ export default function DistributorsPage() {
           console.log(`Código de barras mapeado (${mapping.barCode}):`, product.barCode);
         }
 
-        // Mapear departamento
-        if (mapping.description !== '_EMPTY') {
-          product.description = String(row[mapping.description] || '').trim();
-          console.log(`Departamento mapeado (${mapping.description}):`, product.description);
-        }
-
-        // Mapear grupo de produtos
-        if (mapping.grupo !== '_EMPTY') {
-          product.grupo = String(row[mapping.grupo] || '').trim();
-          console.log(`Grupo mapeado (${mapping.grupo}):`, product.grupo);
-        }
 
         // Mapear preço
         if (mapping.unitPrice !== '_EMPTY') {
@@ -379,11 +384,11 @@ export default function DistributorsPage() {
 
       // Filtrar produtos válidos e verificar campos obrigatórios
       const validProducts = transformedProducts.filter((product, index) => {
-        const isValid = product.name && 
-                       product.itemCode && 
+        const isValid = product.name &&
+                       product.itemCode &&
                        product.description && // Garantir que o departamento está preenchido
                        product.grupo && // Garantir que o grupo está preenchido
-                       product.supplierCode && 
+                       product.supplierCode &&
                        product.barCode;
 
         if (!isValid) {
