@@ -20,14 +20,26 @@ export default function ImportExcel() {
   const importMutation = useMutation({
     mutationFn: async (data: any[]) => {
       const res = await apiRequest("POST", "/api/products/import", data);
-      return res.json();
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || 'Erro ao importar produtos');
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({
         title: "Produtos importados",
-        description: "Os produtos foram importados com sucesso",
+        description: `${data.productsImported} produtos foram importados com sucesso de um total de ${data.totalProducts}`,
       });
+
+      // Se houver erros, mostrar em um toast separado
+      if (data.errors && data.errors.length > 0) {
+        toast({
+          title: "Alguns produtos não foram importados",
+          description: `${data.errors.length} produtos não puderam ser importados. Verifique os dados e tente novamente.`,
+          variant: "destructive",
+        });
+        console.error('Erros na importação:', data.errors);
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -35,6 +47,7 @@ export default function ImportExcel() {
         description: error.message,
         variant: "destructive",
       });
+      console.error('Erro detalhado:', error);
     },
   });
 

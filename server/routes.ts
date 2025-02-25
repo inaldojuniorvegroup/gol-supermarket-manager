@@ -147,6 +147,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/products/import", async (req, res) => {
     try {
       const products = req.body;
+      console.log('Recebendo requisição de importação:', {
+        totalProducts: products.length,
+        sampleProduct: products[0]
+      });
 
       // Log do primeiro produto para debug
       if (products.length > 0) {
@@ -155,53 +159,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const importedProducts = [];
       const batchSize = 50; // Processar em lotes de 50 produtos
+      const errors = [];
 
       for (let i = 0; i < products.length; i += batchSize) {
         const batch = products.slice(i, i + batchSize);
+        console.log(`Processando lote ${i/batchSize + 1} de ${Math.ceil(products.length/batchSize)}`);
+
         for (const product of batch) {
           try {
             // Verificar dados obrigatórios
             if (!product.name || !product.itemCode || !product.distributorId) {
-              console.log('Produto ignorado - dados obrigatórios faltando:', product);
+              const error = `Produto ignorado - dados obrigatórios faltando: ${JSON.stringify(product)}`;
+              console.log(error);
+              errors.push(error);
               continue;
             }
 
             // Garantir que os tipos estejam corretos
             const productData = {
-              name: String(product.name),
-              itemCode: String(product.itemCode),
-              supplierCode: String(product.supplierCode || ''),
-              barCode: String(product.barCode || ''),
+              name: String(product.name).trim(),
+              itemCode: String(product.itemCode).trim(),
+              supplierCode: product.supplierCode ? String(product.supplierCode).trim() : '',
+              barCode: product.barCode ? String(product.barCode).trim() : '',
               distributorId: Number(product.distributorId),
-              unitPrice: Number(product.unitPrice || 0),
+              unitPrice: typeof product.unitPrice === 'number' ? product.unitPrice : 0,
               boxPrice: null,
-              boxQuantity: Number(product.boxQuantity || 1),
-              unit: String(product.unit || 'un'),
-              description: String(product.description || ''),
+              boxQuantity: typeof product.boxQuantity === 'number' ? product.boxQuantity : 1,
+              unit: product.unit ? String(product.unit).trim() : 'un',
+              description: product.description ? String(product.description).trim() : '',
               imageUrl: null,
               isSpecialOffer: false
             };
 
-            console.log('Dados do produto para inserção:', productData);
+            console.log('Tentando inserir produto:', productData);
 
             const parsed = insertProductSchema.parse(productData);
             const savedProduct = await storage.createProduct(parsed);
             importedProducts.push(savedProduct);
             console.log('Produto importado com sucesso:', savedProduct.id);
           } catch (error) {
-            console.error('Error importing product:', product, error);
-            // Continue com o próximo produto mesmo se um falhar
+            const errorMsg = `Erro ao importar produto: ${JSON.stringify(product)}, Error: ${error.message}`;
+            console.error(errorMsg);
+            errors.push(errorMsg);
           }
         }
       }
 
       res.status(201).json({
         message: `${importedProducts.length} produtos importados com sucesso`,
-        products: importedProducts
+        productsImported: importedProducts.length,
+        totalProducts: products.length,
+        errors: errors,
+        success: importedProducts.map(p => p.id)
       });
     } catch (error) {
-      console.error('Error importing products:', error);
-      res.status(400).json({ error: 'Falha ao importar produtos' });
+      console.error('Erro geral na importação:', error);
+      res.status(400).json({ 
+        error: 'Falha ao importar produtos',
+        message: error.message,
+        details: error instanceof Error ? error.stack : null
+      });
     }
   });
 
