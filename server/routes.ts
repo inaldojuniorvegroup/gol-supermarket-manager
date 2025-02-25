@@ -156,17 +156,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             // Mapear campos do Excel para o nosso schema
             const productData = {
-              name: product['Nome'],
-              itemCode: product['Código'],
-              supplierCode: product['Cód.Forn.'] || '',
-              barCode: product['Cód.Barra'] || null,
+              name: product.Nome || product.name || '',
+              itemCode: (product.Código || product.itemCode || '').toString(),
+              supplierCode: (product['Cód.Forn.'] || product.supplierCode || '').toString(),
+              barCode: (product['Cód.Barra'] || product.barCode || '').toString(),
               distributorId: Number(product.distributorId),
-              unitPrice: (product['Preço Custo'] || '0').toString(),
+              unitPrice: (product['Preço Custo'] || product.unitPrice || '0').toString(),
               boxPrice: null,
-              boxQuantity: 1,
-              unit: product['Unid.'] || 'un',
-              description: product['Departamento'] || null,
-              // Campos opcionais
+              boxQuantity: Number(product.Quantidade || product.boxQuantity || 1),
+              unit: product.Unid || product.unit || 'un',
+              description: product.Departamento || product.description || '',
               imageUrl: null,
               isSpecialOffer: false,
               createdAt: new Date(),
@@ -175,6 +174,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             console.log('Dados mapeados do produto:', productData);
             console.log('ID do distribuidor:', productData.distributorId);
+
+            // Validar dados obrigatórios
+            if (!productData.name || !productData.itemCode) {
+              console.log('Produto ignorado - dados obrigatórios faltando:', product);
+              continue;
+            }
 
             const parsed = insertProductSchema.parse(productData);
             const savedProduct = await storage.createProduct(parsed);
