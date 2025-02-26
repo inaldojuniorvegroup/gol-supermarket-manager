@@ -15,7 +15,6 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Dialog,
@@ -47,15 +46,9 @@ import {
   Store as StoreIcon,
   Package,
   Share2,
-  Clock,
   CalendarDays,
-  DollarSign,
-  Tag,
-  ChevronRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 
 const orderStatuses = {
@@ -65,31 +58,6 @@ const orderStatuses = {
   'delivered': { label: 'Entregue', color: 'success' },
   'cancelled': { label: 'Cancelado', color: 'destructive' }
 } as const;
-
-// Interface para os dados do pedido
-interface OrderWithDetails extends Order {
-  store?: {
-    id: number;
-    name: string;
-    code: string;
-  } | null;
-  distributor?: {
-    id: number;
-    name: string;
-    code: string;
-  } | null;
-  items?: Array<{
-    id: number;
-    quantity: string;
-    price: string;
-    total: string;
-    product?: {
-      id: number;
-      name: string;
-      itemCode: string;
-    } | null;
-  }> | null;
-}
 
 export default function OrdersPage() {
   const { toast } = useToast();
@@ -102,18 +70,18 @@ export default function OrdersPage() {
       await navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Link copiado",
-        description: "Link para visualização do vendedor foi copiado para a área de transferência.",
+        description: "Link para visualização do vendedor foi copiado.",
       });
     } catch (err) {
       toast({
         title: "Erro",
-        description: "Não foi possível copiar o link para a área de transferência",
+        description: "Não foi possível copiar o link",
         variant: "destructive",
       });
     }
   };
 
-  const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useQuery<OrderWithDetails[]>({
+  const { data: orders = [], isLoading, error: ordersError } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
     retry: 1,
     onSuccess: (data) => {
@@ -171,7 +139,6 @@ export default function OrdersPage() {
     }
   });
 
-  // Get only the orders for this distributor if logged in as distributor
   const filteredOrders = user?.role === 'distributor'
     ? orders.filter(order => order.distributorId === user?.distributorId)
     : orders;
@@ -193,17 +160,17 @@ export default function OrdersPage() {
     );
   }
 
-  if (ordersLoading) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Pedidos</h1>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
             <Card key={i} className="animate-pulse">
-              <CardContent className="p-6 space-y-4">
-                <div className="h-4 bg-muted rounded w-3/4" />
+              <CardContent className="p-4">
+                <div className="h-4 bg-muted rounded w-3/4 mb-2" />
                 <div className="h-4 bg-muted rounded w-1/2" />
               </CardContent>
             </Card>
@@ -214,16 +181,16 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <ShoppingCart className="h-6 w-6" />
-          <h1 className="text-3xl font-bold">Pedidos</h1>
-        </div>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <ShoppingCart className="h-5 w-5" />
+          Pedidos
+        </h1>
         {user?.role === 'supermarket' && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Pedido
               </Button>
@@ -307,125 +274,72 @@ export default function OrdersPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredOrders?.map((order) => (
-          <Card key={order.id} className="overflow-hidden">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex flex-col">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      Pedido #{order.id}
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-2">
-                      <CalendarDays className="h-4 w-4" />
-                      {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm")}
-                    </CardDescription>
-                  </div>
+          <Card key={order.id} className="hover:shadow-sm transition-shadow">
+            <CardHeader className="p-4 pb-2">
+              <div className="flex justify-between items-start mb-2">
+                <div className="space-y-1">
+                  <CardTitle className="text-base">Pedido #{order.id}</CardTitle>
+                  <CardDescription className="flex items-center gap-1 text-xs">
+                    <CalendarDays className="h-3 w-3" />
+                    {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm")}
+                  </CardDescription>
                 </div>
                 <Badge variant={orderStatuses[order.status as keyof typeof orderStatuses]?.color || 'default'}>
                   {orderStatuses[order.status as keyof typeof orderStatuses]?.label || order.status}
                 </Badge>
               </div>
             </CardHeader>
-
-            <CardContent className="pb-4">
-              <div className="flex flex-col space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <div className="text-sm text-muted-foreground flex items-center gap-2">
-                      <StoreIcon className="h-4 w-4" />
-                      Loja
-                    </div>
-                    <div className="font-medium">{order.store?.name}</div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-sm text-muted-foreground flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      Distribuidor
-                    </div>
-                    <div className="font-medium">{order.distributor?.name}</div>
-                  </div>
+            <CardContent className="p-4 pt-0">
+              <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <StoreIcon className="h-3 w-3" />
+                  <span className="truncate">{order.store?.name}</span>
                 </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <div className="text-sm font-medium flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <Tag className="h-4 w-4" />
-                      Itens do Pedido
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      Total: ${Number(order.total).toFixed(2)}
-                    </span>
-                  </div>
-                  <ScrollArea className="h-[120px]">
-                    <div className="space-y-2">
-                      {order.items?.map((item) => (
-                        <div key={item.id} className="text-sm flex justify-between items-center py-1">
-                          <div className="flex-1">
-                            <div className="font-medium">{item.product?.name}</div>
-                            <div className="text-muted-foreground">
-                              {item.quantity}x • ${Number(item.price).toFixed(2)} cada
-                            </div>
-                          </div>
-                          <div className="font-medium">
-                            ${Number(item.total).toFixed(2)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Package className="h-3 w-3" />
+                  <span className="truncate">{order.distributor?.name}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-sm pt-2 border-t">
+                <span className="font-medium">Total: ${Number(order.total).toFixed(2)}</span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleShareOrder(order.id)}
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                  {order.store && order.distributor && order.items && (
+                    <PDFDownloadLink
+                      document={
+                        <OrderPDF
+                          order={order}
+                          items={order.items}
+                          store={order.store}
+                          distributor={order.distributor}
+                        />
+                      }
+                      fileName={`pedido-${order.id}.pdf`}
+                    >
+                      {({ loading }) => (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          disabled={loading}
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </PDFDownloadLink>
+                  )}
                 </div>
               </div>
             </CardContent>
-
-            <CardFooter className="bg-muted/50 flex justify-between items-center">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                Atualizado {format(new Date(order.updatedAt || order.createdAt), "dd/MM HH:mm")}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleShareOrder(order.id)}
-                  title="Compartilhar pedido"
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-                {order.store && order.distributor && order.items && (
-                  <PDFDownloadLink
-                    document={
-                      <OrderPDF
-                        order={order}
-                        items={order.items}
-                        store={order.store}
-                        distributor={order.distributor}
-                      />
-                    }
-                    fileName={`pedido-${order.id}.pdf`}
-                  >
-                    {({ loading }) => (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        disabled={loading}
-                        title="Baixar PDF"
-                      >
-                        <FileText className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </PDFDownloadLink>
-                )}
-                <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                  Ver Detalhes
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardFooter>
           </Card>
         ))}
       </div>
