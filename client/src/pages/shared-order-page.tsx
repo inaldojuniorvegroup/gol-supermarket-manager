@@ -164,27 +164,31 @@ export default function SharedOrderPage() {
   });
 
   const handleEdit = (itemId: number, field: 'quantity' | 'price', value: string) => {
+    // Garante que o valor não seja negativo
+    const numValue = Math.max(0, Number(value) || 0);
+
     setEditedItems(prev => ({
       ...prev,
       [itemId]: {
         ...(prev[itemId] || { quantity: "0", price: "0" }),
-        [field]: value
+        [field]: numValue.toString()
       }
     }));
   };
 
-  const handleUpdateProduct = async (productId: number, price: string) => {
-    await updateProductMutation.mutate({ productId, price });
-  };
-
   const calculateTotal = (items: OrderWithDetails['items'], editedItems: {[key: number]: { quantity: string; price: string }}) => {
     if (!items) return "0";
+
     return items.reduce((acc, item) => {
       const editedItem = editedItems[item.id] || {
         quantity: item.quantity || "0",
         price: item.price || "0"
       };
-      return acc + (Number(editedItem.quantity) * Number(editedItem.price));
+
+      const quantity = Math.max(0, Number(editedItem.quantity) || 0);
+      const price = Math.max(0, Number(editedItem.price) || 0);
+
+      return acc + (quantity * price);
     }, 0).toFixed(2);
   };
 
@@ -358,7 +362,9 @@ export default function SharedOrderPage() {
                   quantity: item.quantity || "0",
                   price: item.price || "0"
                 };
-                const total = Number(editedItem.quantity) * Number(editedItem.price);
+                const quantity = Math.max(0, Number(editedItem.quantity) || 0);
+                const price = Math.max(0, Number(editedItem.price) || 0);
+                const total = quantity * price;
 
                 return (
                   <div key={item.id} className="bg-muted/30 p-4 rounded-lg">
@@ -427,12 +433,16 @@ export default function SharedOrderPage() {
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
+                          min="0"
+                          step="1"
                           value={editedItem.quantity}
                           onChange={(e) => handleEdit(item.id, 'quantity', e.target.value)}
                           className="w-20"
                         />
                         <Input
                           type="number"
+                          min="0"
+                          step="0.01"
                           value={editedItem.price}
                           onChange={(e) => handleEdit(item.id, 'price', e.target.value)}
                           className="w-24"
