@@ -237,16 +237,26 @@ export class DatabaseStorage implements IStorage {
     return newItem;
   }
   async updateOrderItem(id: number, item: Partial<OrderItem>): Promise<OrderItem> {
+    // Se tiver um novo preço, calcular o novo total
+    let updateData = { ...item };
+    if (item.price) {
+      const [currentItem] = await db
+        .select()
+        .from(orderItems)
+        .where(eq(orderItems.id, id));
+
+      if (currentItem) {
+        const total = Number(currentItem.quantity) * Number(item.price);
+        updateData.total = total.toFixed(2);
+      }
+    }
+
     const [updatedItem] = await db
       .update(orderItems)
-      .set({
-        ...item,
-        total: item.price 
-          ? (await this.getOrderItems(id))[0].quantity * Number(item.price)
-          : undefined
-      })
+      .set(updateData)
       .where(eq(orderItems.id, id))
       .returning();
+
     return updatedItem;
   }
 }

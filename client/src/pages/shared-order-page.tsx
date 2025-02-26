@@ -157,7 +157,8 @@ export default function SharedOrderPage() {
   const updateOrderItemMutation = useMutation({
     mutationFn: async ({ itemId, price }: { itemId: number; price: string }) => {
       const res = await apiRequest("PATCH", `/api/order-items/${itemId}`, {
-        price
+        price,
+        total: Number(price).toFixed(2)
       });
       if (!res.ok) {
         const error = await res.text();
@@ -167,6 +168,10 @@ export default function SharedOrderPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/orders/share/${orderId}`] });
+      toast({
+        title: "Item atualizado",
+        description: "O item do pedido foi atualizado com sucesso",
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -181,6 +186,7 @@ export default function SharedOrderPage() {
     try {
       await updateProductMutation.mutateAsync({ productId, price });
       await updateOrderItemMutation.mutateAsync({ itemId, price });
+
       setEditedItems(prev => ({
         ...prev,
         [itemId]: {
@@ -188,10 +194,8 @@ export default function SharedOrderPage() {
           price
         }
       }));
-      toast({
-        title: "Preço atualizado",
-        description: "O preço foi atualizado com sucesso no produto e no pedido",
-      });
+
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/share/${orderId}`] });
     } catch (error) {
       toast({
         title: "Erro ao atualizar preço",
