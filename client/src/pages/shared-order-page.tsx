@@ -192,7 +192,7 @@ export default function SharedOrderPage() {
                   {new Date(order.createdAt).toLocaleDateString()}
                 </span>
               </div>
-              {user?.role === 'distributor' ? (
+              {(user?.role === 'distributor' || user?.role === 'supermarket') ? (
                 <Select
                   defaultValue={order.status}
                   onValueChange={handleStatusChange}
