@@ -31,20 +31,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Package, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Package, Plus, Truck } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { useToast } from "@/hooks/use-toast";
 import { ProductCard } from "@/components/products/product-card";
-
-const ITEMS_PER_PAGE = 20;
 
 export default function ProductsPage() {
   const [open, setOpen] = useState(false);
   const [selectedDistributor, setSelectedDistributor] = useState<string>("all");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
 
   const { addToCart } = useCart();
   const { toast } = useToast();
@@ -72,15 +69,32 @@ export default function ProductsPage() {
     return matchesDistributor && matchesDepartment && matchesSearch;
   });
 
-  // Agrupa os produtos por subcategoria
-  const groupedProducts = filteredProducts.reduce((acc, product) => {
-    const subcategory = product.description || "Outros";
-    if (!acc[subcategory]) {
-      acc[subcategory] = [];
+  // Primeiro agrupa por distribuidor
+  const groupedByDistributor = filteredProducts.reduce((acc, product) => {
+    if (!acc[product.distributorId]) {
+      acc[product.distributorId] = [];
     }
-    acc[subcategory].push(product);
+    acc[product.distributorId].push(product);
     return acc;
-  }, {} as Record<string, Product[]>);
+  }, {} as Record<number, Product[]>);
+
+  // Depois, para cada distribuidor, agrupa por subcategoria
+  const organizedProducts = Object.entries(groupedByDistributor).map(([distributorId, products]) => {
+    const distributor = distributors.find(d => d.id === parseInt(distributorId));
+    const groupedBySubcategory = products.reduce((acc, product) => {
+      const subcategory = product.description || "Outros";
+      if (!acc[subcategory]) {
+        acc[subcategory] = [];
+      }
+      acc[subcategory].push(product);
+      return acc;
+    }, {} as Record<string, Product[]>);
+
+    return {
+      distributor,
+      categories: groupedBySubcategory
+    };
+  });
 
   // Get unique departments for filter
   const departments = Array.from(new Set(products?.map(p => p.description).filter(Boolean) || []));
@@ -334,19 +348,13 @@ export default function ProductsPage() {
               <Input
                 placeholder="Buscar produtos..."
                 value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full"
               />
             </div>
             <Select
               value={selectedDepartment}
-              onValueChange={(value) => {
-                setSelectedDepartment(value);
-                setPage(1);
-              }}
+              onValueChange={setSelectedDepartment}
             >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filtrar por departamento" />
@@ -362,10 +370,7 @@ export default function ProductsPage() {
             </Select>
             <Select
               value={selectedDistributor}
-              onValueChange={(value) => {
-                setSelectedDistributor(value);
-                setPage(1);
-              }}
+              onValueChange={setSelectedDistributor}
             >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filtrar por distribuidor" />
@@ -383,17 +388,28 @@ export default function ProductsPage() {
         )}
       </div>
 
-      <div className="space-y-8">
-        {Object.entries(groupedProducts).map(([subcategory, products]) => (
-          <div key={subcategory} className="space-y-4">
-            <h2 className="text-2xl font-semibold border-b pb-2">{subcategory}</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAddToCart={() => addToCart(product)}
-                />
+      <div className="space-y-12">
+        {organizedProducts.map(({ distributor, categories }) => (
+          <div key={distributor?.id} className="space-y-6">
+            <div className="flex items-center gap-2 border-b pb-2">
+              <Truck className="h-6 w-6" />
+              <h2 className="text-2xl font-bold">{distributor?.name}</h2>
+            </div>
+
+            <div className="space-y-8">
+              {Object.entries(categories).map(([subcategory, products]) => (
+                <div key={subcategory} className="space-y-4">
+                  <h3 className="text-xl font-semibold">{subcategory}</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {products.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onAddToCart={() => addToCart(product)}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
