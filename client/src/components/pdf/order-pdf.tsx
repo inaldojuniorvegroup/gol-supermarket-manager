@@ -3,127 +3,135 @@ import { Order, OrderItem, Store, Distributor } from "@shared/schema";
 
 const styles = StyleSheet.create({
   page: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     padding: 40,
-    fontSize: 12,
+    fontSize: 10,
+    color: '#334155',
   },
-  headerContainer: {
+  // Cabeçalho
+  header: {
     flexDirection: 'row',
-    borderBottomWidth: 2,
-    borderBottomColor: '#112233',
-    paddingBottom: 20,
     marginBottom: 30,
+    borderBottomWidth: 2,
+    borderBottomColor: '#1e293b',
+    paddingBottom: 20,
   },
-  headerLeft: {
+  headerLogo: {
     flex: 1,
   },
-  headerRight: {
-    width: 200,
-    textAlign: 'right',
-  },
-  logo: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#112233',
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 20,
-    color: '#112233',
-    marginBottom: 4,
-  },
-  subtitle: {
-    color: '#666',
-    fontSize: 10,
-  },
-  orderInfo: {
+  headerInfo: {
+    width: '40%',
     backgroundColor: '#f8fafc',
     padding: 15,
     borderRadius: 4,
+  },
+  companyName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  companyDetail: {
+    fontSize: 10,
+    color: '#64748b',
     marginBottom: 4,
   },
-  section: {
+  invoiceTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 10,
+  },
+  invoiceDetail: {
+    fontSize: 10,
+    marginBottom: 4,
+  },
+  // Grid de informações
+  infoGrid: {
+    flexDirection: 'row',
+    gap: 20,
     marginBottom: 30,
+  },
+  infoColumn: {
+    flex: 1,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    padding: 20,
     borderRadius: 4,
+    padding: 15,
   },
-  sectionTitle: {
+  infoTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#112233',
-    marginBottom: 15,
+    color: '#1e293b',
+    marginBottom: 10,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
-    paddingBottom: 8,
-  },
-  infoGrid: {
-    display: 'flex',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
   },
   infoRow: {
-    width: '45%',
     marginBottom: 8,
   },
-  label: {
+  infoLabel: {
     color: '#64748b',
-    fontSize: 10,
     marginBottom: 2,
   },
-  value: {
-    fontSize: 12,
+  infoValue: {
+    fontSize: 11,
   },
-  table: {
-    width: '100%',
+  // Tabela de produtos
+  productTable: {
+    marginBottom: 30,
   },
   tableHeader: {
-    backgroundColor: '#f8fafc',
     flexDirection: 'row',
-    borderBottomWidth: 2,
-    borderBottomColor: '#e2e8f0',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    fontWeight: 'bold',
-    color: '#334155',
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: -1,
   },
   tableRow: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: -1,
   },
-  col1: { width: '25%' },
-  col2: { width: '15%' },
-  col3: { width: '15%' },
-  col4: { width: '15%', textAlign: 'center' },
-  col5: { width: '15%', textAlign: 'right' },
-  col6: { width: '15%', textAlign: 'right' },
+  tableCell: {
+    padding: 12,
+    fontSize: 10,
+  },
+  productName: { width: '25%', borderRightWidth: 1, borderRightColor: '#e2e8f0' },
+  supplierCode: { width: '15%', borderRightWidth: 1, borderRightColor: '#e2e8f0' },
+  barCode: { width: '20%', borderRightWidth: 1, borderRightColor: '#e2e8f0' },
+  quantity: { width: '10%', borderRightWidth: 1, borderRightColor: '#e2e8f0', textAlign: 'center' },
+  unitPrice: { width: '15%', borderRightWidth: 1, borderRightColor: '#e2e8f0', textAlign: 'right' },
+  total: { width: '15%', textAlign: 'right' },
+  // Seção de totais
   totalSection: {
-    marginTop: 20,
-    paddingTop: 15,
-    borderTopWidth: 2,
-    borderTopColor: '#e2e8f0',
+    marginLeft: 'auto',
+    width: '40%',
   },
   totalRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 5,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
   },
   totalLabel: {
-    width: 100,
+    flex: 1,
     textAlign: 'right',
-    paddingRight: 10,
-    color: '#64748b',
+    paddingRight: 20,
   },
   totalValue: {
-    width: 100,
+    width: '30%',
     textAlign: 'right',
-    fontWeight: 'bold',
   },
+  grandTotal: {
+    backgroundColor: '#f8fafc',
+    padding: 12,
+    marginTop: 4,
+    borderRadius: 4,
+  },
+  // Rodapé
   footer: {
     position: 'absolute',
     bottom: 30,
@@ -152,108 +160,101 @@ export default function OrderPDF({ order, items, store, distributor }: OrderPDFP
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
   });
 
-  // Calcula subtotal e total
+  // Cálculos
   const subtotal = items.reduce((acc, item) => acc + Number(item.total), 0);
-  const tax = subtotal * 0.0; // Por enquanto sem imposto
+  const tax = 0;
   const total = Number(order.total);
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Cabeçalho */}
-        <View style={styles.headerContainer}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.logo}>GOL SUPERMARKET</Text>
-            <Text style={styles.subtitle}>Order Management System</Text>
+        <View style={styles.header}>
+          <View style={styles.headerLogo}>
+            <Text style={styles.companyName}>GOL SUPERMARKET</Text>
+            <Text style={styles.companyDetail}>Order Management System</Text>
+            <Text style={styles.companyDetail}>Excellence in Retail</Text>
           </View>
-          <View style={styles.headerRight}>
-            <Text style={styles.title}>INVOICE</Text>
-            <View style={styles.orderInfo}>
-              <Text>#{order.id}</Text>
-              <Text style={styles.subtitle}>{formatDate(order.createdAt)}</Text>
-              <Text style={styles.subtitle}>Status: {order.status.toUpperCase()}</Text>
+          <View style={styles.headerInfo}>
+            <Text style={styles.invoiceTitle}>INVOICE #{order.id}</Text>
+            <Text style={styles.invoiceDetail}>Date: {formatDate(order.createdAt)}</Text>
+            <Text style={styles.invoiceDetail}>Status: {order.status.toUpperCase()}</Text>
+          </View>
+        </View>
+
+        {/* Grid de informações */}
+        <View style={styles.infoGrid}>
+          <View style={styles.infoColumn}>
+            <Text style={styles.infoTitle}>Store Information</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Name</Text>
+              <Text style={styles.infoValue}>{store.name}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Address</Text>
+              <Text style={styles.infoValue}>{store.address}</Text>
+              <Text style={styles.infoValue}>{store.city}, {store.state}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Phone</Text>
+              <Text style={styles.infoValue}>{store.phone}</Text>
+            </View>
+          </View>
+          <View style={styles.infoColumn}>
+            <Text style={styles.infoTitle}>Distributor Information</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Name</Text>
+              <Text style={styles.infoValue}>{distributor.name}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Contact</Text>
+              <Text style={styles.infoValue}>{distributor.contact}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Phone</Text>
+              <Text style={styles.infoValue}>{distributor.phone}</Text>
             </View>
           </View>
         </View>
 
-        {/* Informações do Cliente e Distribuidor */}
-        <View style={styles.section}>
-          <View style={styles.infoGrid}>
-            <View style={{ width: '48%' }}>
-              <Text style={styles.sectionTitle}>Store Information</Text>
-              <View>
-                <Text style={styles.label}>Name</Text>
-                <Text style={styles.value}>{store.name}</Text>
-              </View>
-              <View style={{ marginTop: 10 }}>
-                <Text style={styles.label}>Address</Text>
-                <Text style={styles.value}>{store.address}</Text>
-                <Text style={styles.value}>{store.city}, {store.state}</Text>
-              </View>
-              <View style={{ marginTop: 10 }}>
-                <Text style={styles.label}>Phone</Text>
-                <Text style={styles.value}>{store.phone}</Text>
-              </View>
-            </View>
-            <View style={{ width: '48%' }}>
-              <Text style={styles.sectionTitle}>Distributor Information</Text>
-              <View>
-                <Text style={styles.label}>Name</Text>
-                <Text style={styles.value}>{distributor.name}</Text>
-              </View>
-              <View style={{ marginTop: 10 }}>
-                <Text style={styles.label}>Contact</Text>
-                <Text style={styles.value}>{distributor.contact}</Text>
-              </View>
-              <View style={{ marginTop: 10 }}>
-                <Text style={styles.label}>Phone</Text>
-                <Text style={styles.value}>{distributor.phone}</Text>
-              </View>
-            </View>
+        {/* Tabela de produtos */}
+        <View style={styles.productTable}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.tableCell, styles.productName]}>Product Name</Text>
+            <Text style={[styles.tableCell, styles.supplierCode]}>Supplier Code</Text>
+            <Text style={[styles.tableCell, styles.barCode]}>Bar Code</Text>
+            <Text style={[styles.tableCell, styles.quantity]}>Qty</Text>
+            <Text style={[styles.tableCell, styles.unitPrice]}>Unit Price</Text>
+            <Text style={[styles.tableCell, styles.total]}>Total</Text>
           </View>
+          {items.map((item) => (
+            <View key={item.id} style={styles.tableRow}>
+              <Text style={[styles.tableCell, styles.productName]}>{item.product?.name || "Product not found"}</Text>
+              <Text style={[styles.tableCell, styles.supplierCode]}>{item.product?.supplierCode}</Text>
+              <Text style={[styles.tableCell, styles.barCode]}>{item.product?.barCode}</Text>
+              <Text style={[styles.tableCell, styles.quantity]}>{item.quantity}</Text>
+              <Text style={[styles.tableCell, styles.unitPrice]}>{formatCurrency(item.price)}</Text>
+              <Text style={[styles.tableCell, styles.total]}>{formatCurrency(item.total)}</Text>
+            </View>
+          ))}
         </View>
 
-        {/* Tabela de Produtos */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Order Details</Text>
-          <View style={styles.table}>
-            <View style={styles.tableHeader}>
-              <Text style={styles.col1}>Product Name</Text>
-              <Text style={styles.col2}>Supplier Code</Text>
-              <Text style={styles.col3}>Bar Code</Text>
-              <Text style={styles.col4}>Quantity</Text>
-              <Text style={styles.col5}>Unit Price</Text>
-              <Text style={styles.col6}>Total</Text>
-            </View>
-            {items.map((item) => (
-              <View key={item.id} style={styles.tableRow}>
-                <Text style={styles.col1}>{item.product?.name || "Product not found"}</Text>
-                <Text style={styles.col2}>{item.product?.supplierCode}</Text>
-                <Text style={styles.col3}>{item.product?.barCode}</Text>
-                <Text style={styles.col4}>{item.quantity}</Text>
-                <Text style={styles.col5}>{formatCurrency(item.price)}</Text>
-                <Text style={styles.col6}>{formatCurrency(item.total)}</Text>
-              </View>
-            ))}
+        {/* Seção de totais */}
+        <View style={styles.totalSection}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Subtotal</Text>
+            <Text style={styles.totalValue}>{formatCurrency(subtotal)}</Text>
           </View>
-
-          {/* Totais */}
-          <View style={styles.totalSection}>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Subtotal:</Text>
-              <Text style={styles.totalValue}>{formatCurrency(subtotal)}</Text>
-            </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Tax:</Text>
-              <Text style={styles.totalValue}>{formatCurrency(tax)}</Text>
-            </View>
-            <View style={styles.totalRow}>
-              <Text style={[styles.totalLabel, { color: '#112233', fontWeight: 'bold' }]}>Total:</Text>
-              <Text style={[styles.totalValue, { color: '#112233' }]}>{formatCurrency(total)}</Text>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Tax</Text>
+            <Text style={styles.totalValue}>{formatCurrency(tax)}</Text>
+          </View>
+          <View style={styles.grandTotal}>
+            <View style={[styles.totalRow, { borderBottomWidth: 0 }]}>
+              <Text style={[styles.totalLabel, { fontWeight: 'bold' }]}>Total</Text>
+              <Text style={[styles.totalValue, { fontWeight: 'bold' }]}>{formatCurrency(total)}</Text>
             </View>
           </View>
         </View>
