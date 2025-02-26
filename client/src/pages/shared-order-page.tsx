@@ -36,6 +36,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 
+
 interface OrderWithDetails extends Order {
   store?: {
     id: number;
@@ -126,16 +127,6 @@ export default function SharedOrderPage() {
     }
   });
 
-  const handleStatusChange = async (newStatus: string) => {
-    if (!order) return;
-
-    try {
-      await updateStatusMutation.mutateAsync(newStatus);
-    } catch (error) {
-      console.error("Erro ao atualizar status:", error);
-    }
-  };
-
   const updateProductMutation = useMutation({
     mutationFn: async ({ productId, price }: { productId: number; price: string }) => {
       const res = await apiRequest("PATCH", `/api/products/${productId}`, {
@@ -207,6 +198,16 @@ export default function SharedOrderPage() {
         description: error instanceof Error ? error.message : "Erro desconhecido",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!order) return;
+
+    try {
+      await updateStatusMutation.mutateAsync(newStatus);
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
     }
   };
 

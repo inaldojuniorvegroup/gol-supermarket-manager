@@ -295,6 +295,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(item);
   });
 
+  app.patch("/api/order-items/:id", async (req, res) => {
+    try {
+      const item = await storage.updateOrderItem(Number(req.params.id), req.body);
+      res.json(item);
+    } catch (error) {
+      console.error('Error updating order item:', error);
+      res.status(500).json({ error: "Failed to update order item" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
