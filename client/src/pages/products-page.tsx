@@ -37,7 +37,7 @@ import { CartSheet } from "@/components/cart/cart-sheet";
 import { useToast } from "@/hooks/use-toast";
 import { ProductCard } from "@/components/products/product-card";
 
-const ITEMS_PER_PAGE = 20; // Mostrar 20 produtos por página
+const ITEMS_PER_PAGE = 20;
 
 export default function ProductsPage() {
   const [open, setOpen] = useState(false);
@@ -58,6 +58,34 @@ export default function ProductsPage() {
     queryKey: ["/api/distributors"],
   });
 
+  // Filtra os produtos baseado nos critérios
+  const filteredProducts = products?.filter(product => {
+    if (user?.role === 'distributor') {
+      return product.distributorId === user.distributorId;
+    }
+
+    const matchesDistributor = selectedDistributor === "all" || product.distributorId === parseInt(selectedDistributor);
+    const matchesDepartment = selectedDepartment === "all" || product.description === selectedDepartment;
+    const matchesSearch = searchTerm === "" ||
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.itemCode.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesDistributor && matchesDepartment && matchesSearch;
+  });
+
+  // Agrupa os produtos por subcategoria
+  const groupedProducts = filteredProducts.reduce((acc, product) => {
+    const subcategory = product.description || "Outros";
+    if (!acc[subcategory]) {
+      acc[subcategory] = [];
+    }
+    acc[subcategory].push(product);
+    return acc;
+  }, {} as Record<string, Product[]>);
+
+  // Get unique departments for filter
+  const departments = Array.from(new Set(products?.map(p => p.description).filter(Boolean) || []));
+
+  // Form setup for product creation
   const form = useForm<InsertProduct>({
     resolver: zodResolver(insertProductSchema),
     defaultValues: {
@@ -98,38 +126,11 @@ export default function ProductsPage() {
     }
   });
 
-  // Filtra os produtos baseado no papel do usuário e nos filtros selecionados
-  const filteredProducts = products?.filter(product => {
-    // Se for um distribuidor, mostrar apenas seus próprios produtos
-    if (user?.role === 'distributor') {
-      return product.distributorId === user.distributorId;
-    }
-
-    // Para usuários do Gol Supermarket, aplicar os filtros normalmente
-    const matchesDistributor = selectedDistributor === "all" || product.distributorId === parseInt(selectedDistributor);
-    const matchesDepartment = selectedDepartment === "all" || product.description === selectedDepartment;
-    const matchesSearch = searchTerm === "" ||
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.itemCode.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesDistributor && matchesDepartment && matchesSearch;
-  });
-
-  // Calcula o total de páginas
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
-
-  // Obtém os produtos da página atual
-  const paginatedProducts = filteredProducts.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
-  );
-
-  const departments = Array.from(new Set(products?.map(p => p.description).filter(Boolean) || []));
-
   if (isLoadingProducts) {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Products</h1>
+          <h1 className="text-3xl font-bold">Produtos</h1>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {[...Array(10)].map((_, i) => (
@@ -146,7 +147,7 @@ export default function ProductsPage() {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Package className="h-8 w-8" />
-            Produtos
+            Catálogo de Produtos
           </h1>
           <div className="flex gap-2">
             {user?.role === 'distributor' && (
@@ -331,11 +332,11 @@ export default function ProductsPage() {
           <div className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-[200px]">
               <Input
-                placeholder="Search products..."
+                placeholder="Buscar produtos..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
-                  setPage(1); // Reset to first page on search
+                  setPage(1);
                 }}
                 className="w-full"
               />
@@ -344,14 +345,14 @@ export default function ProductsPage() {
               value={selectedDepartment}
               onValueChange={(value) => {
                 setSelectedDepartment(value);
-                setPage(1); // Reset to first page on filter change
+                setPage(1);
               }}
             >
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by department" />
+                <SelectValue placeholder="Filtrar por departamento" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
+                <SelectItem value="all">Todos os Departamentos</SelectItem>
                 {departments.map((department) => (
                   <SelectItem key={department} value={department || ""}>
                     {department}
@@ -363,14 +364,14 @@ export default function ProductsPage() {
               value={selectedDistributor}
               onValueChange={(value) => {
                 setSelectedDistributor(value);
-                setPage(1); // Reset to first page on filter change
+                setPage(1);
               }}
             >
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by distributor" />
+                <SelectValue placeholder="Filtrar por distribuidor" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Distributors</SelectItem>
+                <SelectItem value="all">Todos os Distribuidores</SelectItem>
                 {distributors?.map((distributor) => (
                   <SelectItem key={distributor.id} value={distributor.id.toString()}>
                     {distributor.name}
@@ -382,41 +383,21 @@ export default function ProductsPage() {
         )}
       </div>
 
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {paginatedProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onAddToCart={() => addToCart(product)}
-            />
-          ))}
-        </div>
-
-        {/* Paginação */}
-        {totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Previous
-            </Button>
-            <span className="flex items-center px-4">
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
+      <div className="space-y-8">
+        {Object.entries(groupedProducts).map(([subcategory, products]) => (
+          <div key={subcategory} className="space-y-4">
+            <h2 className="text-2xl font-semibold border-b pb-2">{subcategory}</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={() => addToCart(product)}
+                />
+              ))}
+            </div>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
