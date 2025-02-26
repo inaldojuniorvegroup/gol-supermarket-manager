@@ -78,30 +78,68 @@ const styles = StyleSheet.create({
   },
   table: {
     width: '100%',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 4,
+    overflow: 'hidden',
   },
   tableHeader: {
     backgroundColor: '#f8fafc',
     flexDirection: 'row',
     borderBottomWidth: 2,
     borderBottomColor: '#e2e8f0',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    fontWeight: 'bold',
-    color: '#334155',
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
   },
-  col1: { width: '25%' },
-  col2: { width: '15%' },
-  col3: { width: '15%' },
-  col4: { width: '15%', textAlign: 'center' },
-  col5: { width: '15%', textAlign: 'right' },
-  col6: { width: '15%', textAlign: 'right' },
+  tableCell: {
+    padding: 8,
+    borderRightWidth: 1,
+    borderRightColor: '#e2e8f0',
+  },
+  tableCellLast: {
+    padding: 8,
+    borderRightWidth: 0,
+  },
+  col1: { 
+    width: '25%',
+    borderRightWidth: 1,
+    borderRightColor: '#e2e8f0',
+    padding: 8,
+  },
+  col2: { 
+    width: '15%',
+    borderRightWidth: 1,
+    borderRightColor: '#e2e8f0',
+    padding: 8,
+  },
+  col3: { 
+    width: '15%',
+    borderRightWidth: 1,
+    borderRightColor: '#e2e8f0',
+    padding: 8,
+  },
+  col4: { 
+    width: '15%',
+    borderRightWidth: 1,
+    borderRightColor: '#e2e8f0',
+    padding: 8,
+    textAlign: 'center',
+  },
+  col5: { 
+    width: '15%',
+    borderRightWidth: 1,
+    borderRightColor: '#e2e8f0',
+    padding: 8,
+    textAlign: 'right',
+  },
+  col6: { 
+    width: '15%',
+    padding: 8,
+    textAlign: 'right',
+  },
   totalSection: {
     marginTop: 20,
     paddingTop: 15,
@@ -231,12 +269,12 @@ export default function OrderPDF({ order, items, store, distributor }: OrderPDFP
             </View>
             {items.map((item) => (
               <View key={item.id} style={styles.tableRow}>
-                <Text style={styles.col1}>{item.product?.name || "Product not found"}</Text>
-                <Text style={styles.col2}>{item.product?.supplierCode}</Text>
-                <Text style={styles.col3}>{item.product?.barCode}</Text>
-                <Text style={styles.col4}>{item.quantity}</Text>
-                <Text style={styles.col5}>{formatCurrency(item.price)}</Text>
-                <Text style={styles.col6}>{formatCurrency(item.total)}</Text>
+                <Text style={styles.tableCell}>{item.product?.name || "Product not found"}</Text>
+                <Text style={styles.tableCell}>{item.product?.supplierCode}</Text>
+                <Text style={styles.tableCell}>{item.product?.barCode}</Text>
+                <Text style={styles.tableCell}>{item.quantity}</Text>
+                <Text style={styles.tableCell}>{formatCurrency(item.price)}</Text>
+                <Text style={styles.tableCellLast}>{formatCurrency(item.total)}</Text>
               </View>
             ))}
           </View>
