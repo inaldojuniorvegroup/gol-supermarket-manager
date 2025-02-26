@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { useLocation } from "wouter";
 
 const orderStatuses = {
   'pending': { label: 'Pendente', color: 'default' },
@@ -63,6 +64,7 @@ export default function OrdersPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
+  const [, navigate] = useLocation();
 
   const handleShareOrder = async (orderId: number) => {
     const shareUrl = `${window.location.origin}/orders/share/${orderId}?view=vendor`;
@@ -337,6 +339,13 @@ export default function OrdersPage() {
                       )}
                     </PDFDownloadLink>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(`/orders/share/${order.id}`)}
+                  >
+                    Ver Detalhes
+                  </Button>
                 </div>
               </div>
             </CardContent>

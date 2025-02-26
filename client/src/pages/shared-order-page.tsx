@@ -5,7 +5,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useParams, useSearch } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ShoppingCart, Store as StoreIcon, Package, Clock } from "lucide-react";
+import { ShoppingCart, Store as StoreIcon, Package, Clock, Barcode } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface OrderWithDetails extends Order {
   store?: {
@@ -62,6 +63,7 @@ export default function SharedOrderPage() {
   const isVendorView = new URLSearchParams(search).get('view') === 'vendor';
   const { user } = useAuth();
   const [editedItems, setEditedItems] = useState<{[key: number]: { quantity: string; price: string }}>({});
+  const [viewMode, setViewMode] = useState<'supplier' | 'internal'>('supplier');
 
   const { data: order, isLoading } = useQuery<OrderWithDetails>({
     queryKey: [`/api/orders/share/${orderId}`],
@@ -245,6 +247,26 @@ export default function SharedOrderPage() {
             <Package className="h-4 w-4" />
             {order.distributor?.name || "Distribuidor não encontrado"}
           </div>
+
+          {user?.role === 'supermarket' && (
+            <Tabs defaultValue="supplier" className="w-full" onValueChange={(value) => setViewMode(value as 'supplier' | 'internal')}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="supplier" className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Código Fornecedor
+                </TabsTrigger>
+                <TabsTrigger value="internal" className="flex items-center gap-2">
+                  <Barcode className="h-4 w-4" />
+                  Código Interno
+                </TabsTrigger>
+              </TabsList>
+              {/* <TabsContent value="supplier">
+              </TabsContent>
+              <TabsContent value="internal">
+              </TabsContent> */}
+            </Tabs>
+          )}
+
           <div className="space-y-2">
             <p className="text-sm font-medium">Itens:</p>
             <div className="space-y-2">
@@ -259,16 +281,24 @@ export default function SharedOrderPage() {
                   <div key={item.id} className="flex items-center gap-4 p-2 rounded-lg border">
                     <div className="flex-1">
                       <p className="font-medium">{item.product?.name || "Produto não encontrado"}</p>
-                      {isVendorView ? (
+                      {user?.role === 'supermarket' ? (
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          {viewMode === 'supplier' ? (
+                            <>
+                              <p>Código do Fornecedor: {item.product?.supplierCode}</p>
+                              <p>Código de Barras: {item.product?.barCode}</p>
+                            </>
+                          ) : (
+                            <>
+                              <p>Código Interno: {item.product?.itemCode}</p>
+                              <p>Código de Barras: {item.product?.barCode}</p>
+                            </>
+                          )}
+                        </div>
+                      ) : (
                         <p className="text-sm text-muted-foreground">
                           Código do Fornecedor: {item.product?.supplierCode}
                         </p>
-                      ) : (
-                        <div className="text-sm text-muted-foreground space-y-1">
-                          <p>Código: {item.product?.itemCode}</p>
-                          <p>Código do Fornecedor: {item.product?.supplierCode}</p>
-                          <p>Código de Barras: {item.product?.barCode}</p>
-                        </div>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
