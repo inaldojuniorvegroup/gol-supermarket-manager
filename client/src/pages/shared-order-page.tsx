@@ -71,7 +71,7 @@ export default function SharedOrderPage() {
   const updateStatusMutation = useMutation({
     mutationFn: async (newStatus: string) => {
       try {
-        const response = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { 
+        const response = await apiRequest("PATCH", `/api/orders/${orderId}`, { 
           status: newStatus,
           updatedBy: user?.role
         });
