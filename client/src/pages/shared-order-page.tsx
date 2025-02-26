@@ -163,12 +163,43 @@ export default function SharedOrderPage() {
     }
   });
 
-  const handleUpdateProduct = async (productId: number, price: string) => {
+  const updateOrderItemMutation = useMutation({
+    mutationFn: async ({ itemId, price }: { itemId: number; price: string }) => {
+      const res = await apiRequest("PATCH", `/api/order-items/${itemId}`, {
+        price
+      });
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/share/${orderId}`] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar item do pedido",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleUpdateProduct = async (productId: number, price: string, itemId: number) => {
     try {
       await updateProductMutation.mutateAsync({ productId, price });
+      await updateOrderItemMutation.mutateAsync({ itemId, price });
+      setEditedItems(prev => ({
+        ...prev,
+        [itemId]: {
+          ...prev[itemId],
+          price
+        }
+      }));
       toast({
         title: "Preço atualizado",
-        description: "O preço do produto foi atualizado com sucesso",
+        description: "O preço foi atualizado com sucesso no produto e no pedido",
       });
     } catch (error) {
       toast({
@@ -180,7 +211,6 @@ export default function SharedOrderPage() {
   };
 
   const handleEdit = (itemId: number, field: 'quantity' | 'price', value: string) => {
-    // Garante que o valor não seja negativo
     const numValue = Math.max(0, Number(value) || 0);
 
     setEditedItems(prev => ({
@@ -466,8 +496,8 @@ export default function SharedOrderPage() {
                         {item.product && editedItem.price !== item.price && (
                           <Button
                             size="sm"
-                            onClick={() => handleUpdateProduct(item.product!.id, editedItem.price)}
-                            disabled={updateProductMutation.isPending}
+                            onClick={() => handleUpdateProduct(item.product!.id, editedItem.price, item.id)}
+                            disabled={updateProductMutation.isPending || updateOrderItemMutation.isPending}
                           >
                             Atualizar
                           </Button>
