@@ -4,8 +4,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Order, InsertOrder, insertOrderSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import OrderPDF from "@/components/pdf/order-pdf";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -40,7 +38,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  FileText,
   Plus,
   ShoppingCart,
   Store as StoreIcon,
@@ -51,6 +48,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
+import { OrderPDFDownload } from "@/components/orders/order-pdf-download";
 
 const orderStatuses = {
   'pending': { label: 'Pendente', color: 'default' },
@@ -113,21 +111,7 @@ export default function OrdersPage() {
 
   const { data: orders = [], isLoading, error: ordersError } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
-    retry: 1,
-    onSuccess: (data) => {
-      // Filtra os pedidos baseado no papel do usuário
-      if (user?.role === 'distributor') {
-        return data.filter(order => order.distributorId === user?.distributorId);
-      }
-      return data;
-    },
-    onError: () => {
-      toast({
-        title: "Erro ao carregar pedidos",
-        description: "Não foi possível carregar a lista de pedidos. Por favor, tente novamente.",
-        variant: "destructive"
-      });
-    }
+    retry: 1
   });
 
   const { data: stores = [] } = useQuery({
@@ -316,7 +300,7 @@ export default function OrdersPage() {
                     {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm")}
                   </CardDescription>
                 </div>
-                <Badge variant={orderStatuses[order.status as keyof typeof orderStatuses]?.color || 'default'}>
+                <Badge variant={orderStatuses[order.status as keyof typeof orderStatuses]?.color as any || 'default'}>
                   {orderStatuses[order.status as keyof typeof orderStatuses]?.label || order.status}
                 </Badge>
               </div>
@@ -343,30 +327,11 @@ export default function OrdersPage() {
                   >
                     <Share2 className="h-4 w-4" />
                   </Button>
-                  {order.store && order.distributor && order.items && (
-                    <PDFDownloadLink
-                      document={
-                        <OrderPDF
-                          order={order}
-                          items={order.items}
-                          store={order.store}
-                          distributor={order.distributor}
-                        />
-                      }
-                      fileName={`pedido-${order.id}.pdf`}
-                    >
-                      {({ loading }) => (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          disabled={loading}
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </PDFDownloadLink>
-                  )}
+                  <OrderPDFDownload
+                    order={order}
+                    size="icon"
+                    variant="ghost"
+                  />
                   <Button
                     variant="ghost"
                     size="sm"
