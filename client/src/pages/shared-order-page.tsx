@@ -30,19 +30,18 @@ interface OrderWithDetails extends Order {
     name: string;
     code: string;
   } | null;
-  distributorId?: number;
   items?: Array<{
     id: number;
     quantity: string;
     price: string;
     total: string;
-    productId: number;
     product?: {
       id: number;
       name: string;
       itemCode: string;
       supplierCode: string;
       barCode: string;
+      boxQuantity: number;
     } | null;
   }> | null;
 }
@@ -53,7 +52,7 @@ const orderStatuses = {
   'shipped': { label: 'Enviado', color: 'info' },
   'delivered': { label: 'Entregue', color: 'success' },
   'cancelled': { label: 'Cancelado', color: 'destructive' }
-};
+} as const;
 
 export default function SharedOrderPage() {
   const { id } = useParams<{ id: string }>();
@@ -64,28 +63,31 @@ export default function SharedOrderPage() {
   const { user } = useAuth();
   const [editedItems, setEditedItems] = useState<{[key: number]: { quantity: string; price: string }}>({});
 
-  const { data: order, isLoading, error } = useQuery<OrderWithDetails>({
+  const { data: order, isLoading } = useQuery<OrderWithDetails>({
     queryKey: [`/api/orders/share/${orderId}`],
     retry: 1,
-    onSuccess: (data) => {
-      if (user?.role === 'distributor' && data.distributorId !== user.distributorId) {
-        throw new Error("Você não tem permissão para ver este pedido");
-      }
-      return data;
-    },
-    onError: () => {
-      toast({
-        title: "Erro ao carregar pedido",
-        description: "Você não tem permissão para ver este pedido ou ele não existe.",
-        variant: "destructive"
-      });
-    }
   });
 
   const updateStatusMutation = useMutation({
     mutationFn: async (newStatus: string) => {
-      const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status: newStatus });
-      return res.json();
+      try {
+        const response = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { 
+          status: newStatus,
+          updatedBy: user?.role
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || 'Falha ao atualizar o status do pedido');
+        }
+
+        return await response.json();
+      } catch (error) {
+        if (error instanceof Error) {
+          throw new Error(error.message);
+        }
+        throw new Error('Erro desconhecido ao atualizar status');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/orders/share/${orderId}`] });
@@ -97,17 +99,31 @@ export default function SharedOrderPage() {
     onError: (error: Error) => {
       toast({
         title: "Erro ao atualizar status",
-        description: error.message,
+        description: error.message || "Ocorreu um erro ao atualizar o status do pedido.",
         variant: "destructive",
       });
     }
   });
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!order) return;
+
+    try {
+      await updateStatusMutation.mutateAsync(newStatus);
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+    }
+  };
 
   const updateProductMutation = useMutation({
     mutationFn: async ({ productId, price }: { productId: number; price: string }) => {
       const res = await apiRequest("PATCH", `/api/products/${productId}`, {
         unitPrice: price
       });
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error);
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -125,10 +141,6 @@ export default function SharedOrderPage() {
       });
     }
   });
-
-  const handleStatusChange = async (newStatus: string) => {
-    await updateStatusMutation.mutate(newStatus);
-  };
 
   const handleEdit = (itemId: number, field: 'quantity' | 'price', value: string) => {
     setEditedItems(prev => ({
@@ -161,7 +173,7 @@ export default function SharedOrderPage() {
     );
   }
 
-  if (error || !order || (user?.role === 'distributor' && order.distributorId !== user.distributorId)) {
+  if (!order || (user?.role === 'distributor' && order.distributorId !== user.distributorId)) {
     return (
       <div className="container mx-auto p-8">
         <Card>
@@ -175,6 +187,8 @@ export default function SharedOrderPage() {
       </div>
     );
   }
+
+  const canUpdateStatus = user?.role === 'distributor' || user?.role === 'supermarket';
 
   return (
     <div className="container mx-auto p-8">
@@ -192,14 +206,14 @@ export default function SharedOrderPage() {
                   {new Date(order.createdAt).toLocaleDateString()}
                 </span>
               </div>
-              {(user?.role === 'distributor' || user?.role === 'supermarket') ? (
+              {canUpdateStatus ? (
                 <Select
-                  defaultValue={order.status}
+                  value={order.status}
                   onValueChange={handleStatusChange}
                   disabled={updateStatusMutation.isPending}
                 >
                   <SelectTrigger className="w-[200px]">
-                    <SelectValue />
+                    <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(orderStatuses).map(([value, { label }]) => (
@@ -210,7 +224,9 @@ export default function SharedOrderPage() {
                   </SelectContent>
                 </Select>
               ) : (
-                <Badge variant={orderStatuses[order.status as keyof typeof orderStatuses]?.color || 'default'}>
+                <Badge 
+                  variant={orderStatuses[order.status as keyof typeof orderStatuses]?.color as any || 'default'}
+                >
                   {orderStatuses[order.status as keyof typeof orderStatuses]?.label || order.status}
                 </Badge>
               )}
