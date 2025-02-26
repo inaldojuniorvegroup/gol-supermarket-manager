@@ -19,6 +19,7 @@ import { useLocation } from "wouter";
 export default function ProductsPage() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const { addToCart } = useCart();
 
   const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ["/api/products"],
@@ -38,6 +39,13 @@ export default function ProductsPage() {
   // Função para obter os produtos de um distribuidor
   const getDistributorProducts = (distributorId: number) => {
     return products.filter(product => product.distributorId === distributorId);
+  };
+
+  // Função para adicionar ao carrinho
+  const handleAddToCart = (product: Product, quantity: number) => {
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product);
+    }
   };
 
   if (isLoadingDistributors || isLoadingProducts) {
