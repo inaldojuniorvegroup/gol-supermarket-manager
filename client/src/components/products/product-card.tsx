@@ -32,8 +32,8 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
     if (product) {
       onAddToCart(product);
       toast({
-        title: "Added to cart",
-        description: `${product.name} has been added to your cart.`
+        title: "Adicionado ao carrinho",
+        description: `${product.name} foi adicionado ao seu carrinho.`
       });
     }
   };
@@ -169,7 +169,7 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
               <DollarSign className="h-4 w-4 text-primary" />
               <span className="font-semibold text-lg">
@@ -178,12 +178,11 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
             </div>
             <Button
               size="sm"
-              variant="secondary"
-              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
               onClick={handleAddToCart}
+              className="flex items-center"
             >
-              <ShoppingCart className="h-4 w-4 mr-1" />
-              Add
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Adicionar
             </Button>
           </div>
         </CardContent>
