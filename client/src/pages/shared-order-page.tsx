@@ -155,10 +155,10 @@ export default function SharedOrderPage() {
   });
 
   const updateOrderItemMutation = useMutation({
-    mutationFn: async ({ itemId, price }: { itemId: number; price: string }) => {
+    mutationFn: async ({ itemId, price, quantity }: { itemId: number; price: string; quantity: string }) => {
       const res = await apiRequest("PATCH", `/api/order-items/${itemId}`, {
         price,
-        total: Number(price).toFixed(2)
+        quantity
       });
       if (!res.ok) {
         const error = await res.text();
@@ -184,8 +184,18 @@ export default function SharedOrderPage() {
 
   const handleUpdateProduct = async (productId: number, price: string, itemId: number) => {
     try {
+      // Buscar a quantidade atual do item editado
+      const editedItem = editedItems[itemId] || {
+        quantity: order?.items?.find(item => item.id === itemId)?.quantity || "0",
+        price: price
+      };
+
       await updateProductMutation.mutateAsync({ productId, price });
-      await updateOrderItemMutation.mutateAsync({ itemId, price });
+      await updateOrderItemMutation.mutateAsync({ 
+        itemId, 
+        price, 
+        quantity: editedItem.quantity 
+      });
 
       setEditedItems(prev => ({
         ...prev,
