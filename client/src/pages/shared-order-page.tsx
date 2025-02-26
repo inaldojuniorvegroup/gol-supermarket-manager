@@ -5,11 +5,19 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useParams, useSearch } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ShoppingCart, Store as StoreIcon, Package } from "lucide-react";
+import { ShoppingCart, Store as StoreIcon, Package, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 interface OrderWithDetails extends Order {
   store?: {
@@ -22,7 +30,7 @@ interface OrderWithDetails extends Order {
     name: string;
     code: string;
   } | null;
-  distributorId?: number; // Added distributorId
+  distributorId?: number;
   items?: Array<{
     id: number;
     quantity: string;
@@ -39,6 +47,14 @@ interface OrderWithDetails extends Order {
   }> | null;
 }
 
+const orderStatuses = {
+  'pending': { label: 'Pendente', color: 'default' },
+  'processing': { label: 'Em Processamento', color: 'warning' },
+  'shipped': { label: 'Enviado', color: 'info' },
+  'delivered': { label: 'Entregue', color: 'success' },
+  'cancelled': { label: 'Cancelado', color: 'destructive' }
+};
+
 export default function SharedOrderPage() {
   const { id } = useParams<{ id: string }>();
   const orderId = parseInt(id);
@@ -52,7 +68,6 @@ export default function SharedOrderPage() {
     queryKey: [`/api/orders/share/${orderId}`],
     retry: 1,
     onSuccess: (data) => {
-      // Verifica se o distribuidor está tentando acessar um pedido que não é dele
       if (user?.role === 'distributor' && data.distributorId !== user.distributorId) {
         throw new Error("Você não tem permissão para ver este pedido");
       }
@@ -67,6 +82,27 @@ export default function SharedOrderPage() {
     }
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: async (newStatus: string) => {
+      const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status: newStatus });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/share/${orderId}`] });
+      toast({
+        title: "Status atualizado",
+        description: "O status do pedido foi atualizado com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar status",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   const updateProductMutation = useMutation({
     mutationFn: async ({ productId, price }: { productId: number; price: string }) => {
       const res = await apiRequest("PATCH", `/api/products/${productId}`, {
@@ -77,18 +113,22 @@ export default function SharedOrderPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({
-        title: "Product updated",
-        description: "Product price has been updated successfully",
+        title: "Produto atualizado",
+        description: "O preço do produto foi atualizado com sucesso",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error updating product",
+        title: "Erro ao atualizar produto",
         description: error.message,
         variant: "destructive",
       });
     }
   });
+
+  const handleStatusChange = async (newStatus: string) => {
+    await updateStatusMutation.mutate(newStatus);
+  };
 
   const handleEdit = (itemId: number, field: 'quantity' | 'price', value: string) => {
     setEditedItems(prev => ({
@@ -140,25 +180,57 @@ export default function SharedOrderPage() {
     <div className="container mx-auto p-8">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            Order #{order.id}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              Pedido #{order.id}
+            </CardTitle>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  {new Date(order.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              {user?.role === 'distributor' ? (
+                <Select
+                  defaultValue={order.status}
+                  onValueChange={handleStatusChange}
+                  disabled={updateStatusMutation.isPending}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(orderStatuses).map(([value, { label }]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge variant={orderStatuses[order.status as keyof typeof orderStatuses]?.color || 'default'}>
+                  {orderStatuses[order.status as keyof typeof orderStatuses]?.label || order.status}
+                </Badge>
+              )}
+            </div>
+          </div>
           <CardDescription>
-            Status: {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+            Última atualização: {new Date(order.updatedAt || order.createdAt).toLocaleString()}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <StoreIcon className="h-4 w-4" />
-            {order.store?.name || "Store not found"}
+            {order.store?.name || "Loja não encontrada"}
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Package className="h-4 w-4" />
-            {order.distributor?.name || "Distributor not found"}
+            {order.distributor?.name || "Distribuidor não encontrado"}
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium">Items:</p>
+            <p className="text-sm font-medium">Itens:</p>
             <div className="space-y-2">
               {order.items?.map((item) => {
                 const editedItem = editedItems[item.id] || { 
@@ -170,7 +242,7 @@ export default function SharedOrderPage() {
                 return (
                   <div key={item.id} className="flex items-center gap-4 p-2 rounded-lg border">
                     <div className="flex-1">
-                      <p className="font-medium">{item.product?.name || "Product not found"}</p>
+                      <p className="font-medium">{item.product?.name || "Produto não encontrado"}</p>
                       {isVendorView ? (
                         <p className="text-sm text-muted-foreground">
                           Código do Fornecedor: {item.product?.supplierCode}
@@ -203,7 +275,7 @@ export default function SharedOrderPage() {
                           onClick={() => handleUpdateProduct(item.product!.id, editedItem.price)}
                           disabled={updateProductMutation.isPending}
                         >
-                          Update Price
+                          Atualizar Preço
                         </Button>
                       )}
                     </div>
