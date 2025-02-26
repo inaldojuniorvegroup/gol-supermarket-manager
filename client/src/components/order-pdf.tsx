@@ -9,56 +9,112 @@ const styles = StyleSheet.create({
     padding: 30,
   },
   header: {
-    fontSize: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: '#000000',
+    paddingBottom: 10,
     marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 24,
+    marginBottom: 5,
+  },
+  orderInfo: {
+    fontSize: 12,
+    color: '#666666',
   },
   section: {
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    backgroundColor: '#f4f4f4',
+    padding: 5,
     marginBottom: 10,
   },
-  info: {
-    marginBottom: 5,
+  infoGrid: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  infoBlock: {
+    flex: 1,
+    padding: 5,
+  },
+  label: {
+    fontSize: 10,
+    color: '#666666',
+    marginBottom: 2,
+  },
+  value: {
+    fontSize: 12,
   },
   table: {
-    display: 'flex',
     width: '100%',
     marginBottom: 20,
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#000',
-    borderBottomStyle: 'solid',
+    borderBottomColor: '#CCCCCC',
     alignItems: 'center',
     minHeight: 24,
-    fontSize: 12,
   },
   tableHeader: {
-    backgroundColor: '#F4F4F4',
-    fontWeight: 'bold',
+    backgroundColor: '#f4f4f4',
+  },
+  tableHeaderText: {
+    fontSize: 10,
   },
   tableCol: {
-    flex: 1,
-    padding: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 3,
+    fontSize: 10,
   },
-  total: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  tableColCode: {
+    width: '15%',
+  },
+  tableColProduct: {
+    width: '40%',
+  },
+  tableColQty: {
+    width: '15%',
+    textAlign: 'center',
+  },
+  tableColPrice: {
+    width: '15%',
     textAlign: 'right',
+  },
+  tableColTotal: {
+    width: '15%',
+    textAlign: 'right',
+  },
+  totals: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#000000',
+  },
+  totalLabel: {
+    fontSize: 12,
+    marginRight: 10,
+  },
+  totalValue: {
+    fontSize: 12,
+    width: '15%',
+    textAlign: 'right',
   },
   footer: {
     position: 'absolute',
     bottom: 30,
     left: 30,
     right: 30,
-    fontSize: 10,
+    fontSize: 8,
     textAlign: 'center',
-    color: '#666',
+    color: '#666666',
+    borderTopWidth: 1,
+    borderTopColor: '#CCCCCC',
+    paddingTop: 10,
   },
 });
 
@@ -70,71 +126,81 @@ export const OrderPDF = ({ order }: OrderPDFProps) => (
   <Document>
     <Page size="A4" style={styles.page}>
       <View style={styles.header}>
-        <Text>Pedido #{order.id}</Text>
+        <Text style={styles.headerTitle}>Gol Supermarket</Text>
+        <Text style={styles.orderInfo}>Pedido #{order.id}</Text>
+        <Text style={styles.orderInfo}>Data: {format(new Date(order.createdAt), "dd/MM/yyyy")}</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Informações da Loja</Text>
-        <Text style={styles.info}>Nome: {order.store?.name}</Text>
-        <Text style={styles.info}>Código: {order.store?.code}</Text>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Informações do Distribuidor</Text>
-        <Text style={styles.info}>Nome: {order.distributor?.name}</Text>
-        <Text style={styles.info}>Código: {order.distributor?.code}</Text>
+        <Text style={styles.sectionTitle}>Informações do Pedido</Text>
+        <View style={styles.infoGrid}>
+          <View style={styles.infoBlock}>
+            <Text style={styles.label}>Loja</Text>
+            <Text style={styles.value}>{order.store?.name}</Text>
+            <Text style={styles.value}>{order.store?.code}</Text>
+          </View>
+          <View style={styles.infoBlock}>
+            <Text style={styles.label}>Distribuidor</Text>
+            <Text style={styles.value}>{order.distributor?.name}</Text>
+            <Text style={styles.value}>{order.distributor?.code}</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Itens do Pedido</Text>
         <View style={styles.table}>
           <View style={[styles.tableRow, styles.tableHeader]}>
-            <View style={styles.tableCol}>
-              <Text>Produto</Text>
+            <View style={[styles.tableCol, styles.tableColCode]}>
+              <Text style={styles.tableHeaderText}>Código</Text>
             </View>
-            <View style={styles.tableCol}>
-              <Text>Código</Text>
+            <View style={[styles.tableCol, styles.tableColProduct]}>
+              <Text style={styles.tableHeaderText}>Produto</Text>
             </View>
-            <View style={styles.tableCol}>
-              <Text>Qtd</Text>
+            <View style={[styles.tableCol, styles.tableColQty]}>
+              <Text style={styles.tableHeaderText}>Qtd</Text>
             </View>
-            <View style={styles.tableCol}>
-              <Text>Preço</Text>
+            <View style={[styles.tableCol, styles.tableColPrice]}>
+              <Text style={styles.tableHeaderText}>Preço Un.</Text>
             </View>
-            <View style={styles.tableCol}>
-              <Text>Total</Text>
+            <View style={[styles.tableCol, styles.tableColTotal]}>
+              <Text style={styles.tableHeaderText}>Total</Text>
             </View>
           </View>
 
           {order.items?.map((item) => (
             <View key={item.id} style={styles.tableRow}>
-              <View style={styles.tableCol}>
-                <Text>{item.product?.name}</Text>
-              </View>
-              <View style={styles.tableCol}>
+              <View style={[styles.tableCol, styles.tableColCode]}>
                 <Text>{item.product?.supplierCode}</Text>
               </View>
-              <View style={styles.tableCol}>
+              <View style={[styles.tableCol, styles.tableColProduct]}>
+                <Text>{item.product?.name}</Text>
+              </View>
+              <View style={[styles.tableCol, styles.tableColQty]}>
                 <Text>{item.quantity}</Text>
               </View>
-              <View style={styles.tableCol}>
+              <View style={[styles.tableCol, styles.tableColPrice]}>
                 <Text>${Number(item.price).toFixed(2)}</Text>
               </View>
-              <View style={styles.tableCol}>
+              <View style={[styles.tableCol, styles.tableColTotal]}>
                 <Text>${Number(item.total).toFixed(2)}</Text>
               </View>
             </View>
           ))}
         </View>
 
-        <Text style={styles.total}>
-          Total: ${Number(order.total).toFixed(2)}
-        </Text>
+        <View style={styles.totals}>
+          <Text style={styles.totalLabel}>Total do Pedido:</Text>
+          <Text style={styles.totalValue}>${Number(order.total || 0).toFixed(2)}</Text>
+        </View>
       </View>
 
       <View style={styles.footer}>
         <Text>
           Pedido gerado em {format(new Date(), "dd/MM/yyyy 'às' HH:mm")}
+        </Text>
+        <Text>
+          Status: {order.status.toUpperCase()}
         </Text>
       </View>
     </Page>
