@@ -5,7 +5,20 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useParams, useSearch } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ShoppingCart, Store as StoreIcon, Package, Clock, Barcode } from "lucide-react";
+import {
+  ShoppingCart,
+  Store as StoreIcon,
+  Package,
+  Clock,
+  Barcode,
+  CalendarDays,
+  Building2,
+  DollarSign,
+  Tag,
+  FileText,
+  ClipboardList,
+  BookOpen
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +32,9 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
 
 interface OrderWithDetails extends Order {
   store?: {
@@ -75,7 +91,7 @@ export default function SharedOrderPage() {
   const updateStatusMutation = useMutation({
     mutationFn: async (newStatus: string) => {
       try {
-        const response = await apiRequest("PATCH", `/api/orders/${orderId}`, { 
+        const response = await apiRequest("PATCH", `/api/orders/${orderId}`, {
           status: newStatus,
           updatedBy: user?.role
         });
@@ -166,11 +182,15 @@ export default function SharedOrderPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-8">
+      <div className="container mx-auto p-6 max-w-5xl">
         <Card className="animate-pulse">
           <CardContent className="p-6 space-y-4">
-            <div className="h-4 bg-muted rounded w-3/4" />
-            <div className="h-4 bg-muted rounded w-1/2" />
+            <div className="h-8 bg-muted rounded w-1/2" />
+            <div className="h-4 bg-muted rounded w-1/3" />
+            <div className="space-y-2">
+              <div className="h-4 bg-muted rounded w-full" />
+              <div className="h-4 bg-muted rounded w-full" />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -179,7 +199,7 @@ export default function SharedOrderPage() {
 
   if (!order || (user?.role === 'distributor' && order.distributorId !== user.distributorId)) {
     return (
-      <div className="container mx-auto p-8">
+      <div className="container mx-auto p-6 max-w-5xl">
         <Card>
           <CardContent className="p-6">
             <div className="text-center text-destructive">
@@ -195,21 +215,21 @@ export default function SharedOrderPage() {
   const canUpdateStatus = user?.role === 'distributor' || user?.role === 'supermarket';
 
   return (
-    <div className="container mx-auto p-8">
-      <Card>
-        <CardHeader>
+    <div className="container mx-auto p-6 max-w-5xl">
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b bg-muted/30">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5" />
-              Pedido #{order.id}
-            </CardTitle>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  {new Date(order.createdAt).toLocaleDateString()}
-                </span>
-              </div>
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <ClipboardList className="h-6 w-6 text-primary" />
+                Pedido #{order.id}
+              </CardTitle>
+              <CardDescription className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4" />
+                Criado em {format(new Date(order.createdAt), "dd/MM/yyyy 'às' HH:mm")}
+              </CardDescription>
+            </div>
+            <div className="flex flex-col items-end gap-2">
               {canUpdateStatus ? (
                 <Select
                   value={order.status}
@@ -228,124 +248,201 @@ export default function SharedOrderPage() {
                   </SelectContent>
                 </Select>
               ) : (
-                <Badge 
+                <Badge
                   variant={orderStatuses[order.status as keyof typeof orderStatuses]?.color as any || 'default'}
+                  className="h-9 px-4 text-sm"
                 >
                   {orderStatuses[order.status as keyof typeof orderStatuses]?.label || order.status}
                 </Badge>
               )}
+              <span className="text-sm text-muted-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Última atualização: {format(new Date(order.updatedAt || order.createdAt), "dd/MM HH:mm")}
+              </span>
             </div>
           </div>
-          <CardDescription>
-            Última atualização: {new Date(order.updatedAt || order.createdAt).toLocaleString()}
-          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <StoreIcon className="h-4 w-4" />
-            {order.store?.name || "Loja não encontrada"}
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Package className="h-4 w-4" />
-            {order.distributor?.name || "Distribuidor não encontrado"}
+
+        <CardContent className="p-6">
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <div className="space-y-2">
+              <div className="font-medium flex items-center gap-2 text-primary">
+                <Building2 className="h-4 w-4" />
+                Informações da Loja
+              </div>
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-sm text-muted-foreground">Nome</div>
+                    <div className="font-medium">{order.store?.name}</div>
+                  </div>
+                  {order.store?.code && (
+                    <div>
+                      <div className="text-sm text-muted-foreground">Código</div>
+                      <div className="font-medium">{order.store.code}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="font-medium flex items-center gap-2 text-primary">
+                <Package className="h-4 w-4" />
+                Informações do Distribuidor
+              </div>
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-sm text-muted-foreground">Nome</div>
+                    <div className="font-medium">{order.distributor?.name}</div>
+                  </div>
+                  {order.distributor?.code && (
+                    <div>
+                      <div className="text-sm text-muted-foreground">Código</div>
+                      <div className="font-medium">{order.distributor.code}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
           {user?.role === 'supermarket' && !isVendorView && (
-            <Tabs defaultValue="supplier" className="w-full" onValueChange={(value) => setViewMode(value as 'supplier' | 'internal')}>
-              <TabsList className="mb-4">
-                <TabsTrigger value="supplier" className="flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  Código Fornecedor
-                </TabsTrigger>
-                <TabsTrigger value="internal" className="flex items-center gap-2">
-                  <Barcode className="h-4 w-4" />
-                  Código Interno
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="mb-6">
+              <Tabs defaultValue="supplier" className="w-full" onValueChange={(value) => setViewMode(value as 'supplier' | 'internal')}>
+                <TabsList>
+                  <TabsTrigger value="supplier" className="flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Código Fornecedor
+                  </TabsTrigger>
+                  <TabsTrigger value="internal" className="flex items-center gap-2">
+                    <Barcode className="h-4 w-4" />
+                    Código Interno
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           )}
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Itens:</p>
-            <div className="space-y-2">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="font-medium flex items-center gap-2 text-primary">
+                <BookOpen className="h-4 w-4" />
+                Itens do Pedido
+              </div>
+              <div className="text-2xl font-semibold flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                {order.items?.reduce((acc, item) => {
+                  const editedItem = editedItems[item.id] || {
+                    quantity: item.quantity || "0",
+                    price: item.price || "0"
+                  };
+                  return acc + (Number(editedItem.quantity) * Number(editedItem.price));
+                }, 0).toFixed(2)}
+              </div>
+            </div>
+
+            <div className="space-y-3">
               {order.items?.map((item) => {
-                const editedItem = editedItems[item.id] || { 
-                  quantity: item.quantity || "0", 
-                  price: item.price || "0" 
+                const editedItem = editedItems[item.id] || {
+                  quantity: item.quantity || "0",
+                  price: item.price || "0"
                 };
                 const total = Number(editedItem.quantity) * Number(editedItem.price);
 
                 return (
-                  <div key={item.id} className="flex items-center gap-4 p-2 rounded-lg border">
-                    <div className="flex-1">
-                      <p className="font-medium">{item.product?.name || "Produto não encontrado"}</p>
-                      {isVendorView ? (
-                        <div className="text-sm text-muted-foreground">
-                          {showInternalCode ? (
-                            <>
-                              <p>Código Interno: {item.product?.itemCode}</p>
-                              <p>Código de Barras: {item.product?.barCode}</p>
-                            </>
-                          ) : (
-                            <>
-                              <p>Código do Fornecedor: {item.product?.supplierCode}</p>
-                              <p>Código de Barras: {item.product?.barCode}</p>
-                            </>
-                          )}
+                  <div key={item.id} className="bg-muted/30 p-4 rounded-lg">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{item.product?.name || "Produto não encontrado"}</span>
+                          <span className="font-semibold">${total.toFixed(2)}</span>
                         </div>
-                      ) : (
-                        <div className="text-sm text-muted-foreground space-y-1">
-                          {viewMode === 'supplier' ? (
-                            <>
-                              <p>Código do Fornecedor: {item.product?.supplierCode}</p>
-                              <p>Código de Barras: {item.product?.barCode}</p>
-                            </>
-                          ) : (
-                            <>
-                              <p>Código Interno: {item.product?.itemCode}</p>
-                              <p>Código de Barras: {item.product?.barCode}</p>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={editedItem.quantity}
-                        onChange={(e) => handleEdit(item.id, 'quantity', e.target.value)}
-                        className="w-20"
-                      />
-                      <Input
-                        type="number"
-                        value={editedItem.price}
-                        onChange={(e) => handleEdit(item.id, 'price', e.target.value)}
-                        className="w-24"
-                      />
-                      <div className="w-24 text-right">${total.toFixed(2)}</div>
-                      {item.product && editedItem.price !== item.price && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleUpdateProduct(item.product!.id, editedItem.price)}
-                          disabled={updateProductMutation.isPending}
-                        >
-                          Atualizar Preço
-                        </Button>
-                      )}
+
+                        {isVendorView ? (
+                          <div className="text-sm text-muted-foreground grid grid-cols-2 gap-2">
+                            {showInternalCode ? (
+                              <>
+                                <div className="flex items-center gap-1">
+                                  <Tag className="h-3 w-3" />
+                                  Código Interno: {item.product?.itemCode}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Barcode className="h-3 w-3" />
+                                  EAN: {item.product?.barCode}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-1">
+                                  <Tag className="h-3 w-3" />
+                                  Código Fornecedor: {item.product?.supplierCode}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Barcode className="h-3 w-3" />
+                                  EAN: {item.product?.barCode}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground grid grid-cols-2 gap-2">
+                            {viewMode === 'supplier' ? (
+                              <>
+                                <div className="flex items-center gap-1">
+                                  <Tag className="h-3 w-3" />
+                                  Código Fornecedor: {item.product?.supplierCode}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Barcode className="h-3 w-3" />
+                                  EAN: {item.product?.barCode}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-1">
+                                  <Tag className="h-3 w-3" />
+                                  Código Interno: {item.product?.itemCode}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Barcode className="h-3 w-3" />
+                                  EAN: {item.product?.barCode}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          value={editedItem.quantity}
+                          onChange={(e) => handleEdit(item.id, 'quantity', e.target.value)}
+                          className="w-20"
+                        />
+                        <Input
+                          type="number"
+                          value={editedItem.price}
+                          onChange={(e) => handleEdit(item.id, 'price', e.target.value)}
+                          className="w-24"
+                        />
+                        {item.product && editedItem.price !== item.price && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleUpdateProduct(item.product!.id, editedItem.price)}
+                            disabled={updateProductMutation.isPending}
+                          >
+                            Atualizar
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-          </div>
-          <div className="flex items-center gap-2 font-semibold pt-2 border-t">
-            Total: ${order.items?.reduce((acc, item) => {
-              const editedItem = editedItems[item.id] || { 
-                quantity: item.quantity || "0", 
-                price: item.price || "0" 
-              };
-              return acc + (Number(editedItem.quantity) * Number(editedItem.price));
-            }, 0).toFixed(2)}
           </div>
         </CardContent>
       </Card>
