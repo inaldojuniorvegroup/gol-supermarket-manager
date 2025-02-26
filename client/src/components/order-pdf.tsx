@@ -140,13 +140,19 @@ const styles = StyleSheet.create({
     borderTopColor: '#CCCCCC',
     paddingTop: 10,
   },
+  productCodes: {
+    fontSize: 9,
+    color: '#666666',
+    marginTop: 2,
+  }
 });
 
 interface OrderPDFProps {
   order: OrderWithDetails;
+  isVendorView?: boolean;
 }
 
-export const OrderPDF = ({ order }: OrderPDFProps) => {
+export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
   // Calcular subtotal e total
   const subtotal = order.items?.reduce((acc, item) => {
     return acc + (Number(item.total) || 0);
@@ -193,7 +199,14 @@ export const OrderPDF = ({ order }: OrderPDFProps) => {
             {order.items?.map((item) => (
               <View key={item.id} style={styles.tableRow}>
                 <Text style={[styles.tableCell, styles.tableColCode]}>{item.product?.supplierCode}</Text>
-                <Text style={[styles.tableCell, styles.tableColProduct]}>{item.product?.name}</Text>
+                <View style={[styles.tableCell, styles.tableColProduct]}>
+                  <Text>{item.product?.name}</Text>
+                  {!isVendorView && (
+                    <Text style={styles.productCodes}>
+                      Código Interno: {item.product?.itemCode} | EAN: {item.product?.barCode}
+                    </Text>
+                  )}
+                </View>
                 <Text style={[styles.tableCell, styles.tableColQty]}>{item.quantity}</Text>
                 <Text style={[styles.tableCell, styles.tableColPrice]}>
                   ${Number(item.price).toFixed(2)}

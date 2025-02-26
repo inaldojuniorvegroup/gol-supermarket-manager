@@ -340,7 +340,7 @@ export default function SharedOrderPage() {
                   </Badge>
                 )}
                 <PDFDownloadLink
-                  document={<OrderPDF order={order} />}
+                  document={<OrderPDF order={order} isVendorView={isVendorView} />}
                   fileName={`pedido-${order.id}.pdf`}
                 >
                   {({ loading }) => (
