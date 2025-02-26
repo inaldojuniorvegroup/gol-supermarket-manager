@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Order } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -82,6 +82,7 @@ export default function SharedOrderPage() {
   const { user } = useAuth();
   const [editedItems, setEditedItems] = useState<{[key: number]: { quantity: string; price: string }}>({});
   const [viewMode, setViewMode] = useState<'supplier' | 'internal'>('supplier');
+  const [orderTotal, setOrderTotal] = useState("0");
 
   const { data: order, isLoading } = useQuery<OrderWithDetails>({
     queryKey: [`/api/orders/share/${orderId}`],
@@ -176,9 +177,23 @@ export default function SharedOrderPage() {
     await updateProductMutation.mutate({ productId, price });
   };
 
-  const calculateTotal = (quantity: string, price: string) => {
-    return (Number(quantity || 0) * Number(price || 0)).toFixed(2);
+  const calculateTotal = (items: OrderWithDetails['items'], editedItems: {[key: number]: { quantity: string; price: string }}) => {
+    if (!items) return "0";
+    return items.reduce((acc, item) => {
+      const editedItem = editedItems[item.id] || {
+        quantity: item.quantity || "0",
+        price: item.price || "0"
+      };
+      return acc + (Number(editedItem.quantity) * Number(editedItem.price));
+    }, 0).toFixed(2);
   };
+
+  useEffect(() => {
+    if (order?.items) {
+      const newTotal = calculateTotal(order.items, editedItems);
+      setOrderTotal(newTotal);
+    }
+  }, [order?.items, editedItems]);
 
   if (isLoading) {
     return (
@@ -333,13 +348,7 @@ export default function SharedOrderPage() {
               </div>
               <div className="text-2xl font-semibold flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
-                {order.items?.reduce((acc, item) => {
-                  const editedItem = editedItems[item.id] || {
-                    quantity: item.quantity || "0",
-                    price: item.price || "0"
-                  };
-                  return acc + (Number(editedItem.quantity) * Number(editedItem.price));
-                }, 0).toFixed(2)}
+                {orderTotal}
               </div>
             </div>
 
