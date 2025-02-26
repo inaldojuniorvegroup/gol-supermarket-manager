@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   table: {
-    display: 'table',
+    display: 'flex',
     width: '100%',
     marginBottom: 20,
   },
@@ -128,7 +128,7 @@ export const OrderPDF = ({ order }: OrderPDFProps) => (
         </View>
 
         <Text style={styles.total}>
-          Total: ${order.total?.toFixed(2) || 0}
+          Total: ${Number(order.total).toFixed(2)}
         </Text>
       </View>
 
