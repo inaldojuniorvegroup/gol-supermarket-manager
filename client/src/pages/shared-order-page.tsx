@@ -60,7 +60,9 @@ export default function SharedOrderPage() {
   const orderId = parseInt(id);
   const { toast } = useToast();
   const search = useSearch();
-  const isVendorView = new URLSearchParams(search).get('view') === 'vendor';
+  const searchParams = new URLSearchParams(search);
+  const isVendorView = searchParams.get('view') === 'vendor';
+  const showInternalCode = searchParams.get('showInternal') === 'true';
   const { user } = useAuth();
   const [editedItems, setEditedItems] = useState<{[key: number]: { quantity: string; price: string }}>({});
   const [viewMode, setViewMode] = useState<'supplier' | 'internal'>('supplier');
@@ -271,13 +273,27 @@ export default function SharedOrderPage() {
                   quantity: item.quantity || "0", 
                   price: item.price || "0" 
                 };
-                const total = calculateTotal(editedItem.quantity, editedItem.price);
+                const total = Number(editedItem.quantity) * Number(editedItem.price);
 
                 return (
                   <div key={item.id} className="flex items-center gap-4 p-2 rounded-lg border">
                     <div className="flex-1">
                       <p className="font-medium">{item.product?.name || "Produto não encontrado"}</p>
-                      {user?.role === 'supermarket' && !isVendorView ? (
+                      {isVendorView ? (
+                        <div className="text-sm text-muted-foreground">
+                          {showInternalCode ? (
+                            <>
+                              <p>Código Interno: {item.product?.itemCode}</p>
+                              <p>Código de Barras: {item.product?.barCode}</p>
+                            </>
+                          ) : (
+                            <>
+                              <p>Código do Fornecedor: {item.product?.supplierCode}</p>
+                              <p>Código de Barras: {item.product?.barCode}</p>
+                            </>
+                          )}
+                        </div>
+                      ) : (
                         <div className="text-sm text-muted-foreground space-y-1">
                           {viewMode === 'supplier' ? (
                             <>
@@ -291,10 +307,6 @@ export default function SharedOrderPage() {
                             </>
                           )}
                         </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          Código do Fornecedor: {item.product?.supplierCode}
-                        </p>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -310,7 +322,7 @@ export default function SharedOrderPage() {
                         onChange={(e) => handleEdit(item.id, 'price', e.target.value)}
                         className="w-24"
                       />
-                      <div className="w-24 text-right">${total}</div>
+                      <div className="w-24 text-right">${total.toFixed(2)}</div>
                       {item.product && editedItem.price !== item.price && (
                         <Button
                           size="sm"
@@ -332,7 +344,7 @@ export default function SharedOrderPage() {
                 quantity: item.quantity || "0", 
                 price: item.price || "0" 
               };
-              return acc + Number(calculateTotal(editedItem.quantity, editedItem.price));
+              return acc + (Number(editedItem.quantity) * Number(editedItem.price));
             }, 0).toFixed(2)}
           </div>
         </CardContent>
