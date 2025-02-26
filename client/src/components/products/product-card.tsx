@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Product } from "@shared/schema";
-import { Package, Tag, DollarSign, ShoppingCart, Barcode, FileImage, Box, Info, FolderOpen, Folder } from "lucide-react";
+import { Package, Tag, DollarSign, ShoppingCart, Barcode, FileImage, Box, Info, FolderOpen, Folder, Plus, Minus } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -17,11 +17,12 @@ import { formatDistanceToNow } from "date-fns";
 interface ProductCardProps {
   product: Product | null;
   isLoading?: boolean;
-  onAddToCart: (product: Product) => void;
+  onAddToCart: (product: Product, quantity: number) => void;
 }
 
 export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
+  const [quantity, setQuantity] = useState(1);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,12 +31,21 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
 
   const handleAddToCart = () => {
     if (product) {
-      onAddToCart(product);
+      onAddToCart(product, quantity);
       toast({
         title: "Adicionado ao carrinho",
-        description: `${product.name} foi adicionado ao seu carrinho.`
+        description: `${quantity}x ${product.name} foi adicionado ao seu carrinho.`
       });
+      setQuantity(1); // Reset quantity after adding to cart
     }
+  };
+
+  const incrementQuantity = () => {
+    setQuantity(prev => prev + 1);
+  };
+
+  const decrementQuantity = () => {
+    setQuantity(prev => Math.max(1, prev - 1));
   };
 
   if (isLoading || !product) {
@@ -63,7 +73,6 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
       transition={{ duration: 0.2 }}
     >
       <Card className="group relative h-full overflow-hidden hover:shadow-lg transition-all duration-200">
-        {/* Badges mostrando Departamento e Grupo */}
         <div className="absolute top-2 left-2 right-2 z-10 flex flex-col gap-1">
           <div className="flex justify-between items-center gap-2">
             <Badge variant="outline" className="flex items-center gap-1">
@@ -176,14 +185,35 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
                 {Number(product.unitPrice).toFixed(2)}
               </span>
             </div>
-            <Button
-              size="sm"
-              onClick={handleAddToCart}
-              className="flex items-center"
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Adicionar
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-muted rounded-lg">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={decrementQuantity}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="w-8 text-center">{quantity}</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={incrementQuantity}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <Button
+                size="sm"
+                onClick={handleAddToCart}
+                className="flex items-center"
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Adicionar
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

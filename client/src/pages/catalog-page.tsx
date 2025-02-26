@@ -52,6 +52,12 @@ export default function CatalogPage() {
     );
   }
 
+  const handleAddToCart = (product: Product, quantity: number) => {
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between sticky top-0 bg-background z-10 py-4 border-b">
@@ -87,7 +93,7 @@ export default function CatalogPage() {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  onAddToCart={() => addToCart(product)}
+                  onAddToCart={handleAddToCart}
                 />
               ))}
             </div>
