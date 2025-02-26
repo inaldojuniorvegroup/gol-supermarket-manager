@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Order } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useParams, useSearch } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ShoppingCart, Store as StoreIcon, Package } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +22,7 @@ interface OrderWithDetails extends Order {
     name: string;
     code: string;
   } | null;
+  distributorId?: number; // Added distributorId
   items?: Array<{
     id: number;
     quantity: string;
@@ -43,11 +45,26 @@ export default function SharedOrderPage() {
   const { toast } = useToast();
   const search = useSearch();
   const isVendorView = new URLSearchParams(search).get('view') === 'vendor';
+  const { user } = useAuth();
   const [editedItems, setEditedItems] = useState<{[key: number]: { quantity: string; price: string }}>({});
 
   const { data: order, isLoading, error } = useQuery<OrderWithDetails>({
     queryKey: [`/api/orders/share/${orderId}`],
     retry: 1,
+    onSuccess: (data) => {
+      // Verifica se o distribuidor está tentando acessar um pedido que não é dele
+      if (user?.role === 'distributor' && data.distributorId !== user.distributorId) {
+        throw new Error("Você não tem permissão para ver este pedido");
+      }
+      return data;
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao carregar pedido",
+        description: "Você não tem permissão para ver este pedido ou ele não existe.",
+        variant: "destructive"
+      });
+    }
   });
 
   const updateProductMutation = useMutation({
@@ -104,14 +121,14 @@ export default function SharedOrderPage() {
     );
   }
 
-  if (error || !order) {
+  if (error || !order || (user?.role === 'distributor' && order.distributorId !== user.distributorId)) {
     return (
       <div className="container mx-auto p-8">
         <Card>
           <CardContent className="p-6">
             <div className="text-center text-destructive">
-              <h2 className="text-2xl font-bold">Order not found</h2>
-              <p>This order might have been deleted or is not available for sharing.</p>
+              <h2 className="text-2xl font-bold">Pedido não encontrado</h2>
+              <p>Você não tem permissão para ver este pedido ou ele não existe.</p>
             </div>
           </CardContent>
         </Card>

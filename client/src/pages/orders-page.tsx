@@ -7,6 +7,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import OrderPDF from "@/components/pdf/order-pdf";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -37,7 +39,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import {
   FileText, Plus, ShoppingCart, Store as StoreIcon,
   Package, Share2
@@ -71,6 +72,7 @@ interface OrderWithDetails extends Order {
 export default function OrdersPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
 
   const handleShareOrder = async (orderId: number) => {
     const shareUrl = `${window.location.origin}/orders/share/${orderId}?view=vendor`;
@@ -92,6 +94,13 @@ export default function OrdersPage() {
   const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useQuery<OrderWithDetails[]>({
     queryKey: ["/api/orders"],
     retry: 1,
+    onSuccess: (data) => {
+      // Filtra os pedidos baseado no papel do usuário
+      if (user?.role === 'distributor') {
+        return data.filter(order => order.distributorId === user?.distributorId);
+      }
+      return data;
+    },
     onError: () => {
       toast({
         title: "Erro ao carregar pedidos",
@@ -140,6 +149,11 @@ export default function OrdersPage() {
     }
   });
 
+  // Get only the orders for this distributor if logged in as distributor
+  const filteredOrders = user?.role === 'distributor'
+    ? orders.filter(order => order.distributorId === user?.distributorId)
+    : orders;
+
   if (ordersError) {
     return (
       <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
@@ -181,93 +195,95 @@ export default function OrdersPage() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Pedidos</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Pedido
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Criar Novo Pedido</DialogTitle>
-              <DialogDescription>
-                Preencha os dados abaixo para criar um novo pedido.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit((data) => createMutation.mutate(data))}
-                className="space-y-4"
-              >
-                <FormField
-                  control={form.control}
-                  name="storeId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Loja</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(Number(value))}
-                        value={field.value?.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma loja" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {stores?.map((store) => (
-                            <SelectItem key={store.id} value={store.id.toString()}>
-                              {store.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="distributorId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Distribuidor</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(Number(value))}
-                        value={field.value?.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um distribuidor" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {distributors?.map((distributor) => (
-                            <SelectItem
-                              key={distributor.id}
-                              value={distributor.id.toString()}
-                            >
-                              {distributor.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? "Criando..." : "Criar Pedido"}
-                </Button>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        {user?.role === 'supermarket' && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Pedido
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Criar Novo Pedido</DialogTitle>
+                <DialogDescription>
+                  Preencha os dados abaixo para criar um novo pedido.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit((data) => createMutation.mutate(data))}
+                  className="space-y-4"
+                >
+                  <FormField
+                    control={form.control}
+                    name="storeId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Loja</FormLabel>
+                        <Select
+                          onValueChange={(value) => field.onChange(Number(value))}
+                          value={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma loja" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {stores?.map((store) => (
+                              <SelectItem key={store.id} value={store.id.toString()}>
+                                {store.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="distributorId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Distribuidor</FormLabel>
+                        <Select
+                          onValueChange={(value) => field.onChange(Number(value))}
+                          value={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um distribuidor" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {distributors?.map((distributor) => (
+                              <SelectItem
+                                key={distributor.id}
+                                value={distributor.id.toString()}
+                              >
+                                {distributor.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={createMutation.isPending}>
+                    {createMutation.isPending ? "Criando..." : "Criar Pedido"}
+                  </Button>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {orders?.map((order) => (
+        {filteredOrders?.map((order) => (
           <Card key={order.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
