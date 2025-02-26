@@ -9,6 +9,7 @@ import Dashboard from "@/components/layout/dashboard";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import ProductsPage from "@/pages/products-page";
+import CatalogPage from "@/pages/catalog-page";
 import OrdersPage from "@/pages/orders-page";
 import StoresPage from "@/pages/stores-page";
 import DistributorsPage from "@/pages/distributors-page";
@@ -22,6 +23,11 @@ function Router() {
       <ProtectedRoute path="/products" component={() => (
         <Dashboard>
           <ProductsPage />
+        </Dashboard>
+      )} />
+      <ProtectedRoute path="/catalogo/:id" component={() => (
+        <Dashboard>
+          <CatalogPage />
         </Dashboard>
       )} />
       <ProtectedRoute path="/orders" component={() => (
