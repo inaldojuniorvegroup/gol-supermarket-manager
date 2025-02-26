@@ -17,7 +17,8 @@ import {
   Tag,
   FileText,
   ClipboardList,
-  BookOpen
+  BookOpen,
+  FileDown
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -35,9 +36,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { OrderPDF } from '@/components/order-pdf';
 
 
-interface OrderWithDetails extends Order {
+export interface OrderWithDetails extends Order {
   store?: {
     id: number;
     name: string;
@@ -310,31 +313,47 @@ export default function SharedOrderPage() {
               </CardDescription>
             </div>
             <div className="flex flex-col items-end gap-2">
-              {canUpdateStatus ? (
-                <Select
-                  value={order.status}
-                  onValueChange={handleStatusChange}
-                  disabled={updateStatusMutation.isPending}
+              <div className="flex items-center gap-2">
+                {canUpdateStatus ? (
+                  <Select
+                    value={order.status}
+                    onValueChange={handleStatusChange}
+                    disabled={updateStatusMutation.isPending}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(orderStatuses).map(([value, { label }]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Badge
+                    variant={orderStatuses[order.status as keyof typeof orderStatuses]?.color as any || 'default'}
+                    className="h-9 px-4 text-sm"
+                  >
+                    {orderStatuses[order.status as keyof typeof orderStatuses]?.label || order.status}
+                  </Badge>
+                )}
+                <PDFDownloadLink
+                  document={<OrderPDF order={order} />}
+                  fileName={`pedido-${order.id}.pdf`}
                 >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(orderStatuses).map(([value, { label }]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Badge
-                  variant={orderStatuses[order.status as keyof typeof orderStatuses]?.color as any || 'default'}
-                  className="h-9 px-4 text-sm"
-                >
-                  {orderStatuses[order.status as keyof typeof orderStatuses]?.label || order.status}
-                </Badge>
-              )}
+                  {({ loading }) => (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      disabled={loading}
+                    >
+                      <FileDown className="h-4 w-4" />
+                    </Button>
+                  )}
+                </PDFDownloadLink>
+              </div>
               <span className="text-sm text-muted-foreground flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 Última atualização: {format(new Date(order.updatedAt || order.createdAt), "dd/MM HH:mm")}
