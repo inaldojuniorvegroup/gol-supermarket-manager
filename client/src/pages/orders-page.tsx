@@ -63,17 +63,45 @@ const orderStatuses = {
 export default function OrdersPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const { user } = useAuth();
   const [, navigate] = useLocation();
 
   const handleShareOrder = async (orderId: number) => {
-    const shareUrl = `${window.location.origin}/orders/share/${orderId}?view=vendor`;
+    if (user?.role === 'supermarket') {
+      setSelectedOrderId(orderId);
+      setShareDialogOpen(true);
+    } else {
+      // Para distribuidores, compartilha diretamente com código do fornecedor
+      const shareUrl = `${window.location.origin}/orders/share/${orderId}?view=vendor`;
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast({
+          title: "Link copiado",
+          description: "Link para visualização do pedido foi copiado.",
+        });
+      } catch (err) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível copiar o link",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleShare = async (showInternalCode: boolean) => {
+    if (!selectedOrderId) return;
+
+    const shareUrl = `${window.location.origin}/orders/share/${selectedOrderId}?view=vendor${showInternalCode ? '&showInternal=true' : ''}`;
     try {
       await navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Link copiado",
-        description: "Link para visualização do vendedor foi copiado.",
+        description: `Link compartilhado com ${showInternalCode ? 'código interno' : 'código do fornecedor'}.`,
       });
+      setShareDialogOpen(false);
     } catch (err) {
       toast({
         title: "Erro",
@@ -352,6 +380,33 @@ export default function OrdersPage() {
           </Card>
         ))}
       </div>
+
+      {/* Diálogo de compartilhamento */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Compartilhar Pedido</DialogTitle>
+            <DialogDescription>
+              Escolha como você quer compartilhar os códigos dos produtos no pedido.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <Button
+              onClick={() => handleShare(false)}
+              className="w-full"
+            >
+              Compartilhar com Código do Fornecedor
+            </Button>
+            <Button
+              onClick={() => handleShare(true)}
+              variant="outline"
+              className="w-full"
+            >
+              Compartilhar com Código Interno
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

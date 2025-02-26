@@ -248,7 +248,7 @@ export default function SharedOrderPage() {
             {order.distributor?.name || "Distribuidor não encontrado"}
           </div>
 
-          {user?.role === 'supermarket' && (
+          {user?.role === 'supermarket' && !isVendorView && (
             <Tabs defaultValue="supplier" className="w-full" onValueChange={(value) => setViewMode(value as 'supplier' | 'internal')}>
               <TabsList className="mb-4">
                 <TabsTrigger value="supplier" className="flex items-center gap-2">
@@ -260,10 +260,6 @@ export default function SharedOrderPage() {
                   Código Interno
                 </TabsTrigger>
               </TabsList>
-              {/* <TabsContent value="supplier">
-              </TabsContent>
-              <TabsContent value="internal">
-              </TabsContent> */}
             </Tabs>
           )}
 
@@ -281,7 +277,7 @@ export default function SharedOrderPage() {
                   <div key={item.id} className="flex items-center gap-4 p-2 rounded-lg border">
                     <div className="flex-1">
                       <p className="font-medium">{item.product?.name || "Produto não encontrado"}</p>
-                      {user?.role === 'supermarket' ? (
+                      {user?.role === 'supermarket' && !isVendorView ? (
                         <div className="text-sm text-muted-foreground space-y-1">
                           {viewMode === 'supplier' ? (
                             <>
