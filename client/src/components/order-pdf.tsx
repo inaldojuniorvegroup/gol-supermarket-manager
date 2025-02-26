@@ -60,14 +60,18 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     backgroundColor: '#f4f4f4',
+    padding: 5,
+    borderBottomWidth: 2,
+    borderBottomColor: '#000000',
+    marginBottom: 5,
   },
   tableHeaderText: {
     fontSize: 10,
+    fontWeight: 'bold',
   },
-  tableCol: {
-    paddingVertical: 5,
-    paddingHorizontal: 3,
+  tableCell: {
     fontSize: 10,
+    padding: 5,
   },
   tableColCode: {
     width: '15%',
@@ -88,21 +92,41 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   totals: {
+    marginTop: 20,
+    borderTopWidth: 2,
+    borderTopColor: '#000000',
+    paddingTop: 10,
+  },
+  totalRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#000000',
+    marginBottom: 5,
   },
   totalLabel: {
     fontSize: 12,
-    marginRight: 10,
+    width: '85%',
+    textAlign: 'right',
+    paddingRight: 10,
   },
   totalValue: {
     fontSize: 12,
     width: '15%',
     textAlign: 'right',
+  },
+  subtotalSection: {
+    borderTopWidth: 1,
+    borderTopColor: '#CCCCCC',
+    paddingTop: 5,
+  },
+  grandTotal: {
+    borderTopWidth: 2,
+    borderTopColor: '#000000',
+    paddingTop: 5,
+    marginTop: 5,
+  },
+  grandTotalText: {
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   footer: {
     position: 'absolute',
@@ -122,87 +146,88 @@ interface OrderPDFProps {
   order: OrderWithDetails;
 }
 
-export const OrderPDF = ({ order }: OrderPDFProps) => (
-  <Document>
-    <Page size="A4" style={styles.page}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Gol Supermarket</Text>
-        <Text style={styles.orderInfo}>Pedido #{order.id}</Text>
-        <Text style={styles.orderInfo}>Data: {format(new Date(order.createdAt), "dd/MM/yyyy")}</Text>
-      </View>
+export const OrderPDF = ({ order }: OrderPDFProps) => {
+  // Calcular subtotal e total
+  const subtotal = order.items?.reduce((acc, item) => {
+    return acc + (Number(item.total) || 0);
+  }, 0) || 0;
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Informações do Pedido</Text>
-        <View style={styles.infoGrid}>
-          <View style={styles.infoBlock}>
-            <Text style={styles.label}>Loja</Text>
-            <Text style={styles.value}>{order.store?.name}</Text>
-            <Text style={styles.value}>{order.store?.code}</Text>
-          </View>
-          <View style={styles.infoBlock}>
-            <Text style={styles.label}>Distribuidor</Text>
-            <Text style={styles.value}>{order.distributor?.name}</Text>
-            <Text style={styles.value}>{order.distributor?.code}</Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Itens do Pedido</Text>
-        <View style={styles.table}>
-          <View style={[styles.tableRow, styles.tableHeader]}>
-            <View style={[styles.tableCol, styles.tableColCode]}>
-              <Text style={styles.tableHeaderText}>Código</Text>
-            </View>
-            <View style={[styles.tableCol, styles.tableColProduct]}>
-              <Text style={styles.tableHeaderText}>Produto</Text>
-            </View>
-            <View style={[styles.tableCol, styles.tableColQty]}>
-              <Text style={styles.tableHeaderText}>Qtd</Text>
-            </View>
-            <View style={[styles.tableCol, styles.tableColPrice]}>
-              <Text style={styles.tableHeaderText}>Preço Un.</Text>
-            </View>
-            <View style={[styles.tableCol, styles.tableColTotal]}>
-              <Text style={styles.tableHeaderText}>Total</Text>
-            </View>
-          </View>
-
-          {order.items?.map((item) => (
-            <View key={item.id} style={styles.tableRow}>
-              <View style={[styles.tableCol, styles.tableColCode]}>
-                <Text>{item.product?.supplierCode}</Text>
-              </View>
-              <View style={[styles.tableCol, styles.tableColProduct]}>
-                <Text>{item.product?.name}</Text>
-              </View>
-              <View style={[styles.tableCol, styles.tableColQty]}>
-                <Text>{item.quantity}</Text>
-              </View>
-              <View style={[styles.tableCol, styles.tableColPrice]}>
-                <Text>${Number(item.price).toFixed(2)}</Text>
-              </View>
-              <View style={[styles.tableCol, styles.tableColTotal]}>
-                <Text>${Number(item.total).toFixed(2)}</Text>
-              </View>
-            </View>
-          ))}
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Gol Supermarket</Text>
+          <Text style={styles.orderInfo}>Pedido #{order.id}</Text>
+          <Text style={styles.orderInfo}>Data: {format(new Date(order.createdAt), "dd/MM/yyyy")}</Text>
         </View>
 
-        <View style={styles.totals}>
-          <Text style={styles.totalLabel}>Total do Pedido:</Text>
-          <Text style={styles.totalValue}>${Number(order.total || 0).toFixed(2)}</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Informações do Pedido</Text>
+          <View style={styles.infoGrid}>
+            <View style={styles.infoBlock}>
+              <Text style={styles.label}>Loja</Text>
+              <Text style={styles.value}>{order.store?.name}</Text>
+              <Text style={styles.value}>{order.store?.code}</Text>
+            </View>
+            <View style={styles.infoBlock}>
+              <Text style={styles.label}>Distribuidor</Text>
+              <Text style={styles.value}>{order.distributor?.name}</Text>
+              <Text style={styles.value}>{order.distributor?.code}</Text>
+            </View>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.footer}>
-        <Text>
-          Pedido gerado em {format(new Date(), "dd/MM/yyyy 'às' HH:mm")}
-        </Text>
-        <Text>
-          Status: {order.status.toUpperCase()}
-        </Text>
-      </View>
-    </Page>
-  </Document>
-);
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Itens do Pedido</Text>
+          <View style={styles.table}>
+            <View style={styles.tableHeader}>
+              <View style={{ flexDirection: 'row' }}>
+                <Text style={[styles.tableHeaderText, styles.tableColCode]}>Código</Text>
+                <Text style={[styles.tableHeaderText, styles.tableColProduct]}>Produto</Text>
+                <Text style={[styles.tableHeaderText, styles.tableColQty]}>Qtd</Text>
+                <Text style={[styles.tableHeaderText, styles.tableColPrice]}>Preço Un.</Text>
+                <Text style={[styles.tableHeaderText, styles.tableColTotal]}>Total</Text>
+              </View>
+            </View>
+
+            {order.items?.map((item) => (
+              <View key={item.id} style={styles.tableRow}>
+                <Text style={[styles.tableCell, styles.tableColCode]}>{item.product?.supplierCode}</Text>
+                <Text style={[styles.tableCell, styles.tableColProduct]}>{item.product?.name}</Text>
+                <Text style={[styles.tableCell, styles.tableColQty]}>{item.quantity}</Text>
+                <Text style={[styles.tableCell, styles.tableColPrice]}>
+                  ${Number(item.price).toFixed(2)}
+                </Text>
+                <Text style={[styles.tableCell, styles.tableColTotal]}>
+                  ${Number(item.total).toFixed(2)}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.totals}>
+            <View style={[styles.totalRow, styles.subtotalSection]}>
+              <Text style={styles.totalLabel}>Subtotal:</Text>
+              <Text style={styles.totalValue}>${subtotal.toFixed(2)}</Text>
+            </View>
+            <View style={[styles.totalRow, styles.grandTotal]}>
+              <Text style={[styles.totalLabel, styles.grandTotalText]}>Total do Pedido:</Text>
+              <Text style={[styles.totalValue, styles.grandTotalText]}>
+                ${Number(order.total || 0).toFixed(2)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.footer}>
+          <Text>
+            Pedido gerado em {format(new Date(), "dd/MM/yyyy 'às' HH:mm")}
+          </Text>
+          <Text>
+            Status: {order.status.toUpperCase()}
+          </Text>
+        </View>
+      </Page>
+    </Document>
+  );
+};
