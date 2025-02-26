@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Dialog,
@@ -40,9 +41,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  FileText, Plus, ShoppingCart, Store as StoreIcon,
-  Package, Share2
+  FileText,
+  Plus,
+  ShoppingCart,
+  Store as StoreIcon,
+  Package,
+  Share2,
+  Clock,
+  CalendarDays,
+  DollarSign,
+  Tag,
+  ChevronRight,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
+
+const orderStatuses = {
+  'pending': { label: 'Pendente', color: 'default' },
+  'processing': { label: 'Em Processamento', color: 'warning' },
+  'shipped': { label: 'Enviado', color: 'info' },
+  'delivered': { label: 'Entregue', color: 'success' },
+  'cancelled': { label: 'Cancelado', color: 'destructive' }
+} as const;
 
 // Interface para os dados do pedido
 interface OrderWithDetails extends Order {
@@ -177,7 +199,7 @@ export default function OrdersPage() {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Pedidos</h1>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="p-6 space-y-4">
@@ -192,9 +214,12 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Pedidos</h1>
+        <div className="flex items-center gap-2">
+          <ShoppingCart className="h-6 w-6" />
+          <h1 className="text-3xl font-bold">Pedidos</h1>
+        </div>
         {user?.role === 'supermarket' && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -282,78 +307,125 @@ export default function OrdersPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredOrders?.map((order) => (
-          <Card key={order.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShoppingCart className="h-5 w-5" />
-                  Pedido #{order.id}
+          <Card key={order.id} className="overflow-hidden">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      Pedido #{order.id}
+                    </CardTitle>
+                    <CardDescription className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm")}
+                    </CardDescription>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleShareOrder(order.id)}
-                    title="Share order"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                  {order.store && order.distributor && order.items && (
-                    <PDFDownloadLink
-                      document={
-                        <OrderPDF
-                          order={order}
-                          items={order.items}
-                          store={order.store}
-                          distributor={order.distributor}
-                        />
-                      }
-                      fileName={`pedido-${order.id}.pdf`}
-                    >
-                      {({ loading }) => (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          disabled={loading}
-                          title="Download PDF"
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </PDFDownloadLink>
-                  )}
-                </div>
-              </CardTitle>
-              <CardDescription>
-                Status: {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-              </CardDescription>
+                <Badge variant={orderStatuses[order.status as keyof typeof orderStatuses]?.color || 'default'}>
+                  {orderStatuses[order.status as keyof typeof orderStatuses]?.label || order.status}
+                </Badge>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <StoreIcon className="h-4 w-4" />
-                {order.store?.name || "Loja não encontrada"}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Package className="h-4 w-4" />
-                {order.distributor?.name || "Distribuidor não encontrado"}
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Itens:</p>
-                <div className="space-y-1">
-                  {order.items?.map((item) => (
-                    <div key={item.id} className="text-sm text-muted-foreground flex justify-between">
-                      <span>{item.product?.name || "Produto não encontrado"} x{item.quantity}</span>
-                      <span>${Number(item.total).toFixed(2)}</span>
+
+            <CardContent className="pb-4">
+              <div className="flex flex-col space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <StoreIcon className="h-4 w-4" />
+                      Loja
                     </div>
-                  ))}
+                    <div className="font-medium">{order.store?.name}</div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Distribuidor
+                    </div>
+                    <div className="font-medium">{order.distributor?.name}</div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 font-semibold pt-2 border-t">
-                Total: ${Number(order.total).toFixed(2)}
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="text-sm font-medium flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Tag className="h-4 w-4" />
+                      Itens do Pedido
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Total: ${Number(order.total).toFixed(2)}
+                    </span>
+                  </div>
+                  <ScrollArea className="h-[120px]">
+                    <div className="space-y-2">
+                      {order.items?.map((item) => (
+                        <div key={item.id} className="text-sm flex justify-between items-center py-1">
+                          <div className="flex-1">
+                            <div className="font-medium">{item.product?.name}</div>
+                            <div className="text-muted-foreground">
+                              {item.quantity}x • ${Number(item.price).toFixed(2)} cada
+                            </div>
+                          </div>
+                          <div className="font-medium">
+                            ${Number(item.total).toFixed(2)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
               </div>
             </CardContent>
+
+            <CardFooter className="bg-muted/50 flex justify-between items-center">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                Atualizado {format(new Date(order.updatedAt || order.createdAt), "dd/MM HH:mm")}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleShareOrder(order.id)}
+                  title="Compartilhar pedido"
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
+                {order.store && order.distributor && order.items && (
+                  <PDFDownloadLink
+                    document={
+                      <OrderPDF
+                        order={order}
+                        items={order.items}
+                        store={order.store}
+                        distributor={order.distributor}
+                      />
+                    }
+                    fileName={`pedido-${order.id}.pdf`}
+                  >
+                    {({ loading }) => (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={loading}
+                        title="Baixar PDF"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </PDFDownloadLink>
+                )}
+                <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                  Ver Detalhes
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardFooter>
           </Card>
         ))}
       </div>
