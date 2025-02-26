@@ -163,6 +163,22 @@ export default function SharedOrderPage() {
     }
   });
 
+  const handleUpdateProduct = async (productId: number, price: string) => {
+    try {
+      await updateProductMutation.mutateAsync({ productId, price });
+      toast({
+        title: "Preço atualizado",
+        description: "O preço do produto foi atualizado com sucesso",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar preço",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleEdit = (itemId: number, field: 'quantity' | 'price', value: string) => {
     // Garante que o valor não seja negativo
     const numValue = Math.max(0, Number(value) || 0);
