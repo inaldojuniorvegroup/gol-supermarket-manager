@@ -15,7 +15,8 @@ import { Truck, Package } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { useLocation } from "wouter";
-import { ProductCard } from "@/components/products/product-card";
+import { Badge } from "@/components/ui/badge";
+import { useMemo } from "react";
 
 export default function ProductsPage() {
   const [, setLocation] = useLocation();
@@ -46,9 +47,16 @@ export default function ProductsPage() {
   const findSimilarProducts = (product: Product) => {
     return products.filter(p => 
       p.id !== product.id && 
-      p.itemCode === product.itemCode && 
-      p.name === product.name
+      p.barCode === product.barCode && 
+      p.name === product.name 
     );
+  };
+
+  // Função para adicionar ao carrinho
+  const handleAddToCart = (product: Product, quantity: number) => {
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product);
+    }
   };
 
   if (isLoadingDistributors || isLoadingProducts) {
@@ -91,7 +99,8 @@ export default function ProductsPage() {
           return (
             <Card 
               key={distributor.id} 
-              className="group relative"
+              className="hover:border-primary cursor-pointer transition-colors"
+              onClick={() => setLocation(`/catalogo/${distributor.id}`)}
             >
               <CardHeader className="space-y-2 pb-2">
                 <CardTitle className="flex items-center gap-2">
@@ -106,22 +115,25 @@ export default function ProductsPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-2">
                   {distributorProducts.slice(0, 4).map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      similarProducts={findSimilarProducts(product)}
-                      distributors={distributors}
-                      compact={true}
-                    />
+                    <div 
+                      key={product.id} 
+                      className="bg-muted rounded-lg p-2 text-xs space-y-1"
+                    >
+                      <div className="font-medium truncate">{product.name}</div>
+                      <div className="text-muted-foreground truncate">
+                        Código: {product.itemCode}
+                      </div>
+                      {findSimilarProducts(product).length > 0 && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          Disponível em outros distribuidores
+                        </Badge>
+                      )}
+                    </div>
                   ))}
                 </div>
               </CardContent>
               <CardFooter>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => setLocation(`/catalogo/${distributor.id}`)}
-                >
+                <Button variant="outline" className="w-full">
                   Ver Catálogo Completo
                 </Button>
               </CardFooter>

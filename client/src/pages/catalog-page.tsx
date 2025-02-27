@@ -21,8 +21,8 @@ export default function CatalogPage() {
     queryKey: ["/api/products"],
   });
 
-  const { data: distributors = [] } = useQuery<Distributor[]>({
-    queryKey: ["/api/distributors"],
+  const { data: distributor } = useQuery<Distributor>({
+    queryKey: [`/api/distributors/${distributorId}`],
   });
 
   // Filtra os produtos do distribuidor
@@ -33,15 +33,6 @@ export default function CatalogPage() {
       product.itemCode.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesDistributor && matchesSearch;
   });
-
-  // Encontrar produtos similares
-  const findSimilarProducts = (product: Product) => {
-    return products.filter(p => 
-      p.id !== product.id && 
-      p.itemCode === product.itemCode && 
-      p.name === product.name
-    );
-  };
 
   // Agrupa por subcategoria
   const groupedProducts = distributorProducts.reduce((acc, product) => {
@@ -78,9 +69,7 @@ export default function CatalogPage() {
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>
-          <h1 className="text-2xl font-bold">
-            {distributors.find(d => d.id === distributorId)?.name}
-          </h1>
+          <h1 className="text-2xl font-bold">{distributor?.name}</h1>
         </div>
         <CartSheet />
       </div>
@@ -99,14 +88,12 @@ export default function CatalogPage() {
         {Object.entries(groupedProducts).map(([subcategory, products]) => (
           <div key={subcategory} className="space-y-4">
             <h3 className="text-xl font-semibold border-b pb-2">{subcategory}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {products.map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
                   onAddToCart={handleAddToCart}
-                  similarProducts={findSimilarProducts(product)}
-                  distributors={distributors}
                 />
               ))}
             </div>

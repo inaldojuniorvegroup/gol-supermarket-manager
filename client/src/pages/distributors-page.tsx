@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Dialog,
@@ -120,15 +119,6 @@ export default function DistributorsPage() {
   const getShareableLink = (distributorId: number) => {
     const baseUrl = window.location.origin;
     return `${baseUrl}/distributors?view=vendor&distributor=${distributorId}`;
-  };
-
-  // Encontrar produtos similares
-  const findSimilarProducts = (product: Product) => {
-    return products.filter(p => 
-      p.id !== product.id && 
-      p.itemCode === product.itemCode && 
-      p.name === product.name
-    );
   };
 
   return (
@@ -323,7 +313,11 @@ export default function DistributorsPage() {
                       ) : (
                         getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => {
                           // Encontrar produtos similares
-                          const similarProducts = findSimilarProducts(product);
+                          const similarProducts = products.filter(p =>
+                            p.id !== product.id &&
+                            p.barCode === product.barCode &&
+                            p.name === product.name
+                          );
 
                           return (
                             <ProductCard
@@ -367,12 +361,6 @@ export default function DistributorsPage() {
                     )}
                   </DialogContent>
                 </Dialog>
-                <Button
-                  variant="outline"
-                  onClick={() => setLocation(`/catalogo/${distributor.id}`)}
-                >
-                  Ver Catálogo Completo
-                </Button>
               </div>
             </CardContent>
           </Card>
