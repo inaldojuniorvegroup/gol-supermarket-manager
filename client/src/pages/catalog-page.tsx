@@ -25,6 +25,10 @@ export default function CatalogPage() {
     queryKey: [`/api/distributors/${distributorId}`],
   });
 
+  const { data: distributors = [] } = useQuery<Distributor[]>({
+    queryKey: ["/api/distributors"],
+  });
+
   // Filtra os produtos do distribuidor
   const distributorProducts = products.filter(product => {
     const matchesDistributor = product.distributorId === distributorId;
@@ -33,6 +37,15 @@ export default function CatalogPage() {
       product.itemCode.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesDistributor && matchesSearch;
   });
+
+  // Encontra produtos similares
+  const findSimilarProducts = (product: Product) => {
+    return products.filter(p => 
+      p.id !== product.id && 
+      p.itemCode === product.itemCode &&
+      p.name === product.name
+    );
+  };
 
   // Agrupa por subcategoria
   const groupedProducts = distributorProducts.reduce((acc, product) => {
@@ -89,13 +102,19 @@ export default function CatalogPage() {
           <div key={subcategory} className="space-y-4">
             <h3 className="text-xl font-semibold border-b pb-2">{subcategory}</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAddToCart={handleAddToCart}
-                />
-              ))}
+              {products.map((product) => {
+                const similarProducts = findSimilarProducts(product);
+
+                return (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAddToCart={handleAddToCart}
+                    similarProducts={similarProducts}
+                    distributors={distributors}
+                  />
+                );
+              })}
             </div>
           </div>
         ))}
