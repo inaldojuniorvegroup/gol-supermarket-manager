@@ -99,7 +99,7 @@ export default function CatalogPage() {
         {Object.entries(groupedProducts).map(([subcategory, products]) => (
           <div key={subcategory} className="space-y-4">
             <h3 className="text-xl font-semibold border-b pb-2">{subcategory}</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {products.map((product) => (
                 <ProductCard
                   key={product.id}

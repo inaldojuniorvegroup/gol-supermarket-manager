@@ -91,8 +91,7 @@ export default function ProductsPage() {
           return (
             <Card 
               key={distributor.id} 
-              className="hover:border-primary cursor-pointer transition-colors"
-              onClick={() => setLocation(`/catalogo/${distributor.id}`)}
+              className="group relative"
             >
               <CardHeader className="space-y-2 pb-2">
                 <CardTitle className="flex items-center gap-2">
@@ -118,7 +117,11 @@ export default function ProductsPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" className="w-full">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => setLocation(`/catalogo/${distributor.id}`)}
+                >
                   Ver Catálogo Completo
                 </Button>
               </CardFooter>
