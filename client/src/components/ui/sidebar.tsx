@@ -16,12 +16,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useCookies } from "@/hooks/use-cookies"
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
-const SIDEBAR_WIDTH_ICON = "3rem"
+const SIDEBAR_WIDTH_ICON = "4rem" // Increased from 3rem for better visibility
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
 type SidebarContext = {
@@ -67,28 +68,33 @@ const SidebarProvider = React.forwardRef<
   ) => {
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
+    const [cookies, setCookie] = useCookies([SIDEBAR_COOKIE_NAME])
 
-    // This is the internal state of the sidebar.
-    // We use openProp and setOpenProp for control from outside the component.
-    const [_open, _setOpen] = React.useState(defaultOpen)
+    // Get initial state from cookie
+    const initialState = cookies[SIDEBAR_COOKIE_NAME] === "false" ? false : defaultOpen
+    const [_open, _setOpen] = React.useState(initialState)
     const open = openProp ?? _open
+
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
+        const newValue = typeof value === "function" ? value(open) : value
+
         if (setOpenProp) {
-          return setOpenProp?.(
-            typeof value === "function" ? value(open) : value
-          )
+          return setOpenProp(newValue)
         }
 
-        _setOpen(value)
+        _setOpen(newValue)
 
-        // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${open}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+        // Save state to cookie
+        setCookie(SIDEBAR_COOKIE_NAME, String(newValue), {
+          path: "/",
+          maxAge: SIDEBAR_COOKIE_MAX_AGE,
+        })
       },
-      [setOpenProp, open]
+      [setOpenProp, open, setCookie]
     )
 
-    // Helper to toggle the sidebar.
+    // Helper to toggle the sidebar with animation
     const toggleSidebar = React.useCallback(() => {
       return isMobile
         ? setOpenMobile((open) => !open)
@@ -141,6 +147,7 @@ const SidebarProvider = React.forwardRef<
             }
             className={cn(
               "group/sidebar-wrapper flex min-h-svh w-full text-sidebar-foreground has-[[data-variant=inset]]:bg-sidebar",
+              "transition-all duration-300 ease-in-out", // Added transition
               className
             )}
             ref={ref}
@@ -262,7 +269,7 @@ const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, state } = useSidebar()
 
   return (
     <Button
@@ -270,14 +277,18 @@ const SidebarTrigger = React.forwardRef<
       data-sidebar="trigger"
       variant="ghost"
       size="icon"
-      className={cn("h-7 w-7", className)}
+      className={cn(
+        "h-8 w-8 transition-transform duration-300",
+        state === "collapsed" && "rotate-180",
+        className
+      )}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
       }}
       {...props}
     >
-      <PanelLeft />
+      <PanelLeft className="h-4 w-4" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )
