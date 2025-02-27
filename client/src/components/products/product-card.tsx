@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -80,13 +80,20 @@ export function ProductCard({
             <div className="text-sm font-semibold">
               R$ {Number(product.unitPrice).toFixed(2)}
             </div>
-            {similarProducts.length > 0 && (
+          </div>
+          {!isVendorView && similarProducts.length > 0 && (
+            <div className="flex justify-between items-center">
+              <PriceComparisonDialog
+                product={product}
+                similarProducts={similarProducts}
+                distributors={distributors}
+              />
               <Badge variant="secondary" className="text-[10px] flex items-center gap-1">
                 <Scale className="h-3 w-3" />
                 {similarProducts.length} outros
               </Badge>
-            )}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
