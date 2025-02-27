@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Product } from "@shared/schema";
+import { Product, Distributor } from "@shared/schema";
 import { Package, Tag, DollarSign, ShoppingCart, Barcode, FileImage, Box, Info, FolderOpen, Folder, Plus, Minus, Scale } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,12 +14,6 @@ import {
 } from "@/components/ui/hover-card";
 import { formatDistanceToNow } from "date-fns";
 import { PriceComparisonDialog } from "./price-comparison-dialog";
-
-interface Distributor {
-  id: number;
-  name: string;
-  code: string;
-}
 
 interface ProductCardProps {
   product: Product | null;
@@ -96,8 +90,11 @@ export function ProductCard({
               <FolderOpen className="h-3 w-3" />
               {product.description}
             </Badge>
-            {product.isSpecialOffer && (
-              <Badge variant="destructive">Oferta Especial</Badge>
+            {similarProducts.length > 0 && !isVendorView && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Scale className="h-3 w-3" />
+                {similarProducts.length} outros fornecedores
+              </Badge>
             )}
           </div>
           {product.grupo && (
@@ -169,7 +166,7 @@ export function ProductCard({
                     </div>
                     <div className="pt-2 border-t">
                       <p className="text-xs text-muted-foreground">
-                        Last updated {formatDistanceToNow(new Date(product.updatedAt), { addSuffix: true })}
+                        Última atualização {formatDistanceToNow(new Date(product.updatedAt), { addSuffix: true })}
                       </p>
                     </div>
                   </div>
@@ -204,11 +201,10 @@ export function ProductCard({
             </div>
             <div className="flex items-center gap-2">
               {!isVendorView && similarProducts.length > 0 && (
-                <PriceComparisonDialog
-                  product={product}
-                  similarProducts={similarProducts}
-                  distributors={distributors}
-                />
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => {}}>
+                  <Scale className="h-4 w-4" />
+                  Comparar Preços
+                </Button>
               )}
               {onAddToCart && (
                 <>
