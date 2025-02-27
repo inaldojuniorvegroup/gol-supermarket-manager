@@ -21,8 +21,8 @@ export default function CatalogPage() {
     queryKey: ["/api/products"],
   });
 
-  const { data: distributor } = useQuery<Distributor>({
-    queryKey: [`/api/distributors/${distributorId}`],
+  const { data: distributors = [] } = useQuery<Distributor[]>({
+    queryKey: ["/api/distributors"],
   });
 
   // Filtra os produtos do distribuidor
@@ -33,6 +33,15 @@ export default function CatalogPage() {
       product.itemCode.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesDistributor && matchesSearch;
   });
+
+  // Encontrar produtos similares
+  const findSimilarProducts = (product: Product) => {
+    return products.filter(p => 
+      p.id !== product.id && 
+      p.itemCode === product.itemCode && 
+      p.name === product.name
+    );
+  };
 
   // Agrupa por subcategoria
   const groupedProducts = distributorProducts.reduce((acc, product) => {
@@ -69,7 +78,9 @@ export default function CatalogPage() {
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>
-          <h1 className="text-2xl font-bold">{distributor?.name}</h1>
+          <h1 className="text-2xl font-bold">
+            {distributors.find(d => d.id === distributorId)?.name}
+          </h1>
         </div>
         <CartSheet />
       </div>
@@ -94,6 +105,8 @@ export default function CatalogPage() {
                   key={product.id}
                   product={product}
                   onAddToCart={handleAddToCart}
+                  similarProducts={findSimilarProducts(product)}
+                  distributors={distributors}
                 />
               ))}
             </div>
