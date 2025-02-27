@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Product, Distributor } from "@shared/schema";
-import { Package, Tag, DollarSign, ShoppingCart, Barcode, FileImage, Box, Info, FolderOpen, Folder, Plus, Minus, Scale } from "lucide-react";
+import { Package, Tag, DollarSign, ShoppingCart, Barcode, Box, Info, FolderOpen, Folder, Plus, Minus, Scale } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { PriceComparisonDialog } from "./price-comparison-dialog";
 
 interface ProductCardProps {
@@ -106,23 +107,12 @@ export function ProductCard({
         </div>
 
         <CardHeader className="p-0">
-          {product.imageUrl && !imageError ? (
-            <div className="relative w-full h-48 overflow-hidden">
-              <img
-                src={product.imageUrl}
-                alt={product.name}
-                className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
-                onError={() => setImageError(true)}
-              />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center w-full h-48 bg-muted">
-              <Package className="h-12 w-12 text-muted-foreground" />
-            </div>
-          )}
+          <div className="flex items-center justify-center w-full h-48 bg-muted">
+            <Package className="h-12 w-12 text-muted-foreground" />
+          </div>
         </CardHeader>
 
-        <CardContent className="p-4 space-y-4">
+        <CardContent className="p-4 space-y-4 pt-12">
           <div>
             <div className="flex items-center justify-between">
               <CardTitle className="line-clamp-2 text-base mb-2">
@@ -138,57 +128,31 @@ export function ProductCard({
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm">
                       <Tag className="h-4 w-4" />
-                      <span>Item Code: {product.itemCode}</span>
+                      <span>Código: {product.itemCode}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Tag className="h-4 w-4" />
-                      <span>Supplier Code: {product.supplierCode}</span>
+                      <span>Código Fornecedor: {product.supplierCode}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <FolderOpen className="h-4 w-4" />
-                      <span>Departamento: {product.description}</span>
+                      <Barcode className="h-4 w-4" />
+                      <span>EAN: {product.barCode}</span>
                     </div>
-                    {product.grupo && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Folder className="h-4 w-4" />
-                        <span>Grupo: {product.grupo}</span>
-                      </div>
-                    )}
-                    {product.barCode && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Barcode className="h-4 w-4" />
-                        <span>Bar Code: {product.barCode}</span>
-                      </div>
-                    )}
                     <div className="flex items-center gap-2 text-sm">
                       <Box className="h-4 w-4" />
-                      <span>Box Quantity: {product.boxQuantity} {product.unit}</span>
+                      <span>Qtd. Caixa: {product.boxQuantity} {product.unit}</span>
                     </div>
                     <div className="pt-2 border-t">
                       <p className="text-xs text-muted-foreground">
-                        Última atualização {formatDistanceToNow(new Date(product.updatedAt), { addSuffix: true })}
+                        Última atualização {formatDistanceToNow(new Date(product.updatedAt), { 
+                          addSuffix: true,
+                          locale: ptBR
+                        })}
                       </p>
                     </div>
                   </div>
                 </HoverCardContent>
               </HoverCard>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Tag className="h-4 w-4" />
-                <span>Código: {product.itemCode}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Barcode className="h-4 w-4" />
-                <span>EAN: {product.barCode}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Box className="h-4 w-4" />
-                <span>Qtd: {product.boxQuantity} {product.unit}</span>
-              </div>
             </div>
           </div>
 
@@ -201,10 +165,11 @@ export function ProductCard({
             </div>
             <div className="flex items-center gap-2">
               {!isVendorView && similarProducts.length > 0 && (
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => {}}>
-                  <Scale className="h-4 w-4" />
-                  Comparar Preços
-                </Button>
+                <PriceComparisonDialog
+                  product={product}
+                  similarProducts={similarProducts}
+                  distributors={distributors}
+                />
               )}
               {onAddToCart && (
                 <>
