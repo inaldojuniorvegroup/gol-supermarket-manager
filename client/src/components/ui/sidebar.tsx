@@ -278,7 +278,8 @@ const SidebarTrigger = React.forwardRef<
       variant="ghost"
       size="icon"
       className={cn(
-        "h-8 w-8 transition-transform duration-300",
+        "absolute top-2 right-2 z-50 h-8 w-8 bg-background/80 hover:bg-accent",
+        "transition-all duration-300 ease-in-out rounded-full shadow-sm",
         state === "collapsed" && "rotate-180",
         className
       )}
