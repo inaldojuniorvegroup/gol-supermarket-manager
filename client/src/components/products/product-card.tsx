@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,21 +14,30 @@ import {
 } from "@/components/ui/hover-card";
 import { formatDistanceToNow } from "date-fns";
 import { PriceComparisonDialog } from "./price-comparison-dialog";
+
 interface Distributor {
-  id: string;
+  id: number;
   name: string;
-  // Add other distributor properties as needed
+  code: string;
 }
 
 interface ProductCardProps {
   product: Product | null;
   isLoading?: boolean;
-  onAddToCart: (product: Product, quantity: number) => void;
+  onAddToCart?: (product: Product, quantity: number) => void;
   similarProducts?: Product[];
   distributors?: Distributor[];
+  isVendorView?: boolean;
 }
 
-export function ProductCard({ product, isLoading, onAddToCart, similarProducts = [], distributors = [] }: ProductCardProps) {
+export function ProductCard({ 
+  product, 
+  isLoading, 
+  onAddToCart, 
+  similarProducts = [], 
+  distributors = [],
+  isVendorView = false 
+}: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const { toast } = useToast();
@@ -38,7 +47,7 @@ export function ProductCard({ product, isLoading, onAddToCart, similarProducts =
   }, [product?.imageUrl]);
 
   const handleAddToCart = () => {
-    if (product) {
+    if (product && onAddToCart) {
       onAddToCart(product, quantity);
       toast({
         title: "Adicionado ao carrinho",
@@ -194,40 +203,44 @@ export function ProductCard({ product, isLoading, onAddToCart, similarProducts =
               </span>
             </div>
             <div className="flex items-center gap-2">
-              {similarProducts.length > 0 && (
+              {!isVendorView && similarProducts.length > 0 && (
                 <PriceComparisonDialog
                   product={product}
                   similarProducts={similarProducts}
                   distributors={distributors}
                 />
               )}
-              <div className="flex items-center bg-muted rounded-lg">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={decrementQuantity}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="w-8 text-center">{quantity}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={incrementQuantity}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <Button
-                size="sm"
-                onClick={handleAddToCart}
-                className="flex items-center"
-              >
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Adicionar
-              </Button>
+              {onAddToCart && (
+                <>
+                  <div className="flex items-center bg-muted rounded-lg">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={decrementQuantity}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-8 text-center">{quantity}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={incrementQuantity}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleAddToCart}
+                    className="flex items-center"
+                  >
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Adicionar
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </CardContent>

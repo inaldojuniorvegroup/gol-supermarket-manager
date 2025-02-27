@@ -145,7 +145,7 @@ function EditProductDialog({ product, onClose }: { product: Product, onClose: ()
   );
 }
 
-function ProductCard({ product, isVendorView = false }: { product: Product, isVendorView?: boolean }) {
+function ProductCard({ product, isVendorView = false, similarProducts, distributors }: { product: Product, isVendorView?: boolean, similarProducts?: Product[], distributors?: Distributor[] }) {
   return (
     <Card>
       <CardHeader>
@@ -208,13 +208,24 @@ function ProductCard({ product, isVendorView = false }: { product: Product, isVe
             </DialogContent>
           </Dialog>
         )}
+        {similarProducts && similarProducts.length > 0 && (
+          <div>
+            <h3>Produtos Similares:</h3>
+            <ul>
+              {similarProducts.map(p => (
+                <li key={p.id}>{p.name} - {p.supplierCode}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
 
-export default function DistributorsPage() {
+
+function DistributorsPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [selectedDistributor, setSelectedDistributor] = useState<number | null>(null);
@@ -794,16 +805,6 @@ export default function DistributorsPage() {
                         </Button>
                       </div>
                     </div>
-                    {showMapping && (
-                      <div>
-                        {/* Column Mapping Component */}
-                        <ColumnMapping
-                          excelColumns={excelColumns}
-                          onMappingComplete={handleMappingComplete}
-                          isLoading={importProductsMutation.isPending}
-                        />
-                      </div>
-                    )}
                     {!showMapping && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
                         {loadingProducts ? (
@@ -817,14 +818,35 @@ export default function DistributorsPage() {
                             </Card>
                           ))
                         ) : (
-                          getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => (
-                            <ProductCard
-                              key={product.id}
-                              product={product}
-                              isVendorView={isVendorView}
-                            />
-                          ))
+                          getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => {
+                            // Encontrar produtos similares
+                            const similarProducts = products?.filter(p =>
+                              p.id !== product.id &&
+                              p.barCode === product.barCode &&
+                              p.name === product.name
+                            ) || [];
+
+                            return (
+                              <ProductCard
+                                key={product.id}
+                                product={product}
+                                isVendorView={isVendorView}
+                                similarProducts={similarProducts}
+                                distributors={distributors || []}
+                              />
+                            );
+                          })
                         )}
+                      </div>
+                    )}
+                    {showMapping && (
+                      <div>
+                        {/* Column Mapping Component */}
+                        <ColumnMapping
+                          excelColumns={excelColumns}
+                          onMappingComplete={handleMappingComplete}
+                          isLoading={importProductsMutation.isPending}
+                        />
                       </div>
                     )}
                     {/* Paginação */}
@@ -873,3 +895,5 @@ export default function DistributorsPage() {
     </div>
   );
 }
+
+export default DistributorsPage;
