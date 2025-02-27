@@ -15,6 +15,8 @@ import { Truck, Package } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { useLocation } from "wouter";
+import { Badge } from "@/components/ui/badge";
+import { useMemo } from "react";
 
 export default function ProductsPage() {
   const [, setLocation] = useLocation();
@@ -39,6 +41,15 @@ export default function ProductsPage() {
   // Função para obter os produtos de um distribuidor
   const getDistributorProducts = (distributorId: number) => {
     return products.filter(product => product.distributorId === distributorId);
+  };
+
+  // Função para encontrar produtos similares
+  const findSimilarProducts = (product: Product) => {
+    return products.filter(p => 
+      p.id !== product.id && 
+      p.barCode === product.barCode && 
+      p.name === product.name 
+    );
   };
 
   // Função para adicionar ao carrinho
@@ -83,7 +94,7 @@ export default function ProductsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredDistributors.map((distributor) => {
-          const distributorProducts = getDistributorProducts(distributor.id).slice(0, 4);
+          const distributorProducts = getDistributorProducts(distributor.id);
 
           return (
             <Card 
@@ -98,12 +109,12 @@ export default function ProductsPage() {
                 </CardTitle>
                 <CardDescription className="flex items-center justify-between">
                   <span>Código: {distributor.code}</span>
-                  <span>{getDistributorProducts(distributor.id).length} produtos</span>
+                  <span>{distributorProducts.length} produtos</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-2">
-                  {distributorProducts.map((product) => (
+                  {distributorProducts.slice(0, 4).map((product) => (
                     <div 
                       key={product.id} 
                       className="bg-muted rounded-lg p-2 text-xs space-y-1"
@@ -112,6 +123,11 @@ export default function ProductsPage() {
                       <div className="text-muted-foreground truncate">
                         Código: {product.itemCode}
                       </div>
+                      {findSimilarProducts(product).length > 0 && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          Disponível em outros distribuidores
+                        </Badge>
+                      )}
                     </div>
                   ))}
                 </div>

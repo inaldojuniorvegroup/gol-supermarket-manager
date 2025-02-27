@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Product } from "@shared/schema";
-import { Package, Tag, DollarSign, ShoppingCart, Barcode, FileImage, Box, Info, FolderOpen, Folder, Plus, Minus } from "lucide-react";
+import { Package, Tag, DollarSign, ShoppingCart, Barcode, FileImage, Box, Info, FolderOpen, Folder, Plus, Minus, Scale } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -13,14 +13,22 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { formatDistanceToNow } from "date-fns";
+import { PriceComparisonDialog } from "./price-comparison-dialog";
+interface Distributor {
+  id: string;
+  name: string;
+  // Add other distributor properties as needed
+}
 
 interface ProductCardProps {
   product: Product | null;
   isLoading?: boolean;
   onAddToCart: (product: Product, quantity: number) => void;
+  similarProducts?: Product[];
+  distributors?: Distributor[];
 }
 
-export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProps) {
+export function ProductCard({ product, isLoading, onAddToCart, similarProducts = [], distributors = [] }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const { toast } = useToast();
@@ -36,7 +44,7 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
         title: "Adicionado ao carrinho",
         description: `${quantity}x ${product.name} foi adicionado ao seu carrinho.`
       });
-      setQuantity(1); // Reset quantity after adding to cart
+      setQuantity(1); 
     }
   };
 
@@ -186,9 +194,16 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
               </span>
             </div>
             <div className="flex items-center gap-2">
+              {similarProducts.length > 0 && (
+                <PriceComparisonDialog
+                  product={product}
+                  similarProducts={similarProducts}
+                  distributors={distributors}
+                />
+              )}
               <div className="flex items-center bg-muted rounded-lg">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="icon"
                   className="h-8 w-8"
                   onClick={decrementQuantity}
@@ -196,8 +211,8 @@ export function ProductCard({ product, isLoading, onAddToCart }: ProductCardProp
                   <Minus className="h-4 w-4" />
                 </Button>
                 <span className="w-8 text-center">{quantity}</span>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="icon"
                   className="h-8 w-8"
                   onClick={incrementQuantity}
