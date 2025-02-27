@@ -278,8 +278,8 @@ const SidebarTrigger = React.forwardRef<
       variant="ghost"
       size="icon"
       className={cn(
-        "absolute top-2 right-2 z-50 h-8 w-8 bg-background/80 hover:bg-accent",
-        "transition-all duration-300 ease-in-out rounded-full shadow-sm",
+        "h-8 w-8 bg-background hover:bg-accent rounded-full shadow-sm",
+        "transition-all duration-300 ease-in-out",
         state === "collapsed" && "rotate-180",
         className
       )}
@@ -294,6 +294,7 @@ const SidebarTrigger = React.forwardRef<
     </Button>
   )
 })
+
 SidebarTrigger.displayName = "SidebarTrigger"
 
 const SidebarRail = React.forwardRef<

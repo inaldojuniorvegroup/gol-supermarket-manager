@@ -84,9 +84,11 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen>
       <div className="flex h-screen">
+        {/* Move SidebarTrigger outside of Sidebar */}
+        <SidebarTrigger className="fixed top-4 left-4 z-50" />
+
         <Sidebar>
           <NavContent />
-          <SidebarTrigger />
         </Sidebar>
 
         {/* Main content */}
