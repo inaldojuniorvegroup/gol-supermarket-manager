@@ -4,7 +4,7 @@ import { read, utils } from "xlsx";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Upload } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 interface ImportExcelProps {
   distributorId: number;
@@ -20,6 +21,9 @@ interface ImportExcelProps {
 export default function ImportExcel({ distributorId }: ImportExcelProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [processedProducts, setProcessedProducts] = useState(0);
 
   const importMutation = useMutation({
     mutationFn: async (data: any[]) => {
@@ -30,10 +34,9 @@ export default function ImportExcel({ distributorId }: ImportExcelProps) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      toast({
-        title: "Produtos importados",
-        description: `${data.productsImported} produtos foram importados com sucesso`,
-      });
+      setProcessedProducts(prev => prev + data.productsImported);
+      const newProgress = Math.round((processedProducts / totalProducts) * 100);
+      setProgress(newProgress);
     },
     onError: (error: Error) => {
       toast({
@@ -47,6 +50,9 @@ export default function ImportExcel({ distributorId }: ImportExcelProps) {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setIsLoading(true);
+      setProgress(0);
+      setProcessedProducts(0);
+
       const file = event.target.files?.[0];
       if (!file) return;
 
@@ -86,12 +92,32 @@ export default function ImportExcel({ distributorId }: ImportExcelProps) {
             throw new Error('Nenhum produto válido encontrado no arquivo.');
           }
 
-          // Importar em lotes
-          const batchSize = 50;
+          setTotalProducts(validProducts.length);
+          toast({
+            title: "Iniciando importação",
+            description: `Importando ${validProducts.length} produtos...`
+          });
+
+          // Importar em lotes maiores (200 produtos por vez)
+          const batchSize = 200;
           for (let i = 0; i < validProducts.length; i += batchSize) {
             const batch = validProducts.slice(i, i + batchSize);
             await importMutation.mutateAsync(batch);
+
+            const currentProgress = Math.min(((i + batchSize) / validProducts.length) * 100, 100);
+            setProgress(currentProgress);
+
+            // Atualizar toast com progresso
+            toast({
+              title: "Importando produtos",
+              description: `Processados ${Math.min(i + batchSize, validProducts.length)} de ${validProducts.length} produtos`
+            });
           }
+
+          toast({
+            title: "Importação concluída",
+            description: `${validProducts.length} produtos foram importados com sucesso!`
+          });
 
         } catch (error) {
           console.error('Error processing file:', error);
@@ -102,6 +128,9 @@ export default function ImportExcel({ distributorId }: ImportExcelProps) {
           });
         } finally {
           setIsLoading(false);
+          setProgress(0);
+          setProcessedProducts(0);
+          setTotalProducts(0);
         }
       };
 
@@ -125,13 +154,17 @@ export default function ImportExcel({ distributorId }: ImportExcelProps) {
           O arquivo deve conter as colunas: Nome, Código, Cód.Forn., Preço Custo, etc.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         <Button
           variant="outline"
-          className="gap-2 w-full sm:w-auto"
+          className="gap-2 w-full sm:w-auto relative"
           disabled={isLoading || importMutation.isPending}
         >
-          <Upload className="h-4 w-4" />
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
           <label className="cursor-pointer">
             {isLoading ? "Importando..." : "Selecionar Arquivo Excel"}
             <input
@@ -143,6 +176,15 @@ export default function ImportExcel({ distributorId }: ImportExcelProps) {
             />
           </label>
         </Button>
+
+        {(isLoading || importMutation.isPending) && (
+          <div className="space-y-2">
+            <Progress value={progress} className="w-full" />
+            <p className="text-sm text-muted-foreground text-center">
+              {processedProducts} de {totalProducts} produtos processados ({Math.round(progress)}%)
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
