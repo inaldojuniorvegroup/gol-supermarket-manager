@@ -381,31 +381,34 @@ export default function DistributorsPage() {
                     {!isVendorView && <ImportExcel distributorId={distributor.id} />}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
-                      {getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => (
-                        <Card key={product.id} className="hover:border-primary">
-                          <CardHeader className="p-4">
-                            <CardTitle className="text-lg">{product.name}</CardTitle>
-                            <CardDescription>Código: {product.itemCode}</CardDescription>
-                          </CardHeader>
-                          <CardContent className="p-4">
-                            <div className="space-y-2">
-                              <div className="text-base">
-                                Preço: ${Number(product.unitPrice).toFixed(2)}
-                              </div>
-                              {product.boxPrice && (
-                                <div className="text-sm text-muted-foreground">
-                                  Caixa: ${Number(product.boxPrice).toFixed(2)} ({product.boxQuantity} unidades)
-                                </div>
-                              )}
-                              {findSimilarProducts(product).length > 0 && (
-                                <Badge variant="secondary" className="text-sm">
-                                  Disponível em outros distribuidores
-                                </Badge>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                      {loadingProducts ? (
+                        [...Array(4)].map((_, i) => (
+                          <Card key={i} className="animate-pulse">
+                            <CardContent className="p-4 space-y-2">
+                              <div className="h-4 bg-muted rounded w-3/4" />
+                              <div className="h-4 bg-muted rounded w-1/2" />
+                            </CardContent>
+                          </Card>
+                        ))
+                      ) : (
+                        getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => {
+                          const similarProducts = products.filter(p =>
+                            p.id !== product.id &&
+                            p.barCode === product.barCode &&
+                            p.name === product.name
+                          );
+
+                          return (
+                            <ProductCard
+                              key={product.id}
+                              product={product}
+                              isVendorView={isVendorView}
+                              similarProducts={similarProducts}
+                              distributors={distributors}
+                            />
+                          );
+                        })
+                      )}
                     </div>
 
                     {getDistributorProducts(distributor.id).length > ITEMS_PER_PAGE && (
