@@ -4,8 +4,7 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertStoreSchema, insertDistributorSchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema } from "@shared/schema";
 import * as express from 'express';
-// Assuming 'db' is imported and initialized elsewhere,  like: import {db, distributors, products} from './database';
-//  Add necessary import for database interaction here.  Example: import { db, distributors, products, eq } from './database';
+import { execute_sql_tool } from "./tools";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
