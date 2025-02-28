@@ -13,12 +13,22 @@ export default function CatalogPage() {
   const { id } = useParams<{ id: string }>();
   const distributorId = parseInt(id);
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
   const [, navigate] = useLocation();
+  const limit = 50;
 
   const { addToCart } = useCart();
 
-  const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
-    queryKey: ["/api/products"],
+  const { data: productsResponse, isLoading: isLoadingProducts } = useQuery<{
+    data: Product[];
+    pagination: { total: number; page: number; limit: number; totalPages: number };
+  }>({
+    queryKey: ["/api/products", distributorId, page, limit],
+    queryFn: async () => {
+      const res = await fetch(`/api/products?distributorId=${distributorId}&page=${page}&limit=${limit}`);
+      if (!res.ok) throw new Error("Failed to fetch products");
+      return res.json();
+    },
   });
 
   const { data: distributor } = useQuery<Distributor>({
@@ -29,26 +39,24 @@ export default function CatalogPage() {
     queryKey: ["/api/distributors"],
   });
 
-  // Filtra os produtos do distribuidor
-  const distributorProducts = products.filter(product => {
-    const matchesDistributor = product.distributorId === distributorId;
-    const matchesSearch = searchTerm === "" ||
+  // Filtra os produtos do distribuidor baseado na busca
+  const filteredProducts = productsResponse?.data.filter(product => {
+    return searchTerm === "" ||
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.itemCode.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesDistributor && matchesSearch;
-  });
+  }) || [];
 
   // Encontra produtos similares
   const findSimilarProducts = (product: Product) => {
-    return products.filter(p => 
+    return productsResponse?.data.filter(p => 
       p.id !== product.id && 
       p.itemCode === product.itemCode &&
       p.name === product.name
-    );
+    ) || [];
   };
 
   // Agrupa por subcategoria
-  const groupedProducts = distributorProducts.reduce((acc, product) => {
+  const groupedProducts = filteredProducts.reduce((acc, product) => {
     const subcategory = product.description || "Outros";
     if (!acc[subcategory]) {
       acc[subcategory] = [];
@@ -104,7 +112,6 @@ export default function CatalogPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {products.map((product) => {
                 const similarProducts = findSimilarProducts(product);
-
                 return (
                   <ProductCard
                     key={product.id}
@@ -119,6 +126,25 @@ export default function CatalogPage() {
           </div>
         ))}
       </div>
+
+      {productsResponse?.pagination && productsResponse.pagination.totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-4">
+          <Button
+            variant="outline"
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
+            Anterior
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setPage(p => Math.min(productsResponse.pagination.totalPages, p + 1))}
+            disabled={page === productsResponse.pagination.totalPages}
+          >
+            Próximo
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
