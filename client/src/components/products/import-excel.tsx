@@ -64,22 +64,66 @@ export default function ImportExcel({ distributorId }: ImportExcelProps) {
           const worksheet = workbook.Sheets[workbook.SheetNames[0]];
           const products = utils.sheet_to_json(worksheet);
 
+          // Função para encontrar o valor de uma coluna com várias possíveis nomenclaturas
+          const findColumnValue = (row: any, possibilities: string[]) => {
+            for (const possibility of possibilities) {
+              if (row[possibility] !== undefined) {
+                return row[possibility];
+              }
+            }
+            return null;
+          };
+
           // Processar produtos
-          const transformedProducts = products.map((row: any) => ({
-            name: String(row['Nome'] || row['NOME'] || row['Descrição'] || row['DESCRIÇÃO'] || '').trim(),
-            itemCode: String(row['Código'] || row['CÓDIGO'] || row['Cod'] || row['COD'] || '').trim(),
-            supplierCode: String(row['Cód.Forn.'] || row['COD.FORN'] || row['Código Fornecedor'] || '').trim(),
-            barCode: String(row['Cód.Barra'] || row['EAN'] || row['Código de Barras'] || '').trim(),
-            description: String(row['Departamento'] || row['DEPARTAMENTO'] || '').trim(),
-            grupo: String(row['Grupo'] || row['GRUPO'] || '').trim(),
-            unitPrice: parseFloat(String(row['Preço Custo'] || row['PREÇO CUSTO'] || '0').replace(',', '.')) || 0,
-            boxQuantity: parseInt(String(row['Qtd/Caixa'] || row['QTD/CAIXA'] || '1')) || 1,
-            boxPrice: parseFloat(String(row['Preço Caixa'] || row['PREÇO CAIXA'] || '0').replace(',', '.')) || null,
-            unit: String(row['Unid.'] || row['UNIDADE'] || 'un').trim(),
-            distributorId: distributorId,
-            imageUrl: null,
-            isSpecialOffer: false
-          }));
+          const transformedProducts = products.map((row: any) => {
+            // Buscar preço da caixa com várias possibilidades de nome de coluna
+            const boxPriceValue = findColumnValue(row, [
+              'Preço Caixa',
+              'PREÇO CAIXA',
+              'Valor Cx',
+              'VALOR CX',
+              'Valor Caixa',
+              'VALOR CAIXA',
+              'Preco Cx',
+              'PRECO CX',
+              'Vl Cx',
+              'VL CX',
+              'Vl.Cx',
+              'VL.CX',
+              'Val.Cx',
+              'VAL.CX'
+            ]);
+
+            let boxPrice = null;
+            if (boxPriceValue !== null) {
+              if (typeof boxPriceValue === 'number') {
+                boxPrice = boxPriceValue;
+              } else if (typeof boxPriceValue === 'string') {
+                // Remove caracteres não numéricos exceto ponto e vírgula
+                const cleanValue = boxPriceValue.replace(/[^\d.,]/g, '').replace(',', '.');
+                const parsedValue = parseFloat(cleanValue);
+                if (!isNaN(parsedValue)) {
+                  boxPrice = parsedValue;
+                }
+              }
+            }
+
+            return {
+              name: String(row['Nome'] || row['NOME'] || row['Descrição'] || row['DESCRIÇÃO'] || '').trim(),
+              itemCode: String(row['Código'] || row['CÓDIGO'] || row['Cod'] || row['COD'] || '').trim(),
+              supplierCode: String(row['Cód.Forn.'] || row['COD.FORN'] || row['Código Fornecedor'] || '').trim(),
+              barCode: String(row['Cód.Barra'] || row['EAN'] || row['Código de Barras'] || '').trim(),
+              description: String(row['Departamento'] || row['DEPARTAMENTO'] || '').trim(),
+              grupo: String(row['Grupo'] || row['GRUPO'] || '').trim(),
+              unitPrice: parseFloat(String(row['Preço Custo'] || row['PREÇO CUSTO'] || '0').replace(',', '.')) || 0,
+              boxQuantity: parseInt(String(row['Qtd/Caixa'] || row['QTD/CAIXA'] || row['Qtd/Cx'] || row['QTD/CX'] || '1')) || 1,
+              boxPrice: boxPrice,
+              unit: String(row['Unid.'] || row['UNIDADE'] || 'un').trim(),
+              distributorId: distributorId,
+              imageUrl: null,
+              isSpecialOffer: false
+            };
+          });
 
           // Validar produtos
           const validProducts = transformedProducts.filter(product => 
