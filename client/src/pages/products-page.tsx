@@ -6,21 +6,23 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from "@/components/ui/card";
-import { Truck, Package } from "lucide-react";
-import { useCart } from "@/contexts/cart-context";
+import { Package, Truck } from "lucide-react";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import { useCart } from "@/contexts/cart-context";
 
 export default function ProductsPage() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { addToCart } = useCart();
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 12; // Aumentado para melhor uso do espaço em tablets
 
   // Otimizar queries com staleTime e cacheTime apropriados
   const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
@@ -31,8 +33,8 @@ export default function ProductsPage() {
 
   const { data: distributors = [], isLoading: isLoadingDistributors } = useQuery<Distributor[]>({
     queryKey: ["/api/distributors"],
-    staleTime: 1000 * 60 * 5, // 5 minutos
-    cacheTime: 1000 * 60 * 30, // 30 minutos
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 30,
   });
 
   // Memorizar o filtro de distribuidores
@@ -62,6 +64,14 @@ export default function ProductsPage() {
       );
     };
   }, [products]);
+
+  // Memorizar a função getPaginatedProducts
+  const getPaginatedProducts = useMemo(() => {
+    return (products: Product[]) => {
+      const startIndex = (page - 1) * ITEMS_PER_PAGE;
+      return products.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    };
+  }, [page, ITEMS_PER_PAGE]);
 
   if (isLoadingDistributors || isLoadingProducts) {
     return (
@@ -102,6 +112,8 @@ export default function ProductsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {displayedDistributors.map((distributor) => {
           const distributorProducts = getDistributorProducts(distributor.id);
+          const paginatedProducts = getPaginatedProducts(distributorProducts);
+          const totalPages = Math.ceil(distributorProducts.length / ITEMS_PER_PAGE);
 
           return (
             <Card 
@@ -121,7 +133,7 @@ export default function ProductsPage() {
               </CardHeader>
               <CardContent className="space-y-6 p-5">
                 <div className="grid grid-cols-2 gap-3">
-                  {distributorProducts.slice(0, 4).map((product) => (
+                  {paginatedProducts.map((product) => (
                     <div 
                       key={product.id} 
                       className="bg-muted rounded-lg p-4 text-sm space-y-2"
@@ -138,6 +150,36 @@ export default function ProductsPage() {
                     </div>
                   ))}
                 </div>
+
+                {totalPages > 1 && (
+                  <div className="flex justify-center gap-2 pt-4">
+                    <Button
+                      variant="outline"
+                      className="h-12 px-6"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPage(p => Math.max(1, p - 1));
+                      }}
+                      disabled={page === 1}
+                    >
+                      Anterior
+                    </Button>
+                    <div className="flex items-center px-4 text-base">
+                      Página {page} de {totalPages}
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="h-12 px-6"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPage(p => Math.min(totalPages, p + 1));
+                      }}
+                      disabled={page >= totalPages}
+                    >
+                      Próxima
+                    </Button>
+                  </div>
+                )}
               </CardContent>
               <CardFooter className="p-5">
                 <Button variant="outline" className="w-full h-12 text-base">
