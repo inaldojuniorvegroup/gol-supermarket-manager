@@ -105,6 +105,13 @@ const styles = StyleSheet.create({
   quantity: { width: '10%', borderRightWidth: 1, borderRightColor: '#e2e8f0', textAlign: 'center' },
   unitPrice: { width: '15%', borderRightWidth: 1, borderRightColor: '#e2e8f0', textAlign: 'right' },
   total: { width: '15%', textAlign: 'right' },
+  tableColCode: { width: '15%', borderRightWidth: 1, borderRightColor: '#e2e8f0' },
+  tableColProduct: { width: '30%' },
+  tableColQty: { width: '10%', borderRightWidth: 1, borderRightColor: '#e2e8f0', textAlign: 'center' },
+  tableColPrice: { width: '15%', borderRightWidth: 1, borderRightColor: '#e2e8f0', textAlign: 'right' },
+  tableColTotal: { width: '15%', textAlign: 'right' },
+  productCodes: { fontSize: 8 },
+
   // Seção de totais
   totalSection: {
     marginLeft: 'auto',
@@ -155,7 +162,7 @@ interface OrderPDFProps {
 }
 
 export default function OrderPDF({ order, items, store, distributor }: OrderPDFProps) {
-  const formatCurrency = (value: string | number) => `$${Number(value).toFixed(2)}`;
+  const formatCurrency = (value: string | number) => `R$${Number(value).toFixed(2)}`;
   const formatDate = (date: Date) => new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -166,6 +173,7 @@ export default function OrderPDF({ order, items, store, distributor }: OrderPDFP
   const subtotal = items.reduce((acc, item) => acc + Number(item.total), 0);
   const tax = 0;
   const total = Number(order.total);
+  const isVendorView = false; // Assuming this is needed from context -  add proper way to get this value if needed
 
   return (
     <Document>
@@ -222,21 +230,35 @@ export default function OrderPDF({ order, items, store, distributor }: OrderPDFP
         {/* Tabela de produtos */}
         <View style={styles.productTable}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableCell, styles.productName]}>Product Name</Text>
-            <Text style={[styles.tableCell, styles.supplierCode]}>Supplier Code</Text>
-            <Text style={[styles.tableCell, styles.barCode]}>Bar Code</Text>
-            <Text style={[styles.tableCell, styles.quantity]}>Qty</Text>
-            <Text style={[styles.tableCell, styles.unitPrice]}>Unit Price</Text>
-            <Text style={[styles.tableCell, styles.total]}>Total</Text>
+            <Text style={[styles.tableCell, styles.tableColCode]}>Supplier Code</Text>
+            <Text style={[styles.tableCell, styles.tableColProduct]}>Product Name</Text>
+            <Text style={[styles.tableCell, styles.tableColQty]}>Qty</Text>
+            <Text style={[styles.tableCell, styles.tableColPrice]}>Unit Price</Text>
+            <Text style={[styles.tableCell, styles.tableColTotal]}>Total</Text>
           </View>
-          {items.map((item) => (
+          {order.items?.map((item) => (
             <View key={item.id} style={styles.tableRow}>
-              <Text style={[styles.tableCell, styles.productName]}>{item.product?.name || "Product not found"}</Text>
-              <Text style={[styles.tableCell, styles.supplierCode]}>{item.product?.supplierCode}</Text>
-              <Text style={[styles.tableCell, styles.barCode]}>{item.product?.barCode}</Text>
-              <Text style={[styles.tableCell, styles.quantity]}>{item.quantity}</Text>
-              <Text style={[styles.tableCell, styles.unitPrice]}>{formatCurrency(item.price)}</Text>
-              <Text style={[styles.tableCell, styles.total]}>{formatCurrency(item.total)}</Text>
+              <Text style={[styles.tableCell, styles.tableColCode]}>{item.product?.supplierCode}</Text>
+              <View style={[styles.tableCell, styles.tableColProduct]}>
+                <Text>{item.product?.name}</Text>
+                {!isVendorView && (
+                  <Text style={styles.productCodes}>
+                    Código Interno: {item.product?.itemCode} | EAN: {item.product?.barCode}
+                  </Text>
+                )}
+                {item.product?.boxQuantity && item.product?.boxPrice && (
+                  <Text style={styles.productCodes}>
+                    Caixa: {item.product.boxQuantity} un. | R$ {Number(item.product.boxPrice).toFixed(2)}
+                  </Text>
+                )}
+              </View>
+              <Text style={[styles.tableCell, styles.tableColQty]}>{item.quantity}</Text>
+              <Text style={[styles.tableCell, styles.tableColPrice]}>
+                R$ {Number(item.price).toFixed(2)}
+              </Text>
+              <Text style={[styles.tableCell, styles.tableColTotal]}>
+                R$ {Number(item.total).toFixed(2)}
+              </Text>
             </View>
           ))}
         </View>

@@ -162,12 +162,12 @@ export function ProductCard({
               <div className="flex items-center gap-1">
                 <DollarSign className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-lg">
-                  {Number(product.unitPrice).toFixed(2)}
+                  R$ {Number(product.unitPrice).toFixed(2)}
                 </span>
               </div>
-              {product.boxPrice && (
+              {product.boxPrice && product.boxQuantity && (
                 <div className="text-sm text-muted-foreground">
-                  Caixa: R$ {Number(product.boxPrice).toFixed(2)}
+                  Caixa ({product.boxQuantity} un.): R$ {Number(product.boxPrice).toFixed(2)}
                 </div>
               )}
             </div>
