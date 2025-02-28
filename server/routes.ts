@@ -4,6 +4,8 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertStoreSchema, insertDistributorSchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema } from "@shared/schema";
 import * as express from 'express';
+// Assuming 'db' is imported and initialized elsewhere,  like: import {db, distributors, products} from './database';
+//  Add necessary import for database interaction here.  Example: import { db, distributors, products, eq } from './database';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -224,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Erro geral na importação:', error);
-      res.status(400).json({ 
+      res.status(400).json({
         error: 'Falha ao importar produtos',
         message: error.message,
         details: error instanceof Error ? error.stack : null
@@ -312,6 +314,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating order item:', error);
       res.status(500).json({ error: "Failed to update order item" });
+    }
+  });
+
+  // Add this new route before the httpServer creation
+  app.delete("/api/distributors/:id", async (req, res) => {
+    try {
+      const distributorId = Number(req.params.id);
+
+      // Primeiro deletar todos os produtos do distribuidor
+      await db.delete(products).where(eq(products.distributorId, distributorId));
+
+      // Depois deletar o distribuidor
+      const deletedDistributor = await db
+        .delete(distributors)
+        .where(eq(distributors.id, distributorId))
+        .returning();
+
+      if (!deletedDistributor.length) {
+        return res.status(404).json({ error: "Distribuidor não encontrado" });
+      }
+
+      res.json({ message: "Distribuidor e catálogo deletados com sucesso" });
+    } catch (error) {
+      console.error('Error deleting distributor:', error);
+      res.status(500).json({ error: "Erro ao deletar distribuidor" });
     }
   });
 

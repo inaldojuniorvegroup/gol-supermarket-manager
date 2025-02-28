@@ -32,10 +32,21 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Mail, Plus, Truck, Share2 } from "lucide-react";
+import { Phone, Mail, Plus, Truck, Share2, Trash2 } from "lucide-react";
 import { ProductCard } from "@/components/products/product-card";
 import { useLocation, useSearch } from "wouter";
 import ImportExcel from "@/components/products/import-excel";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function DistributorsPage() {
   const { toast } = useToast();
@@ -117,6 +128,32 @@ export default function DistributorsPage() {
     const baseUrl = window.location.origin;
     return `${baseUrl}/distributors?view=vendor&distributor=${distributorId}`;
   };
+
+  const deleteMutation = useMutation({
+    mutationFn: async (distributorId: number) => {
+      const res = await apiRequest("DELETE", `/api/distributors/${distributorId}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Erro ao deletar distribuidor");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/distributors"] });
+      toast({
+        title: "Distribuidor deletado",
+        description: "O distribuidor e seu catálogo foram removidos com sucesso",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao deletar",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
 
   return (
     <div className="space-y-4">
@@ -223,11 +260,46 @@ export default function DistributorsPage() {
         {filteredDistributors.map((distributor) => (
           <Card key={distributor.id}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Truck className="h-5 w-5" />
-                {distributor.name}
-              </CardTitle>
-              <CardDescription>Código: {distributor.code}</CardDescription>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Truck className="h-5 w-5" />
+                    {distributor.name}
+                  </CardTitle>
+                  <CardDescription>Código: {distributor.code}</CardDescription>
+                </div>
+                {user?.role === 'supermarket' && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-500 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Deletar Distribuidor</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja deletar o distribuidor "{distributor.name}" e todo seu catálogo?
+                          Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteMutation.mutate(distributor.id)}
+                          className="bg-red-500 hover:bg-red-600"
+                        >
+                          Deletar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
