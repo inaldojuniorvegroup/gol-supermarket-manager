@@ -26,13 +26,13 @@ interface ProductCardProps {
   isVendorView?: boolean;
 }
 
-export function ProductCard({ 
-  product, 
-  isLoading, 
-  onAddToCart, 
-  similarProducts = [], 
+export function ProductCard({
+  product,
+  isLoading,
+  onAddToCart,
+  similarProducts = [],
   distributors = [],
-  isVendorView = false 
+  isVendorView = false
 }: ProductCardProps) {
   const [quantity, setQuantity] = useState(1);
   const { toast } = useToast();
@@ -44,7 +44,7 @@ export function ProductCard({
         title: "Adicionado ao carrinho",
         description: `${quantity}x ${product.name} foi adicionado ao seu carrinho.`
       });
-      setQuantity(1); 
+      setQuantity(1);
     }
   };
 
@@ -104,9 +104,9 @@ export function ProductCard({
         <CardHeader className="p-0">
           <div className="flex items-center justify-center w-full h-48 bg-muted">
             {product.imageUrl ? (
-              <img 
-                src={product.imageUrl} 
-                alt={product.name} 
+              <img
+                src={product.imageUrl}
+                alt={product.name}
                 className="object-contain h-full w-full"
               />
             ) : (
@@ -213,7 +213,7 @@ export function ProductCard({
 
                     {/* Última Atualização */}
                     <div className="text-xs text-muted-foreground">
-                      Última atualização {formatDistanceToNow(new Date(product.updatedAt), { 
+                      Última atualização {formatDistanceToNow(new Date(product.updatedAt), {
                         addSuffix: true,
                         locale: ptBR
                       })}
@@ -266,9 +266,12 @@ export function ProductCard({
                     <Box className="h-4 w-4" />
                     <span className="text-sm">Caixa com {product.boxQuantity} {product.unit}</span>
                   </div>
-                  <span className="font-medium">
+                  <span className="font-medium text-lg text-primary">
                     ${Number(product.boxPrice).toFixed(2)}
                   </span>
+                </div>
+                <div className="text-xs text-muted-foreground text-right mt-1">
+                  (${(Number(product.boxPrice) / product.boxQuantity).toFixed(2)} por unidade)
                 </div>
               </div>
             )}
