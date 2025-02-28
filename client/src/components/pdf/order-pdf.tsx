@@ -248,16 +248,16 @@ export default function OrderPDF({ order, items, store, distributor }: OrderPDFP
                 )}
                 {item.product?.boxQuantity && item.product?.boxPrice && (
                   <Text style={styles.productCodes}>
-                    Caixa: {item.product.boxQuantity} un. | ${Number(item.product.boxPrice).toFixed(2)}
+                    Caixa: {item.product.boxQuantity} un. | {formatCurrency(item.product.boxPrice)}
                   </Text>
                 )}
               </View>
               <Text style={[styles.tableCell, styles.tableColQty]}>{item.quantity}</Text>
               <Text style={[styles.tableCell, styles.tableColPrice]}>
-                ${Number(item.price).toFixed(2)}
+                {formatCurrency(item.price)}
               </Text>
               <Text style={[styles.tableCell, styles.tableColTotal]}>
-                ${Number(item.total).toFixed(2)}
+                {formatCurrency(item.total)}
               </Text>
             </View>
           ))}

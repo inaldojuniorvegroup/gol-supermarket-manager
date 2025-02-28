@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Product, Distributor } from "@shared/schema";
-import { Package, Tag, DollarSign, ShoppingCart, Barcode, Box, Info, FolderOpen, Folder, Plus, Minus, Scale } from "lucide-react";
+import { Package, Tag, ShoppingCart, Barcode, Box, Info, FolderOpen, Folder, Plus, Minus, Scale } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -139,7 +139,6 @@ export function ProductCard({
                     </div>
                     {product.boxPrice && (
                       <div className="flex items-center gap-2 text-sm">
-                        <DollarSign className="h-4 w-4" />
                         <span>Preço Caixa: ${Number(product.boxPrice).toFixed(2)}</span>
                       </div>
                     )}
@@ -159,12 +158,9 @@ export function ProductCard({
 
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <div className="flex items-center gap-1">
-                <DollarSign className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-lg">
-                  ${Number(product.unitPrice).toFixed(2)}
-                </span>
-              </div>
+              <span className="font-semibold text-lg text-primary">
+                ${Number(product.unitPrice).toFixed(2)}
+              </span>
               {product.boxPrice && product.boxQuantity && (
                 <div className="text-sm text-muted-foreground">
                   Caixa ({product.boxQuantity} un.): ${Number(product.boxPrice).toFixed(2)}
