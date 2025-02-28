@@ -322,20 +322,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const distributorId = Number(req.params.id);
 
-      // Primeiro deletar todos os produtos do distribuidor
-      await db.delete(products).where(eq(products.distributorId, distributorId));
-
-      // Depois deletar o distribuidor
-      const deletedDistributor = await db
-        .delete(distributors)
-        .where(eq(distributors.id, distributorId))
-        .returning();
-
-      if (!deletedDistributor.length) {
+      // Primeiro verificar se o distribuidor existe
+      const distributor = await storage.getDistributor(distributorId);
+      if (!distributor) {
         return res.status(404).json({ error: "Distribuidor não encontrado" });
       }
 
-      res.json({ message: "Distribuidor e catálogo deletados com sucesso" });
+      // Pegar todos os produtos do distribuidor
+      const products = await storage.getProducts();
+      const distributorProducts = products.filter(p => p.distributorId === distributorId);
+
+      // Executar o SQL para deletar produtos e distribuidor
+      await execute_sql_tool(`
+        DELETE FROM products WHERE distributor_id = ${distributorId};
+        DELETE FROM distributors WHERE id = ${distributorId};
+      `);
+
+      res.json({ 
+        message: "Distribuidor e catálogo deletados com sucesso",
+        deletedProducts: distributorProducts.length
+      });
     } catch (error) {
       console.error('Error deleting distributor:', error);
       res.status(500).json({ error: "Erro ao deletar distribuidor" });
