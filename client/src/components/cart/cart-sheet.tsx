@@ -24,14 +24,6 @@ const formatPrice = (price: number): string => {
   return (Math.floor(price * 100) / 100).toFixed(2);
 };
 
-// Função para calcular o preço do item baseado no modo (unidade ou caixa)
-const calculateItemPrice = (product: Product, isBoxUnit: boolean): number => {
-  if (isBoxUnit) {
-    return product.boxPrice || (product.unitPrice * product.boxQuantity);
-  }
-  return product.unitPrice;
-};
-
 export function CartSheet() {
   const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
   const { toast } = useToast();
@@ -63,7 +55,10 @@ export function CartSheet() {
       // Criar um pedido para cada distribuidor
       const orderPromises = Object.entries(itemsByDistributor).map(async ([distributorId, items]) => {
         const orderTotal = items.reduce((sum, item) => {
-          const itemPrice = calculateItemPrice(item.product, item.isBoxUnit);
+          const itemPrice = item.isBoxUnit 
+            ? Number(item.product.boxPrice)
+            : Number(item.product.unitPrice);
+
           const itemTotal = Number(formatPrice(itemPrice)) * item.quantity;
           return sum + itemTotal;
         }, 0);
@@ -80,7 +75,10 @@ export function CartSheet() {
 
         // Adicionar os itens ao pedido
         const itemPromises = items.map(item => {
-          const itemPrice = calculateItemPrice(item.product, item.isBoxUnit);
+          const itemPrice = item.isBoxUnit 
+            ? Number(item.product.boxPrice)
+            : Number(item.product.unitPrice);
+
           const itemTotal = Number(formatPrice(itemPrice)) * item.quantity;
 
           return apiRequest("POST", `/api/orders/${orderData.id}/items`, {
@@ -149,7 +147,10 @@ export function CartSheet() {
             ) : (
               <div className="space-y-4 pr-4">
                 {items.map((item) => {
-                  const itemPrice = calculateItemPrice(item.product, item.isBoxUnit);
+                  const itemPrice = item.isBoxUnit 
+                    ? Number(item.product.boxPrice)
+                    : Number(item.product.unitPrice);
+
                   const itemTotal = Number(formatPrice(itemPrice)) * item.quantity;
 
                   return (

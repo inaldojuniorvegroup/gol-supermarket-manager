@@ -23,14 +23,6 @@ const formatPrice = (price: number): string => {
   return (Math.floor(price * 100) / 100).toFixed(2);
 };
 
-// Função para calcular o preço do item baseado no modo (unidade ou caixa)
-const calculateItemPrice = (product: Product, isBoxUnit: boolean): number => {
-  if (isBoxUnit) {
-    return product.boxPrice || (product.unitPrice * product.boxQuantity);
-  }
-  return product.unitPrice;
-};
-
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
@@ -76,7 +68,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const total = items.reduce((sum, item) => {
-    const itemPrice = calculateItemPrice(item.product, item.isBoxUnit);
+    // Usar o preço da caixa diretamente do produto quando disponível
+    const itemPrice = item.isBoxUnit 
+      ? Number(item.product.boxPrice)
+      : Number(item.product.unitPrice);
+
     const itemTotal = Number(formatPrice(itemPrice)) * item.quantity;
     return sum + itemTotal;
   }, 0);
