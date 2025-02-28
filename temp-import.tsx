@@ -4,18 +4,18 @@ import fs from 'fs';
 async function importProducts() {
   try {
     // Ler o arquivo Excel
-    const excelBuffer = fs.readFileSync('attached_assets/Export (5).xlsx');
+    const excelBuffer = fs.readFileSync('attached_assets/JULINA FOODS (3).xlsx');
     const workbook = read(excelBuffer);
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const products = utils.sheet_to_json(worksheet);
 
     console.log(`Total de produtos encontrados: ${products.length}`);
-    
+
     // Processar em lotes
     const batchSize = 50;
     for (let i = 0; i < products.length; i += batchSize) {
       const batch = products.slice(i, i + batchSize);
-      
+
       for (const row of batch) {
         const product = {
           name: String(row['Nome'] || '').trim(),
@@ -28,7 +28,7 @@ async function importProducts() {
           boxPrice: Number(String(row['Preço Caixa'] || '0').replace(',', '.')),
           boxQuantity: Number(String(row['Qtd/Caixa'] || '1').replace(',', '.')),
           unit: String(row['Unid.'] || 'un').trim(),
-          distributorId: 14,
+          distributorId: 15, // ID do JULINA FOODS que acabamos de criar
           imageUrl: null,
           isSpecialOffer: false
         };
