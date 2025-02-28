@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Product, Distributor } from "@shared/schema";
-import { Package, Tag, ShoppingCart, Barcode, Box, Info, FolderOpen, Folder, Plus, Minus, Scale } from "lucide-react";
+import { Package, Tag, ShoppingCart, Barcode, Box, Info, FolderOpen, Folder, Plus, Minus, Scale, PackageOpen, Percent } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -47,13 +47,8 @@ export function ProductCard({
     }
   };
 
-  const incrementQuantity = () => {
-    setQuantity(prev => prev + 1);
-  };
-
-  const decrementQuantity = () => {
-    setQuantity(prev => Math.max(1, prev - 1));
-  };
+  const incrementQuantity = () => setQuantity(prev => prev + 1);
+  const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
 
   if (isLoading || !product) {
     return (
@@ -81,15 +76,23 @@ export function ProductCard({
     >
       <Card className="group relative h-full overflow-hidden hover:shadow-lg transition-all duration-200">
         <div className="absolute top-2 left-2 right-2 z-10 flex flex-col gap-1">
-          <div className="flex justify-between items-center gap-2">
-            <Badge variant="outline" className="flex items-center gap-1">
-              <FolderOpen className="h-3 w-3" />
-              {product.description}
-            </Badge>
+          <div className="flex flex-wrap gap-1">
+            {product.description && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <FolderOpen className="h-3 w-3" />
+                {product.description}
+              </Badge>
+            )}
             {similarProducts.length > 0 && !isVendorView && (
               <Badge variant="secondary" className="flex items-center gap-1">
                 <Scale className="h-3 w-3" />
                 {similarProducts.length} outros fornecedores
+              </Badge>
+            )}
+            {product.isSpecialOffer && (
+              <Badge variant="destructive" className="flex items-center gap-1">
+                <Percent className="h-3 w-3" />
+                Oferta Especial
               </Badge>
             )}
           </div>
@@ -103,7 +106,15 @@ export function ProductCard({
 
         <CardHeader className="p-0">
           <div className="flex items-center justify-center w-full h-48 bg-muted">
-            <Package className="h-12 w-12 text-muted-foreground" />
+            {product.imageUrl ? (
+              <img 
+                src={product.imageUrl} 
+                alt={product.name} 
+                className="object-contain h-full w-full"
+              />
+            ) : (
+              <Package className="h-12 w-12 text-muted-foreground" />
+            )}
           </div>
         </CardHeader>
 
@@ -132,6 +143,10 @@ export function ProductCard({
                     <div className="flex items-center gap-2 text-sm">
                       <Barcode className="h-4 w-4" />
                       <span>EAN: {product.barCode}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <PackageOpen className="h-4 w-4" />
+                      <span>Unidade: {product.unit}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Box className="h-4 w-4" />
@@ -163,7 +178,7 @@ export function ProductCard({
               </span>
               {product.boxPrice && product.boxQuantity && (
                 <div className="text-sm text-muted-foreground">
-                  Caixa ({product.boxQuantity} un.): ${Number(product.boxPrice).toFixed(2)}
+                  Caixa ({product.boxQuantity} {product.unit}): ${Number(product.boxPrice).toFixed(2)}
                 </div>
               )}
             </div>
