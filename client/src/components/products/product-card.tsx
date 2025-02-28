@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Product, Distributor } from "@shared/schema";
-import { Package, Tag, ShoppingCart, Barcode, Box, Info, FolderOpen, Folder, Plus, Minus, Scale, PackageOpen, Percent } from "lucide-react";
+import { Package, Tag, ShoppingCart, Barcode, Box, Info, FolderOpen, Folder, Plus, Minus, Scale, PackageOpen, Percent, LayersIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -96,9 +96,15 @@ export function ProductCard({
               </Badge>
             )}
           </div>
+          {product.subcategory && (
+            <Badge variant="outline" className="flex items-center gap-1 w-fit">
+              <Folder className="h-3 w-3" />
+              {product.subcategory}
+            </Badge>
+          )}
           {product.grupo && (
             <Badge variant="secondary" className="flex items-center gap-1 w-fit">
-              <Folder className="h-3 w-3" />
+              <LayersIcon className="h-3 w-3" />
               {product.grupo}
             </Badge>
           )}
@@ -118,10 +124,10 @@ export function ProductCard({
           </div>
         </CardHeader>
 
-        <CardContent className="p-4 space-y-4 pt-12">
+        <CardContent className="p-4 space-y-4 pt-16">
           <div>
             <div className="flex items-center justify-between">
-              <CardTitle className="line-clamp-2 text-base mb-2">
+              <CardTitle className="line-clamp-2 text-base mb-2 flex-1">
                 {product.name}
               </CardTitle>
               <HoverCard>
@@ -132,31 +138,57 @@ export function ProductCard({
                 </HoverCardTrigger>
                 <HoverCardContent className="w-80">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Tag className="h-4 w-4" />
-                      <span>Código: {product.itemCode}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Tag className="h-4 w-4" />
-                      <span>Código Fornecedor: {product.supplierCode}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Barcode className="h-4 w-4" />
-                      <span>EAN: {product.barCode}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <PackageOpen className="h-4 w-4" />
-                      <span>Unidade: {product.unit}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Box className="h-4 w-4" />
-                      <span>Qtd. Caixa: {product.boxQuantity} {product.unit}</span>
-                    </div>
-                    {product.boxPrice && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <span>Preço Caixa: ${Number(product.boxPrice).toFixed(2)}</span>
+                    <div className="space-y-1.5">
+                      <h4 className="text-sm font-semibold">Informações do Produto</h4>
+                      <div className="text-sm space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Tag className="h-4 w-4" />
+                          <span>Código: {product.itemCode}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Tag className="h-4 w-4" />
+                          <span>Código Fornecedor: {product.supplierCode}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Barcode className="h-4 w-4" />
+                          <span>EAN: {product.barCode}</span>
+                        </div>
                       </div>
-                    )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <h4 className="text-sm font-semibold">Categoria</h4>
+                      <div className="text-sm space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Folder className="h-4 w-4" />
+                          <span>Subcategoria: {product.subcategory}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <LayersIcon className="h-4 w-4" />
+                          <span>Grupo: {product.grupo}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <h4 className="text-sm font-semibold">Embalagem</h4>
+                      <div className="text-sm space-y-1">
+                        <div className="flex items-center gap-2">
+                          <PackageOpen className="h-4 w-4" />
+                          <span>Unidade: {product.unit}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Box className="h-4 w-4" />
+                          <span>Qtd. por Caixa: {product.boxQuantity} {product.unit}</span>
+                        </div>
+                        {product.boxPrice && (
+                          <div className="flex items-center gap-2">
+                            <span>Preço Caixa: ${Number(product.boxPrice).toFixed(2)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="pt-2 border-t">
                       <p className="text-xs text-muted-foreground">
                         Última atualização {formatDistanceToNow(new Date(product.updatedAt), { 
