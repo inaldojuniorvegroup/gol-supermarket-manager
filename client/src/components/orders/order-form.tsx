@@ -86,25 +86,29 @@ export function OrderForm({ onSubmit, isSubmitting }: OrderFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
         <FormField
           control={form.control}
           name="storeId"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Store</FormLabel>
+            <FormItem className="mb-6">
+              <FormLabel className="text-base">Loja</FormLabel>
               <Select
                 onValueChange={(value) => field.onChange(Number(value))}
                 defaultValue={field.value?.toString()}
               >
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a store" />
+                  <SelectTrigger className="h-12 text-base">
+                    <SelectValue placeholder="Selecione uma loja" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {stores?.map((store) => (
-                    <SelectItem key={store.id} value={store.id.toString()}>
+                    <SelectItem 
+                      key={store.id} 
+                      value={store.id.toString()}
+                      className="h-12 text-base"
+                    >
                       {store.name}
                     </SelectItem>
                   ))}
@@ -118,17 +122,21 @@ export function OrderForm({ onSubmit, isSubmitting }: OrderFormProps) {
           control={form.control}
           name="distributorId"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Distributor</FormLabel>
+            <FormItem className="mb-6">
+              <FormLabel className="text-base">Distribuidor</FormLabel>
               <Select onValueChange={handleDistributorChange} defaultValue={field.value?.toString()}>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a distributor" />
+                  <SelectTrigger className="h-12 text-base">
+                    <SelectValue placeholder="Selecione um distribuidor" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {distributors?.map((distributor) => (
-                    <SelectItem key={distributor.id} value={distributor.id.toString()}>
+                    <SelectItem 
+                      key={distributor.id} 
+                      value={distributor.id.toString()}
+                      className="h-12 text-base"
+                    >
                       {distributor.name}
                     </SelectItem>
                   ))}
@@ -139,73 +147,90 @@ export function OrderForm({ onSubmit, isSubmitting }: OrderFormProps) {
         />
 
         {selectedDistributor && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium">Order Items</h3>
-              <Button type="button" onClick={addProduct} variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Product
+              <h3 className="text-xl font-medium">Itens do Pedido</h3>
+              <Button 
+                type="button" 
+                onClick={addProduct} 
+                variant="outline" 
+                size="lg"
+                className="h-12 px-6"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Adicionar Produto
               </Button>
             </div>
 
             {selectedProducts.length > 0 && (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedProducts.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <Select
-                          value={item.productId.toString()}
-                          onValueChange={(value) => updateProduct(index, "productId", Number(value))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a product" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {filteredProducts.map((product) => (
-                              <SelectItem key={product.id} value={product.id.toString()}>
-                                {product.name} - ${product.unitPrice}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => updateProduct(index, "quantity", Number(e.target.value))}
-                          className="w-24"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeProduct(index)}
-                        >
-                          <MinusCircle className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </TableCell>
+              <div className="rounded-lg border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-base">Produto</TableHead>
+                      <TableHead className="text-base">Quantidade</TableHead>
+                      <TableHead className="text-base">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedProducts.map((item, index) => (
+                      <TableRow key={index} className="h-16">
+                        <TableCell className="min-w-[300px]">
+                          <Select
+                            value={item.productId.toString()}
+                            onValueChange={(value) => updateProduct(index, "productId", Number(value))}
+                          >
+                            <SelectTrigger className="h-12 text-base">
+                              <SelectValue placeholder="Selecione um produto" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {filteredProducts.map((product) => (
+                                <SelectItem 
+                                  key={product.id} 
+                                  value={product.id.toString()}
+                                  className="h-12 text-base"
+                                >
+                                  {product.name} - ${product.unitPrice}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => updateProduct(index, "quantity", Number(e.target.value))}
+                            className="w-32 h-12 text-base"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="lg"
+                            onClick={() => removeProduct(index)}
+                            className="h-12 w-12"
+                          >
+                            <MinusCircle className="h-5 w-5 text-red-500" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </div>
         )}
 
-        <Button type="submit" disabled={isSubmitting || selectedProducts.length === 0}>
-          {isSubmitting ? "Creating..." : "Create Order"}
+        <Button 
+          type="submit" 
+          disabled={isSubmitting || selectedProducts.length === 0}
+          className="w-full h-12 text-base mt-8"
+        >
+          {isSubmitting ? "Criando..." : "Criar Pedido"}
         </Button>
       </form>
     </Form>

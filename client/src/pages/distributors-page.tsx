@@ -156,18 +156,18 @@ export default function DistributorsPage() {
 
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-4 md:p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Distribuidores</h1>
         {user?.role === 'supermarket' && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button className="h-12 px-6">
+                <Plus className="h-5 w-5 mr-2" />
                 Adicionar Distribuidor
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="w-[95%] max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Adicionar Novo Distribuidor</DialogTitle>
                 <DialogDescription>
@@ -256,27 +256,27 @@ export default function DistributorsPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {filteredDistributors.map((distributor) => (
-          <Card key={distributor.id}>
-            <CardHeader>
+          <Card key={distributor.id} className="hover:border-primary active:scale-[0.99] transition-all">
+            <CardHeader className="p-6">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Truck className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <Truck className="h-6 w-6" />
                     {distributor.name}
                   </CardTitle>
-                  <CardDescription>Código: {distributor.code}</CardDescription>
+                  <CardDescription className="text-base mt-2">Código: {distributor.code}</CardDescription>
                 </div>
                 {user?.role === 'supermarket' && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-red-500 hover:text-red-600"
+                        size="lg"
+                        className="h-12 w-12 text-red-500 hover:text-red-600"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-6 w-6" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -301,34 +301,34 @@ export default function DistributorsPage() {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Phone className="h-4 w-4" />
+            <CardContent className="space-y-6 p-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-base text-muted-foreground">
+                  <Phone className="h-5 w-5" />
                   {distributor.phone}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Mail className="h-4 w-4" />
+                <div className="flex items-center gap-3 text-base text-muted-foreground">
+                  <Mail className="h-5 w-5" />
                   {distributor.email}
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
-                      className="flex-1"
+                      className="flex-1 h-12 text-base"
                       onClick={() => {
                         setSelectedDistributor(distributor.id);
                         setPage(1);
                       }}
                     >
-                      <Truck className="h-4 w-4 mr-2" />
+                      <Truck className="h-5 w-5 mr-3" />
                       Ver Catálogo
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-4xl">
+                  <DialogContent className="w-[95%] max-w-5xl h-[90vh]">
                     <DialogHeader>
                       <div className="flex justify-between items-center">
                         <div>
@@ -356,7 +356,6 @@ export default function DistributorsPage() {
                       </div>
                     </DialogHeader>
 
-                    {/* Componente de importação */}
                     {!isVendorView && <ImportExcel distributorId={distributor.id} />}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
@@ -371,7 +370,6 @@ export default function DistributorsPage() {
                         ))
                       ) : (
                         getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => {
-                          // Encontrar produtos similares
                           const similarProducts = products.filter(p =>
                             p.id !== product.id &&
                             p.barCode === product.barCode &&
