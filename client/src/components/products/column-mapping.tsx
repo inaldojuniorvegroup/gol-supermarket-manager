@@ -76,25 +76,18 @@ const SYSTEM_FIELDS = [
     alternatives: ["VALOR", "CUSTO", "PRECOUNIT", "PRECO", "PRICE"] 
   },
   { 
-    key: "packsize", 
-    label: "Tamanho da Embalagem", 
-    defaultColumn: "PACKSIZE",
+    key: "boxQuantity", 
+    label: "Quantidade por Caixa", 
+    defaultColumn: "QTD/CAIXA",
     required: false,
-    alternatives: ["PACK_SIZE", "TAMANHO", "EMBALAGEM"] 
+    alternatives: ["QTD_CAIXA", "QUANTIDADE_CAIXA", "UNIDADES_CAIXA", "QTDCAIXA", "QTD CAIXA", "CAIXA QTD"] 
   },
   { 
     key: "boxPrice", 
     label: "Preço da Caixa", 
     defaultColumn: "PREÇO CAIXA",
     required: false,
-    alternatives: ["PRECO CAIXA", "PRECO_CAIXA", "VALOR_CAIXA", "BOX_PRICE"] 
-  },
-  { 
-    key: "boxQuantity", 
-    label: "Quantidade por Caixa", 
-    defaultColumn: "QTD/CAIXA",
-    required: false,
-    alternatives: ["QTD_CAIXA", "QUANTIDADE_CAIXA", "UNIDADES_CAIXA", "QTDCAIXA", "QTD CAIXA"] 
+    alternatives: ["PRECO CAIXA", "PRECO_CAIXA", "VALOR_CAIXA", "BOX_PRICE", "CAIXA PRECO", "CAIXA VALOR"] 
   }
 ];
 
