@@ -46,6 +46,16 @@ export function ProductCard({
 
   const handleAddToCart = () => {
     if (product && onAddToCart) {
+      // Verifica se tem preço de caixa quando está no modo caixa
+      if (isBoxUnit && !product.boxPrice) {
+        toast({
+          title: "Erro ao adicionar ao carrinho",
+          description: "Este produto não possui preço de caixa definido.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       onAddToCart(product, quantity, isBoxUnit);
       toast({
         title: "Adicionado ao carrinho",
@@ -76,7 +86,7 @@ export function ProductCard({
   }
 
   // Calcular o preço baseado na seleção (unidade ou caixa)
-  const currentPrice = isBoxUnit 
+  const currentPrice = isBoxUnit
     ? (product.boxPrice || (product.unitPrice * product.boxQuantity))
     : product.unitPrice;
 

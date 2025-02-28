@@ -55,8 +55,11 @@ export function CartSheet() {
       // Criar um pedido para cada distribuidor
       const orderPromises = Object.entries(itemsByDistributor).map(async ([distributorId, items]) => {
         const orderTotal = items.reduce((sum, item) => {
-          const price = item.isBoxUnit ? Number(item.product.boxPrice) : Number(item.product.unitPrice);
-          return sum + (price * item.quantity);
+          if (item.isBoxUnit) {
+            if (!item.product.boxPrice) return sum;
+            return sum + (Number(item.product.boxPrice) * item.quantity);
+          }
+          return sum + (Number(item.product.unitPrice) * item.quantity);
         }, 0);
 
         // Criar o pedido
@@ -71,14 +74,14 @@ export function CartSheet() {
 
         // Adicionar os itens ao pedido
         const itemPromises = items.map(item => {
-          const price = item.isBoxUnit ? Number(item.product.boxPrice) : Number(item.product.unitPrice);
-          const total = price * item.quantity;
+          const price = item.isBoxUnit ? item.product.boxPrice : item.product.unitPrice;
+          const total = Number(price) * item.quantity;
 
           return apiRequest("POST", `/api/orders/${orderData.id}/items`, {
             orderId: orderData.id,
             productId: item.product.id,
             quantity: item.quantity.toString(),
-            price: formatPrice(price),
+            price: formatPrice(Number(price)),
             total: formatPrice(total),
             isBoxUnit: item.isBoxUnit
           });

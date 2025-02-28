@@ -27,6 +27,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
   const addToCart = (product: Product, quantity = 1, isBoxUnit = false) => {
+    // Não adicionar se não tiver preço de caixa quando isBoxUnit é true
+    if (isBoxUnit && !product.boxPrice) {
+      return;
+    }
+
     setItems(currentItems => {
       const existingItem = currentItems.find(
         item => item.product.id === product.id && item.isBoxUnit === isBoxUnit
@@ -68,13 +73,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const total = items.reduce((sum, item) => {
-    // Usar o preço da caixa diretamente do produto quando disponível
-    const itemPrice = item.isBoxUnit 
-      ? Number(item.product.boxPrice)
-      : Number(item.product.unitPrice);
-
-    const itemTotal = Number(formatPrice(itemPrice)) * item.quantity;
-    return sum + itemTotal;
+    if (item.isBoxUnit) {
+      if (!item.product.boxPrice) return sum;
+      return sum + (Number(item.product.boxPrice) * item.quantity);
+    }
+    return sum + (Number(item.product.unitPrice) * item.quantity);
   }, 0);
 
   return (
