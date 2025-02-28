@@ -32,19 +32,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Mail, Plus, Truck, Upload, Share2 } from "lucide-react";
+import { Phone, Mail, Plus, Truck, Share2 } from "lucide-react";
 import { ProductCard } from "@/components/products/product-card";
 import { useLocation, useSearch } from "wouter";
-import { ColumnMapping } from "@/components/products/column-mapping";
+import ImportExcel from "@/components/products/import-excel";
 
 export default function DistributorsPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [selectedDistributor, setSelectedDistributor] = useState<number | null>(null);
   const [page, setPage] = useState(1);
-  const [excelColumns, setExcelColumns] = useState<string[]>([]);
-  const [showMapping, setShowMapping] = useState(false);
-  const [fileData, setFileData] = useState<any[]>([]);
   const ITEMS_PER_PAGE = 10;
   const { user } = useAuth();
 
@@ -65,28 +62,6 @@ export default function DistributorsPage() {
   const { data: products = [], isLoading: loadingProducts } = useQuery<Product[]>({
     queryKey: ["/api/products", selectedDistributor],
     enabled: selectedDistributor !== null,
-  });
-
-  // Definir mutation para importação de produtos no nível do componente
-  const importProductsMutation = useMutation({
-    mutationFn: async (data: any[]) => {
-      const res = await apiRequest("POST", "/api/products/import", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      toast({
-        title: "Sucesso",
-        description: "Produtos importados com sucesso",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erro ao importar produtos",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
   });
 
   const form = useForm({
@@ -123,188 +98,6 @@ export default function DistributorsPage() {
       });
     }
   });
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, distributorId: number) => {
-    try {
-      const file = event.target.files?.[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-
-          const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-          const headers: string[] = [];
-
-          for (let C = range.s.c; C <= range.e.c; ++C) {
-            const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c: C })];
-            if (cell && cell.v) {
-              const header = String(cell.v).trim();
-              headers.push(header);
-            }
-          }
-
-          const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-          setSelectedDistributor(distributorId);
-          setExcelColumns(headers);
-          setFileData(jsonData);
-          setShowMapping(true);
-
-        } catch (error) {
-          console.error('Erro ao processar arquivo:', error);
-          toast({
-            title: "Erro ao processar arquivo",
-            description: "Verifique se o arquivo está no formato correto",
-            variant: "destructive",
-          });
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
-    } catch (error) {
-      console.error('Erro ao ler arquivo:', error);
-      toast({
-        title: "Erro ao ler arquivo",
-        description: "Não foi possível ler o arquivo selecionado",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleMappingComplete = async (mapping: Record<string, string>) => {
-    try {
-      const transformedProducts = fileData.map((row: any) => {
-        let product = {
-          name: '',
-          itemCode: '',
-          unitPrice: 0,
-          distributorId: selectedDistributor!,
-          supplierCode: '',
-          barCode: '',
-          description: '',
-          grupo: '',
-          boxQuantity: 1,
-          unit: 'un',
-          imageUrl: null,
-          isSpecialOffer: false,
-          boxPrice: null as number | null
-        };
-
-        // Mapear campos básicos
-        if (mapping.name !== '_EMPTY') {
-          product.name = String(row[mapping.name] || '').trim();
-        }
-
-        if (mapping.itemCode !== '_EMPTY') {
-          product.itemCode = String(row[mapping.itemCode] || '').trim();
-        }
-
-        if (mapping.supplierCode !== '_EMPTY') {
-          product.supplierCode = String(row[mapping.supplierCode] || '').trim();
-        }
-
-        if (mapping.barCode !== '_EMPTY') {
-          product.barCode = String(row[mapping.barCode] || '').trim();
-        }
-
-        // Mapear subcategoria e grupo
-        if (mapping.subcategory !== '_EMPTY') {
-          let subcategory = String(row[mapping.subcategory] || '').trim().toUpperCase();
-          subcategory = subcategory.replace(/^\(N\)\s*/, '');
-          product.description = subcategory;
-        }
-
-        if (mapping.grupo !== '_EMPTY') {
-          let grupo = String(row[mapping.grupo] || '').trim().toUpperCase();
-          grupo = grupo.replace(/^\(N\)\s*/, '');
-          product.grupo = grupo;
-        }
-
-        // Mapear preços e quantidades
-        if (mapping.unitPrice !== '_EMPTY') {
-          const rawPrice = row[mapping.unitPrice];
-          if (typeof rawPrice === 'number') {
-            product.unitPrice = rawPrice;
-          } else if (typeof rawPrice === 'string') {
-            product.unitPrice = parseFloat(rawPrice.replace(',', '.')) || 0;
-          }
-        }
-
-        // Mapear preço da caixa corretamente
-        if (mapping.boxPrice !== '_EMPTY') {
-          const rawBoxPrice = row[mapping.boxPrice];
-          if (typeof rawBoxPrice === 'number') {
-            product.boxPrice = rawBoxPrice;
-          } else if (typeof rawBoxPrice === 'string') {
-            const parsedPrice = parseFloat(rawBoxPrice.replace(',', '.'));
-            product.boxPrice = isNaN(parsedPrice) ? null : parsedPrice;
-          }
-        }
-
-        if (mapping.boxQuantity !== '_EMPTY') {
-          const rawQuantity = row[mapping.boxQuantity];
-          if (typeof rawQuantity === 'number') {
-            product.boxQuantity = rawQuantity;
-          } else if (typeof rawQuantity === 'string') {
-            product.boxQuantity = parseInt(rawQuantity) || 1;
-          }
-        }
-
-        return product;
-      });
-
-      const validProducts = transformedProducts.filter((product) => {
-        const isValid = product.name &&
-          product.itemCode &&
-          product.description &&
-          product.grupo &&
-          product.supplierCode &&
-          product.barCode;
-        return isValid;
-      });
-
-      if (validProducts.length === 0) {
-        throw new Error('Nenhum produto válido encontrado. Verifique se todos os campos obrigatórios foram mapeados corretamente.');
-      }
-
-      const batchSize = 50;
-      let processedCount = 0;
-
-      for (let i = 0; i < validProducts.length; i += batchSize) {
-        const batch = validProducts.slice(i, i + batchSize);
-        const result = await importProductsMutation.mutateAsync(batch);
-        processedCount += result.productsImported;
-
-        toast({
-          title: "Importando produtos",
-          description: `Processados ${processedCount} de ${validProducts.length} produtos...`,
-        });
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-
-      toast({
-        title: "Importação concluída",
-        description: `${processedCount} produtos foram importados com sucesso!`,
-      });
-
-      setShowMapping(false);
-      setFileData([]);
-      setExcelColumns([]);
-
-    } catch (error) {
-      console.error('Erro ao importar produtos:', error);
-      toast({
-        title: "Erro na importação",
-        description: error instanceof Error ? error.message : "Erro ao importar produtos",
-        variant: "destructive",
-      });
-    }
-  };
 
   const getDistributorProducts = (distributorId: number) => {
     if (!products) return [];
@@ -490,20 +283,10 @@ export default function DistributorsPage() {
                         )}
                       </div>
                     </DialogHeader>
-                    <div className="flex justify-between items-center mb-4">
-                      <div className="relative">
-                        <input
-                          type="file"
-                          accept=".xlsx,.xls"
-                          onChange={(e) => handleFileUpload(e, distributor.id)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                        <Button variant="outline">
-                          <Upload className="h-4 w-4 mr-2" />
-                          Importar Produtos (XLSX)
-                        </Button>
-                      </div>
-                    </div>
+
+                    {/* Componente de importação */}
+                    {!isVendorView && <ImportExcel distributorId={distributor.id} />}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
                       {loadingProducts ? (
                         [...Array(4)].map((_, i) => (
@@ -535,16 +318,7 @@ export default function DistributorsPage() {
                         })
                       )}
                     </div>
-                    {showMapping && (
-                      <div>
-                        <ColumnMapping
-                          excelColumns={excelColumns}
-                          onMappingComplete={handleMappingComplete}
-                          isLoading={importProductsMutation.isPending}
-                        />
-                      </div>
-                    )}
-                    {/* Paginação */}
+
                     {getDistributorProducts(distributor.id).length > ITEMS_PER_PAGE && (
                       <div className="flex justify-center gap-2 mt-4">
                         <Button

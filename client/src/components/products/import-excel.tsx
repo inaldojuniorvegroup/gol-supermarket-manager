@@ -13,7 +13,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function ImportExcel() {
+interface ImportExcelProps {
+  distributorId: number;
+}
+
+export default function ImportExcel({ distributorId }: ImportExcelProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,18 +32,8 @@ export default function ImportExcel() {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({
         title: "Produtos importados",
-        description: `${data.productsImported} produtos foram importados com sucesso de um total de ${data.totalProducts}`,
+        description: `${data.productsImported} produtos foram importados com sucesso`,
       });
-
-      // Se houver erros, mostrar em um toast separado
-      if (data.errors && data.errors.length > 0) {
-        toast({
-          title: "Alguns produtos não foram importados",
-          description: `${data.errors.length} produtos não puderam ser importados. Verifique os dados e tente novamente.`,
-          variant: "destructive",
-        });
-        console.error('Erros na importação:', data.errors);
-      }
     },
     onError: (error: Error) => {
       toast({
@@ -47,7 +41,6 @@ export default function ImportExcel() {
         description: error.message,
         variant: "destructive",
       });
-      console.error('Erro detalhado:', error);
     },
   });
 
@@ -65,29 +58,46 @@ export default function ImportExcel() {
           const worksheet = workbook.Sheets[workbook.SheetNames[0]];
           const products = utils.sheet_to_json(worksheet);
 
-          // Processar em lotes menores
-          const batchSize = 50;
-          const batches = [];
-          for (let i = 0; i < products.length; i += batchSize) {
-            batches.push(products.slice(i, i + batchSize));
+          // Processar produtos
+          const transformedProducts = products.map((row: any) => ({
+            name: String(row['Nome'] || row['NOME'] || row['Descrição'] || row['DESCRIÇÃO'] || '').trim(),
+            itemCode: String(row['Código'] || row['CÓDIGO'] || row['Cod'] || row['COD'] || '').trim(),
+            supplierCode: String(row['Cód.Forn.'] || row['COD.FORN'] || row['Código Fornecedor'] || '').trim(),
+            barCode: String(row['Cód.Barra'] || row['EAN'] || row['Código de Barras'] || '').trim(),
+            description: String(row['Departamento'] || row['DEPARTAMENTO'] || '').trim(),
+            grupo: String(row['Grupo'] || row['GRUPO'] || '').trim(),
+            unitPrice: parseFloat(String(row['Preço Custo'] || row['PREÇO CUSTO'] || '0').replace(',', '.')) || 0,
+            boxQuantity: parseInt(String(row['Qtd/Caixa'] || row['QTD/CAIXA'] || '1')) || 1,
+            boxPrice: parseFloat(String(row['Preço Caixa'] || row['PREÇO CAIXA'] || '0').replace(',', '.')) || null,
+            unit: String(row['Unid.'] || row['UNIDADE'] || 'un').trim(),
+            distributorId: distributorId,
+            imageUrl: null,
+            isSpecialOffer: false
+          }));
+
+          // Validar produtos
+          const validProducts = transformedProducts.filter(product => 
+            product.name && 
+            product.itemCode && 
+            product.supplierCode
+          );
+
+          if (validProducts.length === 0) {
+            throw new Error('Nenhum produto válido encontrado no arquivo.');
           }
 
-          // Importar cada lote
-          let importedCount = 0;
-          for (const batch of batches) {
+          // Importar em lotes
+          const batchSize = 50;
+          for (let i = 0; i < validProducts.length; i += batchSize) {
+            const batch = validProducts.slice(i, i + batchSize);
             await importMutation.mutateAsync(batch);
-            importedCount += batch.length;
-            toast({
-              title: "Importando produtos",
-              description: `Processados ${importedCount} de ${products.length} produtos`,
-            });
           }
 
         } catch (error) {
           console.error('Error processing file:', error);
           toast({
             title: "Erro ao processar arquivo",
-            description: "Verifique se o arquivo está no formato correto",
+            description: error instanceof Error ? error.message : "Verifique se o arquivo está no formato correto",
             variant: "destructive",
           });
         } finally {
@@ -111,8 +121,8 @@ export default function ImportExcel() {
       <CardHeader>
         <CardTitle>Importação em Massa</CardTitle>
         <CardDescription>
-          Use esta função apenas para importação inicial do catálogo ou atualizações em lote.
-          Para adições ou alterações pontuais, utilize o formulário de cadastro individual.
+          Use esta função para importar produtos do catálogo via Excel.
+          O arquivo deve conter as colunas: Nome, Código, Cód.Forn., Preço Custo, etc.
         </CardDescription>
       </CardHeader>
       <CardContent>
