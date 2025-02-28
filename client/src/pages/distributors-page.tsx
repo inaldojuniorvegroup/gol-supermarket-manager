@@ -67,6 +67,28 @@ export default function DistributorsPage() {
     enabled: selectedDistributor !== null,
   });
 
+  // Definir mutation para importação de produtos no nível do componente
+  const importProductsMutation = useMutation({
+    mutationFn: async (data: any[]) => {
+      const res = await apiRequest("POST", "/api/products/import", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({
+        title: "Sucesso",
+        description: "Produtos importados com sucesso",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao importar produtos",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   const form = useForm({
     resolver: zodResolver(insertDistributorSchema),
     defaultValues: {
@@ -155,7 +177,7 @@ export default function DistributorsPage() {
 
   const handleMappingComplete = async (mapping: Record<string, string>) => {
     try {
-      const transformedProducts = fileData.map((row: any, index: number) => {
+      const transformedProducts = fileData.map((row: any) => {
         let product = {
           name: '',
           itemCode: '',
@@ -250,27 +272,6 @@ export default function DistributorsPage() {
 
       const batchSize = 50;
       let processedCount = 0;
-
-      const importProductsMutation = useMutation({
-        mutationFn: async (data: any[]) => {
-          const res = await apiRequest("POST", "/api/products/import", data);
-          return res.json();
-        },
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-          toast({
-            title: "Sucesso",
-            description: "Produtos importados com sucesso",
-          });
-        },
-        onError: (error: Error) => {
-          toast({
-            title: "Erro ao importar produtos",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
-      });
 
       for (let i = 0; i < validProducts.length; i += batchSize) {
         const batch = validProducts.slice(i, i + batchSize);
@@ -538,7 +539,7 @@ export default function DistributorsPage() {
                         <ColumnMapping
                           excelColumns={excelColumns}
                           onMappingComplete={handleMappingComplete}
-                          isLoading={false}
+                          isLoading={importProductsMutation.isPending}
                         />
                       </div>
                     )}
