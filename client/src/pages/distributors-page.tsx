@@ -102,6 +102,208 @@ export default function DistributorsPage() {
     }
   });
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, distributorId: number) => {
+    try {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+
+          const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+          const headers: string[] = [];
+
+          for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c: C })];
+            if (cell && cell.v) {
+              const header = String(cell.v).trim();
+              headers.push(header);
+            }
+          }
+
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+          setSelectedDistributor(distributorId);
+          setExcelColumns(headers);
+          setFileData(jsonData);
+          setShowMapping(true);
+
+        } catch (error) {
+          console.error('Erro ao processar arquivo:', error);
+          toast({
+            title: "Erro ao processar arquivo",
+            description: "Verifique se o arquivo está no formato correto",
+            variant: "destructive",
+          });
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    } catch (error) {
+      console.error('Erro ao ler arquivo:', error);
+      toast({
+        title: "Erro ao ler arquivo",
+        description: "Não foi possível ler o arquivo selecionado",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMappingComplete = async (mapping: Record<string, string>) => {
+    try {
+      const transformedProducts = fileData.map((row: any, index: number) => {
+        let product = {
+          name: '',
+          itemCode: '',
+          unitPrice: 0,
+          distributorId: selectedDistributor!,
+          supplierCode: '',
+          barCode: '',
+          description: '', 
+          grupo: '', 
+          boxQuantity: 1,
+          unit: 'un',
+          imageUrl: null,
+          isSpecialOffer: false,
+          boxPrice: null
+        };
+
+        // Mapear campos básicos
+        if (mapping.name !== '_EMPTY') {
+          product.name = String(row[mapping.name] || '').trim();
+        }
+
+        if (mapping.itemCode !== '_EMPTY') {
+          product.itemCode = String(row[mapping.itemCode] || '').trim();
+        }
+
+        if (mapping.supplierCode !== '_EMPTY') {
+          product.supplierCode = String(row[mapping.supplierCode] || '').trim();
+        }
+
+        if (mapping.barCode !== '_EMPTY') {
+          product.barCode = String(row[mapping.barCode] || '').trim();
+        }
+
+        // Mapear subcategoria e grupo
+        if (mapping.subcategory !== '_EMPTY') {
+          let subcategory = String(row[mapping.subcategory] || '').trim().toUpperCase();
+          subcategory = subcategory.replace(/^\(N\)\s*/, '');
+          product.description = subcategory;
+        }
+
+        if (mapping.grupo !== '_EMPTY') {
+          let grupo = String(row[mapping.grupo] || '').trim().toUpperCase();
+          grupo = grupo.replace(/^\(N\)\s*/, '');
+          product.grupo = grupo;
+        }
+
+        // Mapear preços e quantidades
+        if (mapping.unitPrice !== '_EMPTY') {
+          const rawPrice = row[mapping.unitPrice];
+          if (typeof rawPrice === 'number') {
+            product.unitPrice = rawPrice;
+          } else if (typeof rawPrice === 'string') {
+            product.unitPrice = parseFloat(rawPrice.replace(',', '.')) || 0;
+          }
+        }
+
+        // Novos campos
+        if (mapping.boxPrice !== '_EMPTY') {
+          const rawBoxPrice = row[mapping.boxPrice];
+          if (typeof rawBoxPrice === 'number') {
+            product.boxPrice = rawBoxPrice;
+          } else if (typeof rawBoxPrice === 'string') {
+            product.boxPrice = parseFloat(rawBoxPrice.replace(',', '.')) || null;
+          }
+        }
+
+        if (mapping.boxQuantity !== '_EMPTY') {
+          const rawQuantity = row[mapping.boxQuantity];
+          if (typeof rawQuantity === 'number') {
+            product.boxQuantity = rawQuantity;
+          } else if (typeof rawQuantity === 'string') {
+            product.boxQuantity = parseInt(rawQuantity) || 1;
+          }
+        }
+
+        return product;
+      });
+
+      const validProducts = transformedProducts.filter((product) => {
+        const isValid = product.name &&
+          product.itemCode &&
+          product.description && 
+          product.grupo && 
+          product.supplierCode &&
+          product.barCode;
+        return isValid;
+      });
+
+      if (validProducts.length === 0) {
+        throw new Error('Nenhum produto válido encontrado. Verifique se todos os campos obrigatórios foram mapeados corretamente.');
+      }
+
+      const batchSize = 50;
+      let processedCount = 0;
+
+      const importProductsMutation = useMutation({
+        mutationFn: async (data: any[]) => {
+          const res = await apiRequest("POST", "/api/products/import", data);
+          return res.json();
+        },
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+          toast({
+            title: "Sucesso",
+            description: "Produtos importados com sucesso",
+          });
+        },
+        onError: (error: Error) => {
+          toast({
+            title: "Erro ao importar produtos",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      });
+
+      for (let i = 0; i < validProducts.length; i += batchSize) {
+        const batch = validProducts.slice(i, i + batchSize);
+        const result = await importProductsMutation.mutateAsync(batch);
+        processedCount += result.productsImported;
+
+        toast({
+          title: "Importando produtos",
+          description: `Processados ${processedCount} de ${validProducts.length} produtos...`,
+        });
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+
+      toast({
+        title: "Importação concluída",
+        description: `${processedCount} produtos foram importados com sucesso!`,
+      });
+
+      setShowMapping(false);
+      setFileData([]);
+      setExcelColumns([]);
+
+    } catch (error) {
+      console.error('Erro ao importar produtos:', error);
+      toast({
+        title: "Erro na importação",
+        description: error instanceof Error ? error.message : "Erro ao importar produtos",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getDistributorProducts = (distributorId: number) => {
     if (!products) return [];
     return products.filter(product => product.distributorId === distributorId);
@@ -369,205 +571,3 @@ export default function DistributorsPage() {
     </div>
   );
 }
-
-const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, distributorId: number) => {
-    try {
-      const file = event.target.files?.[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-
-          const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-          const headers: string[] = [];
-
-          for (let C = range.s.c; C <= range.e.c; ++C) {
-            const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c: C })];
-            if (cell && cell.v) {
-              const header = String(cell.v).trim();
-              headers.push(header);
-            }
-          }
-
-          const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-          setSelectedDistributor(distributorId);
-          setExcelColumns(headers);
-          setFileData(jsonData);
-          setShowMapping(true);
-
-        } catch (error) {
-          console.error('Erro ao processar arquivo:', error);
-          toast({
-            title: "Erro ao processar arquivo",
-            description: "Verifique se o arquivo está no formato correto",
-            variant: "destructive",
-          });
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
-    } catch (error) {
-      console.error('Erro ao ler arquivo:', error);
-      toast({
-        title: "Erro ao ler arquivo",
-        description: "Não foi possível ler o arquivo selecionado",
-        variant: "destructive",
-      });
-    }
-  };
-
-const handleMappingComplete = async (mapping: Record<string, string>) => {
-    try {
-      const transformedProducts = fileData.map((row: any, index: number) => {
-        let product = {
-          name: '',
-          itemCode: '',
-          unitPrice: 0,
-          distributorId: selectedDistributor!,
-          supplierCode: '',
-          barCode: '',
-          description: '', 
-          grupo: '', 
-          boxQuantity: 1,
-          unit: 'un',
-          imageUrl: null,
-          isSpecialOffer: false,
-          boxPrice: null
-        };
-
-        // Mapear campos básicos
-        if (mapping.name !== '_EMPTY') {
-          product.name = String(row[mapping.name] || '').trim();
-        }
-
-        if (mapping.itemCode !== '_EMPTY') {
-          product.itemCode = String(row[mapping.itemCode] || '').trim();
-        }
-
-        if (mapping.supplierCode !== '_EMPTY') {
-          product.supplierCode = String(row[mapping.supplierCode] || '').trim();
-        }
-
-        if (mapping.barCode !== '_EMPTY') {
-          product.barCode = String(row[mapping.barCode] || '').trim();
-        }
-
-        // Mapear subcategoria e grupo
-        if (mapping.subcategory !== '_EMPTY') {
-          let subcategory = String(row[mapping.subcategory] || '').trim().toUpperCase();
-          subcategory = subcategory.replace(/^\(N\)\s*/, '');
-          product.description = subcategory;
-        }
-
-        if (mapping.grupo !== '_EMPTY') {
-          let grupo = String(row[mapping.grupo] || '').trim().toUpperCase();
-          grupo = grupo.replace(/^\(N\)\s*/, '');
-          product.grupo = grupo;
-        }
-
-        // Mapear preços e quantidades
-        if (mapping.unitPrice !== '_EMPTY') {
-          const rawPrice = row[mapping.unitPrice];
-          if (typeof rawPrice === 'number') {
-            product.unitPrice = rawPrice;
-          } else if (typeof rawPrice === 'string') {
-            product.unitPrice = parseFloat(rawPrice.replace(',', '.')) || 0;
-          }
-        }
-
-        // Novos campos
-        if (mapping.boxPrice !== '_EMPTY') {
-          const rawBoxPrice = row[mapping.boxPrice];
-          if (typeof rawBoxPrice === 'number') {
-            product.boxPrice = rawBoxPrice;
-          } else if (typeof rawBoxPrice === 'string') {
-            product.boxPrice = parseFloat(rawBoxPrice.replace(',', '.')) || null;
-          }
-        }
-
-        if (mapping.boxQuantity !== '_EMPTY') {
-          const rawQuantity = row[mapping.boxQuantity];
-          if (typeof rawQuantity === 'number') {
-            product.boxQuantity = rawQuantity;
-          } else if (typeof rawQuantity === 'string') {
-            product.boxQuantity = parseInt(rawQuantity) || 1;
-          }
-        }
-
-        return product;
-      });
-
-      const validProducts = transformedProducts.filter((product, index) => {
-        const isValid = product.name &&
-          product.itemCode &&
-          product.description && 
-          product.grupo && 
-          product.supplierCode &&
-          product.barCode;
-        return isValid;
-      });
-
-      if (validProducts.length === 0) {
-        throw new Error('Nenhum produto válido encontrado. Verifique se todos os campos obrigatórios foram mapeados corretamente.');
-      }
-
-      const batchSize = 50;
-      let processedCount = 0;
-
-      const importProductsMutation = useMutation({
-        mutationFn: async (data: any[]) => {
-          const res = await apiRequest("POST", "/api/products/import", data);
-          return res.json();
-        },
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-          toast({
-            title: "Success",
-            description: "Products imported successfully",
-          });
-        },
-        onError: (error: Error) => {
-          toast({
-            title: "Error importing products",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
-      });
-
-      for (let i = 0; i < validProducts.length; i += batchSize) {
-        const batch = validProducts.slice(i, i + batchSize);
-        const result = await importProductsMutation.mutateAsync(batch);
-        processedCount += result.productsImported;
-
-        toast({
-          title: "Importando produtos",
-          description: `Processados ${processedCount} de ${validProducts.length} produtos...`,
-        });
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-
-      toast({
-        title: "Importação concluída",
-        description: `${processedCount} produtos foram importados com sucesso!`,
-      });
-
-      setShowMapping(false);
-      setFileData([]);
-      setExcelColumns([]);
-
-    } catch (error) {
-      console.error('Erro ao importar produtos:', error);
-      toast({
-        title: "Erro na importação",
-        description: error instanceof Error ? error.message : "Erro ao importar produtos",
-        variant: "destructive",
-      });
-    }
-  };
