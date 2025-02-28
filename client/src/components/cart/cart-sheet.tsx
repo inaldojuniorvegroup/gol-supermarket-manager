@@ -55,12 +55,8 @@ export function CartSheet() {
       // Criar um pedido para cada distribuidor
       const orderPromises = Object.entries(itemsByDistributor).map(async ([distributorId, items]) => {
         const orderTotal = items.reduce((sum, item) => {
-          const itemPrice = item.isBoxUnit 
-            ? Number(item.product.boxPrice)
-            : Number(item.product.unitPrice);
-
-          const itemTotal = Number(formatPrice(itemPrice)) * item.quantity;
-          return sum + itemTotal;
+          const price = item.isBoxUnit ? Number(item.product.boxPrice) : Number(item.product.unitPrice);
+          return sum + (price * item.quantity);
         }, 0);
 
         // Criar o pedido
@@ -75,18 +71,15 @@ export function CartSheet() {
 
         // Adicionar os itens ao pedido
         const itemPromises = items.map(item => {
-          const itemPrice = item.isBoxUnit 
-            ? Number(item.product.boxPrice)
-            : Number(item.product.unitPrice);
-
-          const itemTotal = Number(formatPrice(itemPrice)) * item.quantity;
+          const price = item.isBoxUnit ? Number(item.product.boxPrice) : Number(item.product.unitPrice);
+          const total = price * item.quantity;
 
           return apiRequest("POST", `/api/orders/${orderData.id}/items`, {
             orderId: orderData.id,
             productId: item.product.id,
             quantity: item.quantity.toString(),
-            price: formatPrice(itemPrice),
-            total: formatPrice(itemTotal),
+            price: formatPrice(price),
+            total: formatPrice(total),
             isBoxUnit: item.isBoxUnit
           });
         });
@@ -147,61 +140,63 @@ export function CartSheet() {
             ) : (
               <div className="space-y-4 pr-4">
                 {items.map((item) => {
-                  const itemPrice = item.isBoxUnit 
-                    ? Number(item.product.boxPrice)
-                    : Number(item.product.unitPrice);
-
-                  const itemTotal = Number(formatPrice(itemPrice)) * item.quantity;
+                  const price = item.isBoxUnit ? item.product.boxPrice : item.product.unitPrice;
+                  const total = Number(price) * item.quantity;
 
                   return (
-                    <div key={`${item.product.id}-${item.isBoxUnit}`} className="flex gap-4">
-                      <div className="flex-1 space-y-1">
-                        <h4 className="font-medium">{item.product.name}</h4>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                          {item.isBoxUnit ? (
-                            <>
-                              <p className="flex items-center gap-1">
-                                <Box className="h-3 w-3" />
-                                Caixa com {item.product.boxQuantity} unidades
-                              </p>
-                              <p>
-                                ${formatPrice(itemPrice)} por caixa
-                              </p>
-                            </>
-                          ) : (
-                            <p>${formatPrice(itemPrice)} por unidade</p>
-                          )}
-                          <p className="font-medium">
-                            Total: ${formatPrice(itemTotal)}
-                          </p>
+                    <div key={`${item.product.id}-${item.isBoxUnit}`} className="bg-muted/30 p-4 rounded-lg">
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <h4 className="font-medium">{item.product.name}</h4>
+                            <div className="text-sm text-muted-foreground">
+                              {item.isBoxUnit ? (
+                                <>
+                                  <div className="flex items-center gap-1">
+                                    <Box className="h-3 w-3" />
+                                    <span>Caixa com {item.product.boxQuantity} unidades</span>
+                                  </div>
+                                  <div>Preço por caixa: ${formatPrice(Number(item.product.boxPrice))}</div>
+                                </>
+                              ) : (
+                                <div>Preço por unidade: ${formatPrice(Number(item.product.unitPrice))}</div>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => removeFromCart(item.product.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.isBoxUnit)}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="w-8 text-center">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.isBoxUnit)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => removeFromCart(item.product.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.isBoxUnit)}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="w-8 text-center">{item.quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.isBoxUnit)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="font-medium">
+                            Total: ${formatPrice(total)}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );
