@@ -68,10 +68,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const total = items.reduce((sum, item) => {
-    const unitPrice = item.isBoxUnit 
+    const price = item.isBoxUnit 
       ? (item.product.boxPrice || (item.product.unitPrice * item.product.boxQuantity))
       : item.product.unitPrice;
-    return sum + Number(formatPrice(unitPrice)) * item.quantity;
+    const itemTotal = Number(formatPrice(price)) * item.quantity;
+    return sum + itemTotal;
   }, 0);
 
   return (

@@ -18,7 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query";
 import { Store } from "@shared/schema";
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Função para formatar preços mantendo exatamente 2 casas decimais sem arredondamento
 const formatPrice = (price: number): string => {
@@ -59,7 +58,8 @@ export function CartSheet() {
           const price = item.isBoxUnit
             ? (item.product.boxPrice || (item.product.unitPrice * item.product.boxQuantity))
             : item.product.unitPrice;
-          return sum + (Number(price) * item.quantity);
+          const itemTotal = Number(formatPrice(price)) * item.quantity;
+          return sum + itemTotal;
         }, 0);
 
         // Criar o pedido
@@ -74,16 +74,18 @@ export function CartSheet() {
 
         // Adicionar os itens ao pedido
         const itemPromises = items.map(item => {
-          const itemPrice = item.isBoxUnit
+          const price = item.isBoxUnit
             ? (item.product.boxPrice || (item.product.unitPrice * item.product.boxQuantity))
             : item.product.unitPrice;
+
+          const itemTotal = Number(formatPrice(price)) * item.quantity;
 
           return apiRequest("POST", `/api/orders/${orderData.id}/items`, {
             orderId: orderData.id,
             productId: item.product.id,
             quantity: item.quantity.toString(),
-            price: formatPrice(itemPrice),
-            total: formatPrice(Number(itemPrice) * item.quantity),
+            price: formatPrice(price),
+            total: formatPrice(itemTotal),
             isBoxUnit: item.isBoxUnit
           });
         });
@@ -123,7 +125,7 @@ export function CartSheet() {
               {items.length}
             </span>
           )}
-          <span className="sr-only">Shopping Cart</span>
+          <span className="sr-only">Carrinho de Compras</span>
         </Button>
       </SheetTrigger>
       <SheetContent className="flex flex-col h-full" side="right">
@@ -144,55 +146,65 @@ export function CartSheet() {
               </div>
             ) : (
               <div className="space-y-4 pr-4">
-                {items.map((item) => (
-                  <div key={`${item.product.id}-${item.isBoxUnit}`} className="flex gap-4">
-                    <div className="flex-1 space-y-1">
-                      <h4 className="font-medium">{item.product.name}</h4>
-                      <div className="space-y-1 text-sm text-muted-foreground">
-                        {item.isBoxUnit ? (
-                          <>
-                            <p className="flex items-center gap-1">
-                              <Box className="h-3 w-3" />
-                              Caixa com {item.product.boxQuantity} unidades
-                            </p>
-                            <p>
-                              ${formatPrice(item.product.boxPrice || (item.product.unitPrice * item.product.boxQuantity))} por caixa
-                            </p>
-                          </>
-                        ) : (
-                          <p>${formatPrice(item.product.unitPrice)} por unidade</p>
-                        )}
+                {items.map((item) => {
+                  const price = item.isBoxUnit
+                    ? (item.product.boxPrice || (item.product.unitPrice * item.product.boxQuantity))
+                    : item.product.unitPrice;
+                  const itemTotal = Number(formatPrice(price)) * item.quantity;
+
+                  return (
+                    <div key={`${item.product.id}-${item.isBoxUnit}`} className="flex gap-4">
+                      <div className="flex-1 space-y-1">
+                        <h4 className="font-medium">{item.product.name}</h4>
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                          {item.isBoxUnit ? (
+                            <>
+                              <p className="flex items-center gap-1">
+                                <Box className="h-3 w-3" />
+                                Caixa com {item.product.boxQuantity} unidades
+                              </p>
+                              <p>
+                                ${formatPrice(price)} por caixa
+                              </p>
+                            </>
+                          ) : (
+                            <p>${formatPrice(price)} por unidade</p>
+                          )}
+                          <p className="font-medium">
+                            Total: ${formatPrice(itemTotal)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.isBoxUnit)}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="w-8 text-center">{item.quantity}</span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.isBoxUnit)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => removeFromCart(item.product.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.isBoxUnit)}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="w-8 text-center">{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.isBoxUnit)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => removeFromCart(item.product.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </ScrollArea>
