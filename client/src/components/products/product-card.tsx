@@ -140,7 +140,7 @@ export function ProductCard({
                     {product.boxPrice && (
                       <div className="flex items-center gap-2 text-sm">
                         <DollarSign className="h-4 w-4" />
-                        <span>Preço Caixa: R$ {Number(product.boxPrice).toFixed(2)}</span>
+                        <span>Preço Caixa: ${Number(product.boxPrice).toFixed(2)}</span>
                       </div>
                     )}
                     <div className="pt-2 border-t">
@@ -162,12 +162,12 @@ export function ProductCard({
               <div className="flex items-center gap-1">
                 <DollarSign className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-lg">
-                  R$ {Number(product.unitPrice).toFixed(2)}
+                  ${Number(product.unitPrice).toFixed(2)}
                 </span>
               </div>
               {product.boxPrice && product.boxQuantity && (
                 <div className="text-sm text-muted-foreground">
-                  Caixa ({product.boxQuantity} un.): R$ {Number(product.boxPrice).toFixed(2)}
+                  Caixa ({product.boxQuantity} un.): ${Number(product.boxPrice).toFixed(2)}
                 </div>
               )}
             </div>

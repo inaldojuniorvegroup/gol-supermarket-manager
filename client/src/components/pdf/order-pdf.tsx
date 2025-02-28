@@ -162,7 +162,7 @@ interface OrderPDFProps {
 }
 
 export default function OrderPDF({ order, items, store, distributor }: OrderPDFProps) {
-  const formatCurrency = (value: string | number) => `R$${Number(value).toFixed(2)}`;
+  const formatCurrency = (value: string | number) => `$${Number(value).toFixed(2)}`;
   const formatDate = (date: Date) => new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -248,16 +248,16 @@ export default function OrderPDF({ order, items, store, distributor }: OrderPDFP
                 )}
                 {item.product?.boxQuantity && item.product?.boxPrice && (
                   <Text style={styles.productCodes}>
-                    Caixa: {item.product.boxQuantity} un. | R$ {Number(item.product.boxPrice).toFixed(2)}
+                    Caixa: {item.product.boxQuantity} un. | ${Number(item.product.boxPrice).toFixed(2)}
                   </Text>
                 )}
               </View>
               <Text style={[styles.tableCell, styles.tableColQty]}>{item.quantity}</Text>
               <Text style={[styles.tableCell, styles.tableColPrice]}>
-                R$ {Number(item.price).toFixed(2)}
+                ${Number(item.price).toFixed(2)}
               </Text>
               <Text style={[styles.tableCell, styles.tableColTotal]}>
-                R$ {Number(item.total).toFixed(2)}
+                ${Number(item.total).toFixed(2)}
               </Text>
             </View>
           ))}
