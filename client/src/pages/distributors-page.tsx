@@ -46,6 +46,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
 export default function DistributorsPage() {
   const { toast } = useToast();
@@ -167,6 +168,14 @@ export default function DistributorsPage() {
 
   // Limitar número de distribuidores mostrados por vez
   const displayedDistributors = filteredDistributors.slice(0, 8);
+
+  const findSimilarProducts = (product: Product) => {
+    return products.filter(p =>
+      p.id !== product.id &&
+      p.barCode === product.barCode &&
+      p.name === product.name
+    );
+  };
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -372,34 +381,31 @@ export default function DistributorsPage() {
                     {!isVendorView && <ImportExcel distributorId={distributor.id} />}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
-                      {loadingProducts ? (
-                        [...Array(4)].map((_, i) => (
-                          <Card key={i} className="animate-pulse">
-                            <CardContent className="p-4 space-y-2">
-                              <div className="h-4 bg-muted rounded w-3/4" />
-                              <div className="h-4 bg-muted rounded w-1/2" />
-                            </CardContent>
-                          </Card>
-                        ))
-                      ) : (
-                        getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => {
-                          const similarProducts = products.filter(p =>
-                            p.id !== product.id &&
-                            p.barCode === product.barCode &&
-                            p.name === product.name
-                          );
-
-                          return (
-                            <ProductCard
-                              key={product.id}
-                              product={product}
-                              isVendorView={isVendorView}
-                              similarProducts={similarProducts}
-                              distributors={distributors}
-                            />
-                          );
-                        })
-                      )}
+                      {getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => (
+                        <Card key={product.id} className="hover:border-primary">
+                          <CardHeader className="p-4">
+                            <CardTitle className="text-lg">{product.name}</CardTitle>
+                            <CardDescription>Código: {product.itemCode}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="p-4">
+                            <div className="space-y-2">
+                              <div className="text-base">
+                                Preço: ${Number(product.unitPrice).toFixed(2)}
+                              </div>
+                              {product.boxPrice && (
+                                <div className="text-sm text-muted-foreground">
+                                  Caixa: ${Number(product.boxPrice).toFixed(2)} ({product.boxQuantity} unidades)
+                                </div>
+                              )}
+                              {findSimilarProducts(product).length > 0 && (
+                                <Badge variant="secondary" className="text-sm">
+                                  Disponível em outros distribuidores
+                                </Badge>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
 
                     {getDistributorProducts(distributor.id).length > ITEMS_PER_PAGE && (
@@ -408,15 +414,20 @@ export default function DistributorsPage() {
                           variant="outline"
                           onClick={() => setPage(p => Math.max(1, p - 1))}
                           disabled={page === 1}
+                          className="h-12 px-6"
                         >
                           Anterior
                         </Button>
+                        <div className="flex items-center px-4 text-base">
+                          Página {page} de {Math.ceil(getDistributorProducts(distributor.id).length / ITEMS_PER_PAGE)}
+                        </div>
                         <Button
                           variant="outline"
-                          onClick={() => setPage(p => p + 1)}
-                          disabled={page * ITEMS_PER_PAGE >= getDistributorProducts(distributor.id).length}
+                          onClick={() => setPage(p => Math.min(Math.ceil(getDistributorProducts(distributor.id).length / ITEMS_PER_PAGE), p + 1))}
+                          disabled={page >= Math.ceil(getDistributorProducts(distributor.id).length / ITEMS_PER_PAGE)}
+                          className="h-12 px-6"
                         >
-                          Próximo
+                          Próxima
                         </Button>
                       </div>
                     )}
