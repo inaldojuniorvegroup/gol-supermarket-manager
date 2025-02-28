@@ -17,6 +17,12 @@ import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
 import { PriceComparisonDialog } from "./price-comparison-dialog";
 
+// Função para formatar preços mantendo exatamente 2 casas decimais sem arredondamento
+const formatPrice = (price: number): string => {
+  // Converte para string com 3 casas decimais e trunca para 2
+  return (Math.floor(price * 100) / 100).toFixed(2);
+};
+
 interface ProductCardProps {
   product: Product | null;
   isLoading?: boolean;
@@ -170,7 +176,7 @@ export function ProductCard({
                         </div>
                         {product.boxPrice && (
                           <div className="flex items-center gap-2">
-                            <span>Preço Caixa: ${Number(product.boxPrice).toFixed(2)}</span>
+                            <span>Preço Caixa: ${formatPrice(Number(product.boxPrice))}</span>
                           </div>
                         )}
                       </div>
@@ -184,24 +190,24 @@ export function ProductCard({
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
                           <span>Atual:</span>
-                          <span className="font-medium">${Number(product.unitPrice).toFixed(2)}</span>
+                          <span className="font-medium">${formatPrice(Number(product.unitPrice))}</span>
                         </div>
                         {product.previousUnitPrice && (
                           <div className="flex items-center justify-between text-muted-foreground">
                             <span>Anterior:</span>
-                            <span>${Number(product.previousUnitPrice).toFixed(2)}</span>
+                            <span>${formatPrice(Number(product.previousUnitPrice))}</span>
                           </div>
                         )}
                         {product.boxPrice && (
                           <>
                             <div className="flex items-center justify-between mt-2">
                               <span>Caixa Atual:</span>
-                              <span className="font-medium">${Number(product.boxPrice).toFixed(2)}</span>
+                              <span className="font-medium">${formatPrice(Number(product.boxPrice))}</span>
                             </div>
                             {product.previousBoxPrice && (
                               <div className="flex items-center justify-between text-muted-foreground">
                                 <span>Caixa Anterior:</span>
-                                <span>${Number(product.previousBoxPrice).toFixed(2)}</span>
+                                <span>${formatPrice(Number(product.previousBoxPrice))}</span>
                               </div>
                             )}
                           </>
@@ -253,7 +259,7 @@ export function ProductCard({
             {/* Unit Price */}
             <div className="flex items-baseline gap-2">
               <span className="font-semibold text-lg text-primary">
-                ${Number(product.unitPrice).toFixed(2)}
+                ${formatPrice(product.unitPrice)}
               </span>
               <span className="text-sm text-muted-foreground">/ unidade</span>
             </div>
@@ -267,11 +273,11 @@ export function ProductCard({
                     <span className="text-sm">Caixa com {product.boxQuantity} {product.unit}</span>
                   </div>
                   <span className="font-medium text-lg text-primary">
-                    ${((product.boxPrice || (product.unitPrice * product.boxQuantity))).toFixed(2)}
+                    ${formatPrice(product.boxPrice || (product.unitPrice * product.boxQuantity))}
                   </span>
                 </div>
                 <div className="text-xs text-muted-foreground text-right mt-1">
-                  (${((product.boxPrice || (product.unitPrice * product.boxQuantity)) / product.boxQuantity).toFixed(2)} por unidade)
+                  (${formatPrice((product.boxPrice || (product.unitPrice * product.boxQuantity)) / product.boxQuantity)} por unidade)
                 </div>
               </div>
             )}
