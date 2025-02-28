@@ -421,7 +421,7 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, dist
     }
   };
 
-  const handleMappingComplete = async (mapping: Record<string, string>) => {
+const handleMappingComplete = async (mapping: Record<string, string>) => {
     try {
       const transformedProducts = fileData.map((row: any, index: number) => {
         let product = {
@@ -440,6 +440,7 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, dist
           boxPrice: null
         };
 
+        // Mapear campos básicos
         if (mapping.name !== '_EMPTY') {
           product.name = String(row[mapping.name] || '').trim();
         }
@@ -456,6 +457,7 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, dist
           product.barCode = String(row[mapping.barCode] || '').trim();
         }
 
+        // Mapear subcategoria e grupo
         if (mapping.subcategory !== '_EMPTY') {
           let subcategory = String(row[mapping.subcategory] || '').trim().toUpperCase();
           subcategory = subcategory.replace(/^\(N\)\s*/, '');
@@ -468,12 +470,32 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, dist
           product.grupo = grupo;
         }
 
+        // Mapear preços e quantidades
         if (mapping.unitPrice !== '_EMPTY') {
           const rawPrice = row[mapping.unitPrice];
           if (typeof rawPrice === 'number') {
             product.unitPrice = rawPrice;
           } else if (typeof rawPrice === 'string') {
             product.unitPrice = parseFloat(rawPrice.replace(',', '.')) || 0;
+          }
+        }
+
+        // Novos campos
+        if (mapping.boxPrice !== '_EMPTY') {
+          const rawBoxPrice = row[mapping.boxPrice];
+          if (typeof rawBoxPrice === 'number') {
+            product.boxPrice = rawBoxPrice;
+          } else if (typeof rawBoxPrice === 'string') {
+            product.boxPrice = parseFloat(rawBoxPrice.replace(',', '.')) || null;
+          }
+        }
+
+        if (mapping.boxQuantity !== '_EMPTY') {
+          const rawQuantity = row[mapping.boxQuantity];
+          if (typeof rawQuantity === 'number') {
+            product.boxQuantity = rawQuantity;
+          } else if (typeof rawQuantity === 'string') {
+            product.boxQuantity = parseInt(rawQuantity) || 1;
           }
         }
 

@@ -74,6 +74,27 @@ const SYSTEM_FIELDS = [
     defaultColumn: "PRECO CUSTO",
     required: true,
     alternatives: ["VALOR", "CUSTO", "PRECOUNIT", "PRECO", "PRICE"] 
+  },
+  { 
+    key: "packsize", 
+    label: "Tamanho da Embalagem", 
+    defaultColumn: "PACKSIZE",
+    required: false,
+    alternatives: ["PACK_SIZE", "TAMANHO", "EMBALAGEM"] 
+  },
+  { 
+    key: "boxPrice", 
+    label: "Preço da Caixa", 
+    defaultColumn: "PREÇO CAIXA",
+    required: false,
+    alternatives: ["PRECO CAIXA", "PRECO_CAIXA", "VALOR_CAIXA", "BOX_PRICE"] 
+  },
+  { 
+    key: "boxQuantity", 
+    label: "Quantidade por Caixa", 
+    defaultColumn: "QTD/CAIXA",
+    required: false,
+    alternatives: ["QTD_CAIXA", "QUANTIDADE_CAIXA", "UNIDADES_CAIXA", "QTDCAIXA", "QTD CAIXA"] 
   }
 ];
 
@@ -148,7 +169,7 @@ export function ColumnMapping({ excelColumns = [], onMappingComplete, isLoading 
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground mb-4">
         <p>Mapeie as colunas do seu arquivo Excel com os campos do sistema.</p>
-        <p>Todos os campos são obrigatórios para garantir a qualidade dos dados.</p>
+        <p>Os campos marcados com * são obrigatórios para garantir a qualidade dos dados.</p>
         <p className="text-xs mt-1">
           Dica: O sistema tentará mapear automaticamente as colunas com base nos nomes mais comuns.
         </p>
