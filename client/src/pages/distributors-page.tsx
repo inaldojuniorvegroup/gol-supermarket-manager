@@ -46,7 +46,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 
 export default function DistributorsPage() {
   const { toast } = useToast();
@@ -168,14 +167,6 @@ export default function DistributorsPage() {
 
   // Limitar número de distribuidores mostrados por vez
   const displayedDistributors = filteredDistributors.slice(0, 8);
-
-  const findSimilarProducts = (product: Product) => {
-    return products.filter(p =>
-      p.id !== product.id &&
-      p.barCode === product.barCode &&
-      p.name === product.name
-    );
-  };
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -417,20 +408,15 @@ export default function DistributorsPage() {
                           variant="outline"
                           onClick={() => setPage(p => Math.max(1, p - 1))}
                           disabled={page === 1}
-                          className="h-12 px-6"
                         >
                           Anterior
                         </Button>
-                        <div className="flex items-center px-4 text-base">
-                          Página {page} de {Math.ceil(getDistributorProducts(distributor.id).length / ITEMS_PER_PAGE)}
-                        </div>
                         <Button
                           variant="outline"
-                          onClick={() => setPage(p => Math.min(Math.ceil(getDistributorProducts(distributor.id).length / ITEMS_PER_PAGE), p + 1))}
-                          disabled={page >= Math.ceil(getDistributorProducts(distributor.id).length / ITEMS_PER_PAGE)}
-                          className="h-12 px-6"
+                          onClick={() => setPage(p => p + 1)}
+                          disabled={page * ITEMS_PER_PAGE >= getDistributorProducts(distributor.id).length}
                         >
-                          Próxima
+                          Próximo
                         </Button>
                       </div>
                     )}
