@@ -248,58 +248,72 @@ export function ProductCard({
             </div>
           </div>
 
-          {/* Prices and Actions */}
-          <div className="flex items-center justify-between pt-2">
-            <div className="space-y-1">
+          {/* Price Information */}
+          <div className="flex flex-col gap-2">
+            {/* Unit Price */}
+            <div className="flex items-baseline gap-2">
               <span className="font-semibold text-lg text-primary">
                 ${Number(product.unitPrice).toFixed(2)}
               </span>
-              {product.boxPrice && product.boxQuantity && (
-                <div className="text-sm text-muted-foreground">
-                  Caixa ({product.boxQuantity} {product.unit}): ${Number(product.boxPrice).toFixed(2)}
-                </div>
-              )}
+              <span className="text-sm text-muted-foreground">/ unidade</span>
             </div>
-            <div className="flex items-center gap-2">
-              {!isVendorView && similarProducts.length > 0 && (
-                <PriceComparisonDialog
-                  product={product}
-                  similarProducts={similarProducts}
-                  distributors={distributors}
-                />
-              )}
-              {onAddToCart && (
-                <>
-                  <div className="flex items-center bg-muted rounded-lg">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={decrementQuantity}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="w-8 text-center">{quantity}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={incrementQuantity}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
+
+            {/* Box Price */}
+            {product.boxPrice && product.boxQuantity && (
+              <div className="bg-muted p-2 rounded-lg">
+                <div className="flex items-baseline justify-between">
+                  <div className="flex items-center gap-2">
+                    <Box className="h-4 w-4" />
+                    <span className="text-sm">Caixa com {product.boxQuantity} {product.unit}</span>
                   </div>
+                  <span className="font-medium">
+                    ${Number(product.boxPrice).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 justify-end pt-2">
+            {!isVendorView && similarProducts.length > 0 && (
+              <PriceComparisonDialog
+                product={product}
+                similarProducts={similarProducts}
+                distributors={distributors}
+              />
+            )}
+            {onAddToCart && (
+              <>
+                <div className="flex items-center bg-muted rounded-lg">
                   <Button
-                    size="sm"
-                    onClick={handleAddToCart}
-                    className="flex items-center"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={decrementQuantity}
                   >
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Adicionar
+                    <Minus className="h-4 w-4" />
                   </Button>
-                </>
-              )}
-            </div>
+                  <span className="w-8 text-center">{quantity}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={incrementQuantity}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleAddToCart}
+                  className="flex items-center"
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Adicionar
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
