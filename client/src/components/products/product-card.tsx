@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Product, Distributor } from "@shared/schema";
-import { Package, Tag, ShoppingCart, Barcode, Box, Info, FolderOpen, Folder, Plus, Minus, Scale, PackageOpen, Percent, LayersIcon } from "lucide-react";
+import { Package, Tag, ShoppingCart, Barcode, Box, Info, FolderOpen, Folder, Plus, Minus, Scale, PackageOpen, Percent, LayersIcon, DollarSign } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -67,6 +67,8 @@ export function ProductCard({
     );
   }
 
+  const hasSpecialOffer = product.specialOfferPrice && product.specialOfferEndDate && new Date(product.specialOfferEndDate) > new Date();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -89,19 +91,13 @@ export function ProductCard({
                 {similarProducts.length} outros fornecedores
               </Badge>
             )}
-            {product.isSpecialOffer && (
+            {hasSpecialOffer && (
               <Badge variant="destructive" className="flex items-center gap-1">
                 <Percent className="h-3 w-3" />
                 Oferta Especial
               </Badge>
             )}
           </div>
-          {product.subcategory && (
-            <Badge variant="outline" className="flex items-center gap-1 w-fit">
-              <Folder className="h-3 w-3" />
-              {product.subcategory}
-            </Badge>
-          )}
           {product.grupo && (
             <Badge variant="secondary" className="flex items-center gap-1 w-fit">
               <LayersIcon className="h-3 w-3" />
@@ -160,10 +156,6 @@ export function ProductCard({
                       <h4 className="text-sm font-semibold">Categoria</h4>
                       <div className="text-sm space-y-1">
                         <div className="flex items-center gap-2">
-                          <Folder className="h-4 w-4" />
-                          <span>Subcategoria: {product.subcategory}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
                           <LayersIcon className="h-4 w-4" />
                           <span>Grupo: {product.grupo}</span>
                         </div>
@@ -171,19 +163,40 @@ export function ProductCard({
                     </div>
 
                     <div className="space-y-1.5">
-                      <h4 className="text-sm font-semibold">Embalagem</h4>
+                      <h4 className="text-sm font-semibold">Preços e Embalagem</h4>
                       <div className="text-sm space-y-1">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4" />
+                          <span>Preço Unitário: ${Number(product.unitPrice).toFixed(2)}</span>
+                        </div>
+                        {product.previousUnitPrice && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <span>Preço Anterior: ${Number(product.previousUnitPrice).toFixed(2)}</span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2">
                           <PackageOpen className="h-4 w-4" />
                           <span>Unidade: {product.unit}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Box className="h-4 w-4" />
-                          <span>Qtd. por Caixa: {product.boxQuantity} {product.unit}</span>
+                          <span>Quantidade por Caixa: {product.boxQuantity} {product.unit}</span>
                         </div>
                         {product.boxPrice && (
                           <div className="flex items-center gap-2">
-                            <span>Preço Caixa: ${Number(product.boxPrice).toFixed(2)}</span>
+                            <DollarSign className="h-4 w-4" />
+                            <span>Preço da Caixa: ${Number(product.boxPrice).toFixed(2)}</span>
+                          </div>
+                        )}
+                        {product.previousBoxPrice && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <span>Preço Anterior da Caixa: ${Number(product.previousBoxPrice).toFixed(2)}</span>
+                          </div>
+                        )}
+                        {hasSpecialOffer && (
+                          <div className="flex items-center gap-2 text-destructive font-medium">
+                            <Percent className="h-4 w-4" />
+                            <span>Preço Promocional: ${Number(product.specialOfferPrice).toFixed(2)}</span>
                           </div>
                         )}
                       </div>
@@ -205,9 +218,22 @@ export function ProductCard({
 
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <span className="font-semibold text-lg text-primary">
-                ${Number(product.unitPrice).toFixed(2)}
-              </span>
+              <div className="flex items-center gap-1">
+                {hasSpecialOffer ? (
+                  <>
+                    <span className="font-semibold text-lg text-destructive">
+                      ${Number(product.specialOfferPrice).toFixed(2)}
+                    </span>
+                    <span className="text-sm text-muted-foreground line-through">
+                      ${Number(product.unitPrice).toFixed(2)}
+                    </span>
+                  </>
+                ) : (
+                  <span className="font-semibold text-lg text-primary">
+                    ${Number(product.unitPrice).toFixed(2)}
+                  </span>
+                )}
+              </div>
               {product.boxPrice && product.boxQuantity && (
                 <div className="text-sm text-muted-foreground">
                   Caixa ({product.boxQuantity} {product.unit}): ${Number(product.boxPrice).toFixed(2)}

@@ -36,58 +36,72 @@ const SYSTEM_FIELDS = [
   { 
     key: "itemCode", 
     label: "Código do Item", 
-    defaultColumn: "CODIGO",
+    defaultColumn: "ITEM CODE",
     required: true,
-    alternatives: ["COD", "REFERENCIA", "REF", "CODE"] 
+    alternatives: ["COD", "REFERENCIA", "REF", "CODE", "CODIGO"] 
   },
   { 
     key: "supplierCode", 
     label: "Código do Fornecedor", 
-    defaultColumn: "COD.FORN",
+    defaultColumn: "SUPPLIER CODE",
     required: true,
-    alternatives: ["CODFORN", "COD_FORN", "FORNECEDOR", "CODFORNECEDOR"] 
+    alternatives: ["CODFORN", "COD_FORN", "FORNECEDOR", "CODFORNECEDOR", "COD. FORN"] 
   },
   { 
     key: "barCode", 
-    label: "Código de Barras", 
-    defaultColumn: "COD.BARRA",
-    required: true,
-    alternatives: ["GTIN", "EAN", "CODBARRAS", "COD_BARRAS", "CODBARRA"] 
+    label: "Código de Barras (EAN)", 
+    defaultColumn: "EAN",
+    required: false,
+    alternatives: ["GTIN", "BARCODE", "CODBARRAS", "COD_BARRAS", "CODBARRA", "COD. BARRA"] 
   },
   { 
-    key: "subcategory", 
-    label: "Subcategoria (ex: FRIOS/LACTICNIOS/CONGELADOS)", 
-    defaultColumn: "SUBCATEGORIA",
-    required: true,
-    alternatives: ["SETOR", "SECAO", "DEPARTAMENTO", "DEPTO"] 
+    key: "description", 
+    label: "Descrição", 
+    defaultColumn: "DESCRIPTION",
+    required: false,
+    alternatives: ["DESC", "DESCRICAO", "OBS", "OBSERVACAO"] 
   },
   { 
     key: "grupo", 
-    label: "Grupo do Produto (ex: MASSA DE PASTEL)", 
-    defaultColumn: "GRUPO",
-    required: true,
-    alternatives: ["CATEGORIA", "LINHA", "FAMILIA", "SUBCATEGORIA"] 
+    label: "Grupo do Produto", 
+    defaultColumn: "GROUP",
+    required: false,
+    alternatives: ["GRUPO", "CATEGORIA", "LINHA", "FAMILIA"] 
   },
   { 
     key: "unitPrice", 
     label: "Preço Unitário", 
-    defaultColumn: "PRECO CUSTO",
+    defaultColumn: "UNIT PRICE",
     required: true,
-    alternatives: ["VALOR", "CUSTO", "PRECOUNIT", "PRECO", "PRICE"] 
+    alternatives: ["VALOR", "CUSTO", "PRECOUNIT", "PRECO", "PRICE", "UNIT COST"] 
   },
   { 
     key: "boxQuantity", 
     label: "Quantidade por Caixa", 
-    defaultColumn: "QTD/CAIXA",
+    defaultColumn: "BOX QTY",
     required: false,
-    alternatives: ["QTD_CAIXA", "QUANTIDADE_CAIXA", "UNIDADES_CAIXA", "QTDCAIXA", "QTD CAIXA", "CAIXA QTD"] 
+    alternatives: ["QTD_CAIXA", "QUANTIDADE_CAIXA", "UNIDADES_CAIXA", "QTDCAIXA", "QTD CAIXA", "CAIXA QTD", "CS", "CASE", "CASE SIZE"] 
   },
   { 
     key: "boxPrice", 
     label: "Preço da Caixa", 
-    defaultColumn: "PREÇO CAIXA",
+    defaultColumn: "CASE PRICE",
     required: false,
-    alternatives: ["PRECO CAIXA", "PRECO_CAIXA", "VALOR_CAIXA", "BOX_PRICE", "CAIXA PRECO", "CAIXA VALOR"] 
+    alternatives: ["PRECO CAIXA", "PRECO_CAIXA", "VALOR_CAIXA", "BOX_PRICE", "CAIXA PRECO", "CS PRICE"] 
+  },
+  { 
+    key: "unit", 
+    label: "Unidade de Medida", 
+    defaultColumn: "UNIT",
+    required: false,
+    alternatives: ["UNIDADE", "UND", "UN", "MEDIDA"] 
+  },
+  { 
+    key: "specialOfferPrice", 
+    label: "Preço Promocional", 
+    defaultColumn: "SPECIAL PRICE",
+    required: false,
+    alternatives: ["PRECO_PROMOCIONAL", "PROMO_PRICE", "OFERTA", "PRECO_OFERTA"] 
   }
 ];
 
