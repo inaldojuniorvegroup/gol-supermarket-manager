@@ -64,72 +64,53 @@ export default function ImportExcel({ distributorId }: ImportExcelProps) {
           const worksheet = workbook.Sheets[workbook.SheetNames[0]];
           const products = utils.sheet_to_json(worksheet);
 
-          // Função para encontrar o valor de uma coluna com várias possíveis nomenclaturas
-          const findColumnValue = (row: any, possibilities: string[]) => {
-            for (const possibility of possibilities) {
-              if (row[possibility] !== undefined) {
-                return row[possibility];
-              }
-            }
-            return null;
-          };
-
           // Processar produtos
           const transformedProducts = products.map((row: any) => {
-            // Buscar preço da caixa com várias possibilidades de nome de coluna
-            const boxPriceValue = findColumnValue(row, [
-              'Preço Caixa',
-              'PREÇO CAIXA',
-              'Valor Cx',
-              'VALOR CX',
-              'Valor Caixa',
-              'VALOR CAIXA',
-              'Preco Cx',
-              'PRECO CX',
-              'Vl Cx',
-              'VL CX',
-              'Vl.Cx',
-              'VL.CX',
-              'Val.Cx',
-              'VAL.CX'
-            ]);
+            // Converter preços para número, removendo caracteres especiais
+            const cleanPrice = (price: any) => {
+              if (!price) return null;
+              if (typeof price === 'number') return price;
+              return Number(String(price).replace(/[^\d.,]/g, '').replace(',', '.'));
+            };
 
-            let boxPrice = null;
-            if (boxPriceValue !== null) {
-              if (typeof boxPriceValue === 'number') {
-                boxPrice = boxPriceValue;
-              } else if (typeof boxPriceValue === 'string') {
-                // Remove caracteres não numéricos exceto ponto e vírgula
-                const cleanValue = boxPriceValue.replace(/[^\d.,]/g, '').replace(',', '.');
-                const parsedValue = parseFloat(cleanValue);
-                if (!isNaN(parsedValue)) {
-                  boxPrice = parsedValue;
-                }
-              }
-            }
+            // Tentar encontrar valores em diferentes formatos de coluna
+            const boxPrice = cleanPrice(row['Preço Caixa'] || row['PREÇO CAIXA'] || row['Preço CX'] || row['PRECO CAIXA']);
+            const unitPrice = cleanPrice(row['Preço Compra'] || row['PREÇO COMPRA'] || row['Preço'] || row['PRECO']);
+            const boxQty = Number(String(row['Qtd/Caixa'] || row['QTD/CAIXA'] || row['Qtd/CX'] || '1').replace(',', '.'));
 
-            return {
-              name: String(row['Nome'] || row['NOME'] || row['Descrição'] || row['DESCRIÇÃO'] || '').trim(),
-              itemCode: String(row['Código'] || row['CÓDIGO'] || row['Cod'] || row['COD'] || '').trim(),
-              supplierCode: String(row['Cód.Forn.'] || row['COD.FORN'] || row['Código Fornecedor'] || '').trim(),
-              barCode: String(row['Cód.Barra'] || row['EAN'] || row['Código de Barras'] || '').trim(),
+            const product = {
+              name: String(row['Nome'] || row['NOME'] || '').trim(),
+              itemCode: String(row['Código'] || row['CÓDIGO'] || row['CODIGO'] || '').trim(),
+              supplierCode: String(row['Cód.Forn.'] || row['COD.FORN'] || row['CODIGO FORNECEDOR'] || '').trim(),
+              barCode: String(row['Cód.Barra'] || row['COD.BARRA'] || row['EAN'] || '').trim(),
               description: String(row['Departamento'] || row['DEPARTAMENTO'] || '').trim(),
               grupo: String(row['Grupo'] || row['GRUPO'] || '').trim(),
-              unitPrice: parseFloat(String(row['Preço Custo'] || row['PREÇO CUSTO'] || '0').replace(',', '.')) || 0,
-              boxQuantity: parseInt(String(row['Qtd/Caixa'] || row['QTD/CAIXA'] || row['Qtd/Cx'] || row['QTD/CX'] || '1')) || 1,
+              unitPrice: unitPrice || 0,
               boxPrice: boxPrice,
+              boxQuantity: boxQty || 1,
               unit: String(row['Unid.'] || row['UNIDADE'] || 'un').trim(),
               distributorId: distributorId,
               imageUrl: null,
               isSpecialOffer: false
             };
+
+            // Log para debug
+            console.log('Processando produto:', {
+              nome: product.name,
+              precoUnitario: product.unitPrice,
+              precoCaixa: product.boxPrice,
+              qtdCaixa: product.boxQuantity
+            });
+
+            return product;
           });
 
           // Validar produtos
-          const validProducts = transformedProducts.filter(product => 
-            product.name && 
-            product.itemCode && 
-            product.supplierCode
+          const validProducts = transformedProducts.filter(product =>
+            product.name &&
+            product.itemCode &&
+            product.supplierCode &&
+            product.unitPrice > 0
           );
 
           if (validProducts.length === 0) {
@@ -142,7 +123,7 @@ export default function ImportExcel({ distributorId }: ImportExcelProps) {
             description: `Importando ${validProducts.length} produtos...`
           });
 
-          // Importar em lotes maiores (200 produtos por vez)
+          // Importar em lotes
           const batchSize = 200;
           for (let i = 0; i < validProducts.length; i += batchSize) {
             const batch = validProducts.slice(i, i + batchSize);
@@ -151,7 +132,6 @@ export default function ImportExcel({ distributorId }: ImportExcelProps) {
             const currentProgress = Math.min(((i + batchSize) / validProducts.length) * 100, 100);
             setProgress(currentProgress);
 
-            // Atualizar toast com progresso
             toast({
               title: "Importando produtos",
               description: `Processados ${Math.min(i + batchSize, validProducts.length)} de ${validProducts.length} produtos`
@@ -195,7 +175,7 @@ export default function ImportExcel({ distributorId }: ImportExcelProps) {
         <CardTitle>Importação em Massa</CardTitle>
         <CardDescription>
           Use esta função para importar produtos do catálogo via Excel.
-          O arquivo deve conter as colunas: Nome, Código, Cód.Forn., Preço Custo, etc.
+          O arquivo deve conter as colunas: Nome, Grupo, Código, Departamento, Preço Compra, etc.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

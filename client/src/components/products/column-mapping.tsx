@@ -29,79 +29,79 @@ const SYSTEM_FIELDS = [
   { 
     key: "name", 
     label: "Nome do Produto", 
-    defaultColumn: "DESCRIPTION",
+    defaultColumn: "Nome",
     required: true,
-    alternatives: ["DESCR", "DESC", "DESCRICAO", "NOME", "PRODUTO"] 
+    alternatives: ["NOME", "DESCRICAO", "DESCRIÇÃO"] 
   },
   { 
     key: "itemCode", 
     label: "Código do Item", 
-    defaultColumn: "ITEM CODE",
+    defaultColumn: "Código",
     required: true,
-    alternatives: ["COD", "REFERENCIA", "REF", "CODE", "CODIGO"] 
-  },
-  { 
-    key: "supplierCode", 
-    label: "Código do Fornecedor", 
-    defaultColumn: "SUPPLIER CODE",
-    required: true,
-    alternatives: ["CODFORN", "COD_FORN", "FORNECEDOR", "CODFORNECEDOR", "COD. FORN"] 
-  },
-  { 
-    key: "barCode", 
-    label: "Código de Barras (EAN)", 
-    defaultColumn: "EAN",
-    required: false,
-    alternatives: ["GTIN", "BARCODE", "CODBARRAS", "COD_BARRAS", "CODBARRA", "COD. BARRA"] 
-  },
-  { 
-    key: "description", 
-    label: "Descrição", 
-    defaultColumn: "DESCRIPTION",
-    required: false,
-    alternatives: ["DESC", "DESCRICAO", "OBS", "OBSERVACAO"] 
+    alternatives: ["CODIGO", "COD", "CÓDIGO"] 
   },
   { 
     key: "grupo", 
     label: "Grupo do Produto", 
-    defaultColumn: "GROUP",
+    defaultColumn: "Grupo",
     required: false,
-    alternatives: ["GRUPO", "CATEGORIA", "LINHA", "FAMILIA"] 
+    alternatives: ["GRUPO", "CATEGORIA", "LINHA"] 
+  },
+  { 
+    key: "description", 
+    label: "Departamento", 
+    defaultColumn: "Departamento",
+    required: false,
+    alternatives: ["DEPARTAMENTO", "DEPT", "SETOR"] 
   },
   { 
     key: "unitPrice", 
-    label: "Preço Unitário", 
-    defaultColumn: "UNIT PRICE",
+    label: "Preço de Compra", 
+    defaultColumn: "Preço Compra",
     required: true,
-    alternatives: ["VALOR", "CUSTO", "PRECOUNIT", "PRECO", "PRICE", "UNIT COST"] 
-  },
-  { 
-    key: "boxQuantity", 
-    label: "Quantidade por Caixa", 
-    defaultColumn: "BOX QTY",
-    required: false,
-    alternatives: ["QTD_CAIXA", "QUANTIDADE_CAIXA", "UNIDADES_CAIXA", "QTDCAIXA", "QTD CAIXA", "CAIXA QTD", "CS", "CASE", "CASE SIZE"] 
-  },
-  { 
-    key: "boxPrice", 
-    label: "Preço da Caixa", 
-    defaultColumn: "CASE PRICE",
-    required: false,
-    alternatives: ["PRECO CAIXA", "PRECO_CAIXA", "VALOR_CAIXA", "BOX_PRICE", "CAIXA PRECO", "CS PRICE"] 
+    alternatives: ["PRECO COMPRA", "PREÇO", "VALOR", "CUSTO"] 
   },
   { 
     key: "unit", 
     label: "Unidade de Medida", 
-    defaultColumn: "UNIT",
+    defaultColumn: "Unid.",
     required: false,
-    alternatives: ["UNIDADE", "UND", "UN", "MEDIDA"] 
+    alternatives: ["UNIDADE", "UND", "UN"] 
   },
   { 
-    key: "specialOfferPrice", 
-    label: "Preço Promocional", 
-    defaultColumn: "SPECIAL PRICE",
+    key: "packsize", 
+    label: "Packsize", 
+    defaultColumn: "Packsize",
     required: false,
-    alternatives: ["PRECO_PROMOCIONAL", "PROMO_PRICE", "OFERTA", "PRECO_OFERTA"] 
+    alternatives: ["PACK SIZE", "TAMANHO", "SIZE"] 
+  },
+  { 
+    key: "boxPrice", 
+    label: "Preço da Caixa", 
+    defaultColumn: "Preço Caixa",
+    required: true,
+    alternatives: ["PRECO CAIXA", "PREÇO CX", "VALOR CX", "VL.CX"] 
+  },
+  { 
+    key: "boxQuantity", 
+    label: "Quantidade por Caixa", 
+    defaultColumn: "Qtd/Caixa",
+    required: true,
+    alternatives: ["QTD CAIXA", "QTD/CX", "QUANTIDADE CAIXA"] 
+  },
+  { 
+    key: "barCode", 
+    label: "Código de Barras", 
+    defaultColumn: "Cód.Barra",
+    required: false,
+    alternatives: ["CODIGO BARRA", "EAN", "GTIN", "COD.BARRA"] 
+  },
+  { 
+    key: "supplierCode", 
+    label: "Código do Fornecedor", 
+    defaultColumn: "Cód.Forn.",
+    required: true,
+    alternatives: ["CODIGO FORNECEDOR", "COD.FORN", "COD FORN"] 
   }
 ];
 
@@ -177,9 +177,6 @@ export function ColumnMapping({ excelColumns = [], onMappingComplete, isLoading 
       <div className="text-sm text-muted-foreground mb-4">
         <p>Mapeie as colunas do seu arquivo Excel com os campos do sistema.</p>
         <p>Os campos marcados com * são obrigatórios para garantir a qualidade dos dados.</p>
-        <p className="text-xs mt-1">
-          Dica: O sistema tentará mapear automaticamente as colunas com base nos nomes mais comuns.
-        </p>
       </div>
 
       {error && (

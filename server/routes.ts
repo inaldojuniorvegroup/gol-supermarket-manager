@@ -182,21 +182,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
               supplierCode: product.supplierCode ? String(product.supplierCode).trim() : '',
               barCode: product.barCode ? String(product.barCode).trim() : '',
               distributorId: Number(product.distributorId),
-              unitPrice: typeof product.unitPrice === 'number' ? product.unitPrice : 0,
-              boxPrice: null,
-              boxQuantity: typeof product.boxQuantity === 'number' ? product.boxQuantity : 1,
+              unitPrice: typeof product.unitPrice === 'number' ? product.unitPrice : Number(String(product.unitPrice || '0').replace(',', '.')),
+              boxPrice: product.boxPrice ? Number(String(product.boxPrice).replace(',', '.')) : null,
+              boxQuantity: typeof product.boxQuantity === 'number' ? product.boxQuantity : Number(String(product.boxQuantity || '1').replace(',', '.')),
               unit: product.unit ? String(product.unit).trim() : 'un',
               description: product.description ? String(product.description).trim() : '',
               imageUrl: null,
               isSpecialOffer: false
             };
 
-            console.log('Tentando inserir produto:', productData);
+            console.log('Tentando inserir produto:', {
+              name: productData.name,
+              itemCode: productData.itemCode,
+              unitPrice: productData.unitPrice,
+              boxPrice: productData.boxPrice,
+              boxQuantity: productData.boxQuantity
+            });
 
             const parsed = insertProductSchema.parse(productData);
             const savedProduct = await storage.createProduct(parsed);
             importedProducts.push(savedProduct);
-            console.log('Produto importado com sucesso:', savedProduct.id);
+            console.log('Produto importado com sucesso:', {
+              id: savedProduct.id,
+              name: savedProduct.name,
+              boxPrice: savedProduct.boxPrice
+            });
           } catch (error) {
             const errorMsg = `Erro ao importar produto: ${JSON.stringify(product)}, Error: ${error.message}`;
             console.error(errorMsg);
