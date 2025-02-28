@@ -33,13 +33,8 @@ export function ProductCard({
   distributors = [],
   isVendorView = false 
 }: ProductCardProps) {
-  const [imageError, setImageError] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const { toast } = useToast();
-
-  useEffect(() => {
-    setImageError(false);
-  }, [product?.imageUrl]);
 
   const handleAddToCart = () => {
     if (product && onAddToCart) {
@@ -142,6 +137,12 @@ export function ProductCard({
                       <Box className="h-4 w-4" />
                       <span>Qtd. Caixa: {product.boxQuantity} {product.unit}</span>
                     </div>
+                    {product.boxPrice && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <DollarSign className="h-4 w-4" />
+                        <span>Preço Caixa: R$ {Number(product.boxPrice).toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="pt-2 border-t">
                       <p className="text-xs text-muted-foreground">
                         Última atualização {formatDistanceToNow(new Date(product.updatedAt), { 
@@ -157,11 +158,18 @@ export function ProductCard({
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <DollarSign className="h-4 w-4 text-primary" />
-              <span className="font-semibold text-lg">
-                {Number(product.unitPrice).toFixed(2)}
-              </span>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <DollarSign className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-lg">
+                  {Number(product.unitPrice).toFixed(2)}
+                </span>
+              </div>
+              {product.boxPrice && (
+                <div className="text-sm text-muted-foreground">
+                  Caixa: R$ {Number(product.boxPrice).toFixed(2)}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {!isVendorView && similarProducts.length > 0 && (
