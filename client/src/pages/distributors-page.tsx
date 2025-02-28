@@ -185,13 +185,13 @@ export default function DistributorsPage() {
           distributorId: selectedDistributor!,
           supplierCode: '',
           barCode: '',
-          description: '', 
-          grupo: '', 
+          description: '',
+          grupo: '',
           boxQuantity: 1,
           unit: 'un',
           imageUrl: null,
           isSpecialOffer: false,
-          boxPrice: null
+          boxPrice: null as number | null
         };
 
         // Mapear campos básicos
@@ -234,13 +234,14 @@ export default function DistributorsPage() {
           }
         }
 
-        // Novos campos
+        // Mapear preço da caixa corretamente
         if (mapping.boxPrice !== '_EMPTY') {
           const rawBoxPrice = row[mapping.boxPrice];
           if (typeof rawBoxPrice === 'number') {
             product.boxPrice = rawBoxPrice;
           } else if (typeof rawBoxPrice === 'string') {
-            product.boxPrice = parseFloat(rawBoxPrice.replace(',', '.')) || null;
+            const parsedPrice = parseFloat(rawBoxPrice.replace(',', '.'));
+            product.boxPrice = isNaN(parsedPrice) ? null : parsedPrice;
           }
         }
 
@@ -259,8 +260,8 @@ export default function DistributorsPage() {
       const validProducts = transformedProducts.filter((product) => {
         const isValid = product.name &&
           product.itemCode &&
-          product.description && 
-          product.grupo && 
+          product.description &&
+          product.grupo &&
           product.supplierCode &&
           product.barCode;
         return isValid;
