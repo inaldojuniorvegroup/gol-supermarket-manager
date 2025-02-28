@@ -16,17 +16,17 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
 import { PriceComparisonDialog } from "./price-comparison-dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Função para formatar preços mantendo exatamente 2 casas decimais sem arredondamento
 const formatPrice = (price: number): string => {
-  // Converte para string com 3 casas decimais e trunca para 2
   return (Math.floor(price * 100) / 100).toFixed(2);
 };
 
 interface ProductCardProps {
   product: Product | null;
   isLoading?: boolean;
-  onAddToCart?: (product: Product, quantity: number) => void;
+  onAddToCart?: (product: Product, quantity: number, isBoxUnit: boolean) => void;
   similarProducts?: Product[];
   distributors?: Distributor[];
   isVendorView?: boolean;
@@ -41,14 +41,15 @@ export function ProductCard({
   isVendorView = false
 }: ProductCardProps) {
   const [quantity, setQuantity] = useState(1);
+  const [isBoxUnit, setIsBoxUnit] = useState(false);
   const { toast } = useToast();
 
   const handleAddToCart = () => {
     if (product && onAddToCart) {
-      onAddToCart(product, quantity);
+      onAddToCart(product, quantity, isBoxUnit);
       toast({
         title: "Adicionado ao carrinho",
-        description: `${quantity}x ${product.name} foi adicionado ao seu carrinho.`
+        description: `${quantity}x ${isBoxUnit ? 'caixas' : 'unidades'} de ${product.name} foi adicionado ao seu carrinho.`
       });
       setQuantity(1);
     }
@@ -73,6 +74,11 @@ export function ProductCard({
       </Card>
     );
   }
+
+  // Calcular o preço baseado na seleção (unidade ou caixa)
+  const currentPrice = isBoxUnit 
+    ? (product.boxPrice || (product.unitPrice * product.boxQuantity))
+    : product.unitPrice;
 
   return (
     <motion.div
@@ -254,46 +260,37 @@ export function ProductCard({
             </div>
           </div>
 
-          {/* Price Information */}
-          <div className="flex flex-col gap-2">
-            {/* Unit Price */}
-            <div className="flex items-baseline gap-2">
-              <span className="font-semibold text-lg text-primary">
-                ${formatPrice(product.unitPrice)}
-              </span>
-              <span className="text-sm text-muted-foreground">/ unidade</span>
-            </div>
+          {/* Unit/Box Selection and Price */}
+          {onAddToCart && (
+            <div className="space-y-4">
+              <Tabs
+                defaultValue="unit"
+                className="w-full"
+                onValueChange={(value) => setIsBoxUnit(value === "box")}
+              >
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="unit">Unidade</TabsTrigger>
+                  <TabsTrigger value="box">Caixa</TabsTrigger>
+                </TabsList>
+              </Tabs>
 
-            {/* Box Price */}
-            {(product.boxPrice || product.boxQuantity) && (
-              <div className="bg-muted p-2 rounded-lg">
-                <div className="flex items-baseline justify-between">
-                  <div className="flex items-center gap-2">
-                    <Box className="h-4 w-4" />
-                    <span className="text-sm">Caixa com {product.boxQuantity} {product.unit}</span>
-                  </div>
-                  <span className="font-medium text-lg text-primary">
-                    ${formatPrice(product.boxPrice || (product.unitPrice * product.boxQuantity))}
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground text-right mt-1">
-                  (${formatPrice((product.boxPrice || (product.unitPrice * product.boxQuantity)) / product.boxQuantity)} por unidade)
-                </div>
+              <div className="flex items-baseline justify-between">
+                <span className="font-semibold text-lg text-primary">
+                  ${formatPrice(currentPrice)}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  / {isBoxUnit ? 'caixa' : 'unidade'}
+                </span>
               </div>
-            )}
-          </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 justify-end pt-2">
-            {!isVendorView && similarProducts.length > 0 && (
-              <PriceComparisonDialog
-                product={product}
-                similarProducts={similarProducts}
-                distributors={distributors}
-              />
-            )}
-            {onAddToCart && (
-              <>
+              {isBoxUnit && (
+                <div className="text-xs text-muted-foreground text-right">
+                  (${formatPrice(currentPrice / product.boxQuantity)} por unidade)
+                </div>
+              )}
+
+              {/* Quantity Selection and Add to Cart */}
+              <div className="flex items-center gap-2 justify-end pt-2">
                 <div className="flex items-center bg-muted rounded-lg">
                   <Button
                     variant="ghost"
@@ -321,9 +318,9 @@ export function ProductCard({
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Adicionar
                 </Button>
-              </>
-            )}
-          </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>
