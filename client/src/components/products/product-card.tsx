@@ -259,7 +259,7 @@ export function ProductCard({
             </div>
 
             {/* Box Price */}
-            {product.boxPrice && product.boxQuantity && (
+            {(product.boxPrice || product.boxQuantity) && (
               <div className="bg-muted p-2 rounded-lg">
                 <div className="flex items-baseline justify-between">
                   <div className="flex items-center gap-2">
@@ -267,11 +267,11 @@ export function ProductCard({
                     <span className="text-sm">Caixa com {product.boxQuantity} {product.unit}</span>
                   </div>
                   <span className="font-medium text-lg text-primary">
-                    ${Number(product.boxPrice).toFixed(2)}
+                    ${((product.boxPrice || (product.unitPrice * product.boxQuantity))).toFixed(2)}
                   </span>
                 </div>
                 <div className="text-xs text-muted-foreground text-right mt-1">
-                  (${(Number(product.boxPrice) / product.boxQuantity).toFixed(2)} por unidade)
+                  (${((product.boxPrice || (product.unitPrice * product.boxQuantity)) / product.boxQuantity).toFixed(2)} por unidade)
                 </div>
               </div>
             )}
