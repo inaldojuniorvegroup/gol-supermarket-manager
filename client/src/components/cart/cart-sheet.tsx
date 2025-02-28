@@ -16,12 +16,20 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { Store } from "@shared/schema";
+import { Store, Product } from "@shared/schema";
 import { useState } from "react";
 
 // Função para formatar preços mantendo exatamente 2 casas decimais sem arredondamento
 const formatPrice = (price: number): string => {
   return (Math.floor(price * 100) / 100).toFixed(2);
+};
+
+// Função para calcular o preço do item baseado no modo (unidade ou caixa)
+const calculateItemPrice = (product: Product, isBoxUnit: boolean): number => {
+  if (isBoxUnit) {
+    return product.boxPrice || (product.unitPrice * product.boxQuantity);
+  }
+  return product.unitPrice;
 };
 
 export function CartSheet() {
@@ -55,10 +63,8 @@ export function CartSheet() {
       // Criar um pedido para cada distribuidor
       const orderPromises = Object.entries(itemsByDistributor).map(async ([distributorId, items]) => {
         const orderTotal = items.reduce((sum, item) => {
-          const price = item.isBoxUnit
-            ? (item.product.boxPrice || (item.product.unitPrice * item.product.boxQuantity))
-            : item.product.unitPrice;
-          const itemTotal = Number(formatPrice(price)) * item.quantity;
+          const itemPrice = calculateItemPrice(item.product, item.isBoxUnit);
+          const itemTotal = Number(formatPrice(itemPrice)) * item.quantity;
           return sum + itemTotal;
         }, 0);
 
@@ -74,17 +80,14 @@ export function CartSheet() {
 
         // Adicionar os itens ao pedido
         const itemPromises = items.map(item => {
-          const price = item.isBoxUnit
-            ? (item.product.boxPrice || (item.product.unitPrice * item.product.boxQuantity))
-            : item.product.unitPrice;
-
-          const itemTotal = Number(formatPrice(price)) * item.quantity;
+          const itemPrice = calculateItemPrice(item.product, item.isBoxUnit);
+          const itemTotal = Number(formatPrice(itemPrice)) * item.quantity;
 
           return apiRequest("POST", `/api/orders/${orderData.id}/items`, {
             orderId: orderData.id,
             productId: item.product.id,
             quantity: item.quantity.toString(),
-            price: formatPrice(price),
+            price: formatPrice(itemPrice),
             total: formatPrice(itemTotal),
             isBoxUnit: item.isBoxUnit
           });
@@ -136,7 +139,6 @@ export function CartSheet() {
           </SheetDescription>
         </SheetHeader>
 
-        {/* Área de rolagem com altura dinâmica */}
         <div className="flex-1 overflow-hidden my-4">
           <ScrollArea className="h-full">
             {items.length === 0 ? (
@@ -147,10 +149,8 @@ export function CartSheet() {
             ) : (
               <div className="space-y-4 pr-4">
                 {items.map((item) => {
-                  const price = item.isBoxUnit
-                    ? (item.product.boxPrice || (item.product.unitPrice * item.product.boxQuantity))
-                    : item.product.unitPrice;
-                  const itemTotal = Number(formatPrice(price)) * item.quantity;
+                  const itemPrice = calculateItemPrice(item.product, item.isBoxUnit);
+                  const itemTotal = Number(formatPrice(itemPrice)) * item.quantity;
 
                   return (
                     <div key={`${item.product.id}-${item.isBoxUnit}`} className="flex gap-4">
@@ -164,11 +164,11 @@ export function CartSheet() {
                                 Caixa com {item.product.boxQuantity} unidades
                               </p>
                               <p>
-                                ${formatPrice(price)} por caixa
+                                ${formatPrice(itemPrice)} por caixa
                               </p>
                             </>
                           ) : (
-                            <p>${formatPrice(price)} por unidade</p>
+                            <p>${formatPrice(itemPrice)} por unidade</p>
                           )}
                           <p className="font-medium">
                             Total: ${formatPrice(itemTotal)}
@@ -210,7 +210,6 @@ export function CartSheet() {
           </ScrollArea>
         </div>
 
-        {/* Footer fixo com seleção de loja e botão de checkout */}
         {items.length > 0 && (
           <div className="border-t pt-4 mt-auto space-y-4">
             <Select
