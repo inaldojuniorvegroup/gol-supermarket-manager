@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,7 +6,6 @@ import { Distributor, Product, insertDistributorSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import * as XLSX from 'xlsx';
 import {
   Card,
   CardContent,
@@ -56,24 +55,30 @@ export default function DistributorsPage() {
   const ITEMS_PER_PAGE = 10;
   const { user } = useAuth();
 
-  // Buscar distribuidores
+  // Otimizar queries com staleTime e cacheTime
   const { data: distributors = [], isLoading } = useQuery<Distributor[]>({
     queryKey: ["/api/distributors"],
+    staleTime: 1000 * 60 * 5, // 5 minutos
+    cacheTime: 1000 * 60 * 30, // 30 minutos
   });
 
-  // Filtrar distribuidores baseado no papel do usuário
-  const filteredDistributors = distributors.filter(distributor => {
-    if (user?.role === 'distributor') {
-      return distributor.id === user.distributorId;
-    }
-    return true;
-  });
-
-  // Buscar produtos apenas para o distribuidor selecionado
+  // Otimizar query de produtos com enabled e cache
   const { data: products = [], isLoading: loadingProducts } = useQuery<Product[]>({
     queryKey: ["/api/products", selectedDistributor],
     enabled: selectedDistributor !== null,
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 30,
   });
+
+  // Memorizar o filtro de distribuidores
+  const filteredDistributors = useMemo(() => {
+    return distributors.filter(distributor => {
+      if (user?.role === 'distributor') {
+        return distributor.id === user.distributorId;
+      }
+      return true;
+    });
+  }, [distributors, user?.role, user?.distributorId]);
 
   const form = useForm({
     resolver: zodResolver(insertDistributorSchema),
@@ -110,15 +115,21 @@ export default function DistributorsPage() {
     }
   });
 
-  const getDistributorProducts = (distributorId: number) => {
-    if (!products) return [];
-    return products.filter(product => product.distributorId === distributorId);
-  };
+  // Memorizar a função getDistributorProducts
+  const getDistributorProducts = useMemo(() => {
+    return (distributorId: number) => {
+      if (!products) return [];
+      return products.filter(product => product.distributorId === distributorId);
+    };
+  }, [products]);
 
-  const getPaginatedProducts = (products: Product[]) => {
-    const startIndex = (page - 1) * ITEMS_PER_PAGE;
-    return products.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  };
+  // Memorizar a função getPaginatedProducts
+  const getPaginatedProducts = useMemo(() => {
+    return (products: Product[]) => {
+      const startIndex = (page - 1) * ITEMS_PER_PAGE;
+      return products.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    };
+  }, [page, ITEMS_PER_PAGE]);
 
   const [, setLocation] = useLocation();
   const search = useSearch();
@@ -154,6 +165,8 @@ export default function DistributorsPage() {
     },
   });
 
+  // Limitar número de distribuidores mostrados por vez
+  const displayedDistributors = filteredDistributors.slice(0, 8);
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -257,7 +270,7 @@ export default function DistributorsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-        {filteredDistributors.map((distributor) => (
+        {displayedDistributors.map((distributor) => (
           <Card key={distributor.id} className="hover:border-primary active:scale-[0.99] transition-all">
             <CardHeader className="p-6">
               <div className="flex justify-between items-start">
