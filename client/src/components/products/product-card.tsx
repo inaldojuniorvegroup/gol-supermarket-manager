@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Product, Distributor } from "@shared/schema";
-import { Package, Tag, ShoppingCart, Barcode, Box, Info, FolderOpen, Folder, Plus, Minus, Scale, PackageOpen, Percent, LayersIcon, DollarSign } from "lucide-react";
+import { Package, Tag, ShoppingCart, Barcode, Box, Info, FolderOpen, Plus, Minus, Scale, PackageOpen, LayersIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/hover-card";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Separator } from "@/components/ui/separator";
 import { PriceComparisonDialog } from "./price-comparison-dialog";
 
 interface ProductCardProps {
@@ -67,8 +68,6 @@ export function ProductCard({
     );
   }
 
-  const hasSpecialOffer = product.specialOfferPrice && product.specialOfferEndDate && new Date(product.specialOfferEndDate) > new Date();
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -77,6 +76,7 @@ export function ProductCard({
       transition={{ duration: 0.2 }}
     >
       <Card className="group relative h-full overflow-hidden hover:shadow-lg transition-all duration-200">
+        {/* Badges */}
         <div className="absolute top-2 left-2 right-2 z-10 flex flex-col gap-1">
           <div className="flex flex-wrap gap-1">
             {product.description && (
@@ -91,12 +91,6 @@ export function ProductCard({
                 {similarProducts.length} outros fornecedores
               </Badge>
             )}
-            {hasSpecialOffer && (
-              <Badge variant="destructive" className="flex items-center gap-1">
-                <Percent className="h-3 w-3" />
-                Oferta Especial
-              </Badge>
-            )}
           </div>
           {product.grupo && (
             <Badge variant="secondary" className="flex items-center gap-1 w-fit">
@@ -106,6 +100,7 @@ export function ProductCard({
           )}
         </div>
 
+        {/* Product Image */}
         <CardHeader className="p-0">
           <div className="flex items-center justify-center w-full h-48 bg-muted">
             {product.imageUrl ? (
@@ -120,7 +115,9 @@ export function ProductCard({
           </div>
         </CardHeader>
 
+        {/* Product Details */}
         <CardContent className="p-4 space-y-4 pt-16">
+          {/* Product Name and Info Button */}
           <div>
             <div className="flex items-center justify-between">
               <CardTitle className="line-clamp-2 text-base mb-2 flex-1">
@@ -133,82 +130,93 @@ export function ProductCard({
                   </Button>
                 </HoverCardTrigger>
                 <HoverCardContent className="w-80">
-                  <div className="space-y-2">
-                    <div className="space-y-1.5">
-                      <h4 className="text-sm font-semibold">Informações do Produto</h4>
-                      <div className="text-sm space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Tag className="h-4 w-4" />
-                          <span>Código: {product.itemCode}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Tag className="h-4 w-4" />
-                          <span>Código Fornecedor: {product.supplierCode}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Barcode className="h-4 w-4" />
-                          <span>EAN: {product.barCode}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <h4 className="text-sm font-semibold">Categoria</h4>
-                      <div className="text-sm space-y-1">
-                        <div className="flex items-center gap-2">
-                          <LayersIcon className="h-4 w-4" />
-                          <span>Grupo: {product.grupo}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <h4 className="text-sm font-semibold">Preços e Embalagem</h4>
-                      <div className="text-sm space-y-1">
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4" />
-                          <span>Preço Unitário: ${Number(product.unitPrice).toFixed(2)}</span>
-                        </div>
-                        {product.previousUnitPrice && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <span>Preço Anterior: ${Number(product.previousUnitPrice).toFixed(2)}</span>
+                  {/* Códigos Section */}
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-semibold mb-2">Códigos</h4>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Tag className="h-4 w-4" />
+                            <span>Interno: {product.itemCode}</span>
                           </div>
-                        )}
-                        <div className="flex items-center gap-2">
-                          <PackageOpen className="h-4 w-4" />
-                          <span>Unidade: {product.unit}</span>
+                          <div className="flex items-center gap-2">
+                            <Tag className="h-4 w-4" />
+                            <span>Fornecedor: {product.supplierCode}</span>
+                          </div>
                         </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Barcode className="h-4 w-4" />
+                            <span>EAN: {product.barCode}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <PackageOpen className="h-4 w-4" />
+                            <span>Unidade: {product.unit}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Embalagem Section */}
+                    <div>
+                      <h4 className="text-sm font-semibold mb-2">Informações da Caixa</h4>
+                      <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <Box className="h-4 w-4" />
-                          <span>Quantidade por Caixa: {product.boxQuantity} {product.unit}</span>
+                          <span>Quantidade: {product.boxQuantity} {product.unit}</span>
                         </div>
                         {product.boxPrice && (
                           <div className="flex items-center gap-2">
-                            <DollarSign className="h-4 w-4" />
-                            <span>Preço da Caixa: ${Number(product.boxPrice).toFixed(2)}</span>
-                          </div>
-                        )}
-                        {product.previousBoxPrice && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <span>Preço Anterior da Caixa: ${Number(product.previousBoxPrice).toFixed(2)}</span>
-                          </div>
-                        )}
-                        {hasSpecialOffer && (
-                          <div className="flex items-center gap-2 text-destructive font-medium">
-                            <Percent className="h-4 w-4" />
-                            <span>Preço Promocional: ${Number(product.specialOfferPrice).toFixed(2)}</span>
+                            <span>Preço Caixa: ${Number(product.boxPrice).toFixed(2)}</span>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t">
-                      <p className="text-xs text-muted-foreground">
-                        Última atualização {formatDistanceToNow(new Date(product.updatedAt), { 
-                          addSuffix: true,
-                          locale: ptBR
-                        })}
-                      </p>
+                    <Separator />
+
+                    {/* Preços Section */}
+                    <div>
+                      <h4 className="text-sm font-semibold mb-2">Histórico de Preços</h4>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span>Atual:</span>
+                          <span className="font-medium">${Number(product.unitPrice).toFixed(2)}</span>
+                        </div>
+                        {product.previousUnitPrice && (
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span>Anterior:</span>
+                            <span>${Number(product.previousUnitPrice).toFixed(2)}</span>
+                          </div>
+                        )}
+                        {product.boxPrice && (
+                          <>
+                            <div className="flex items-center justify-between mt-2">
+                              <span>Caixa Atual:</span>
+                              <span className="font-medium">${Number(product.boxPrice).toFixed(2)}</span>
+                            </div>
+                            {product.previousBoxPrice && (
+                              <div className="flex items-center justify-between text-muted-foreground">
+                                <span>Caixa Anterior:</span>
+                                <span>${Number(product.previousBoxPrice).toFixed(2)}</span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Última Atualização */}
+                    <div className="text-xs text-muted-foreground">
+                      Última atualização {formatDistanceToNow(new Date(product.updatedAt), { 
+                        addSuffix: true,
+                        locale: ptBR
+                      })}
                     </div>
                   </div>
                 </HoverCardContent>
@@ -216,24 +224,36 @@ export function ProductCard({
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          {/* Main Product Info */}
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="space-y-1">
-              <div className="flex items-center gap-1">
-                {hasSpecialOffer ? (
-                  <>
-                    <span className="font-semibold text-lg text-destructive">
-                      ${Number(product.specialOfferPrice).toFixed(2)}
-                    </span>
-                    <span className="text-sm text-muted-foreground line-through">
-                      ${Number(product.unitPrice).toFixed(2)}
-                    </span>
-                  </>
-                ) : (
-                  <span className="font-semibold text-lg text-primary">
-                    ${Number(product.unitPrice).toFixed(2)}
-                  </span>
-                )}
+              <div className="flex items-center gap-2">
+                <Tag className="h-4 w-4" />
+                <span>Cód: {product.itemCode}</span>
               </div>
+              <div className="flex items-center gap-2">
+                <Barcode className="h-4 w-4" />
+                <span>EAN: {product.barCode}</span>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Box className="h-4 w-4" />
+                <span>Qtd/Cx: {product.boxQuantity}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <PackageOpen className="h-4 w-4" />
+                <span>{product.unit}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Prices and Actions */}
+          <div className="flex items-center justify-between pt-2">
+            <div className="space-y-1">
+              <span className="font-semibold text-lg text-primary">
+                ${Number(product.unitPrice).toFixed(2)}
+              </span>
               {product.boxPrice && product.boxQuantity && (
                 <div className="text-sm text-muted-foreground">
                   Caixa ({product.boxQuantity} {product.unit}): ${Number(product.boxPrice).toFixed(2)}
