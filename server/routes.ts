@@ -131,28 +131,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/products", async (req, res) => {
     try {
       const distributorId = req.query.distributorId ? Number(req.query.distributorId) : undefined;
-      const page = Number(req.query.page) || 1;
-      const limit = Number(req.query.limit) || 50;
-      const offset = (page - 1) * limit;
-
-      // Primeiro, buscar o total de produtos
-      const allProducts = await storage.getProducts();
-      const filteredProducts = distributorId 
-        ? allProducts.filter(p => p.distributorId === distributorId)
-        : allProducts;
-
-      // Aplicar paginação
-      const paginatedProducts = filteredProducts.slice(offset, offset + limit);
-
-      res.json({
-        data: paginatedProducts,
-        pagination: {
-          total: filteredProducts.length,
-          page,
-          limit,
-          totalPages: Math.ceil(filteredProducts.length / limit)
-        }
-      });
+      const products = await storage.getProducts(distributorId);
+      res.json(products);
     } catch (error) {
       console.error('Error fetching products:', error);
       res.status(500).json({ error: "Internal server error" });

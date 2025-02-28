@@ -16,25 +16,15 @@ import { useCart } from "@/contexts/cart-context";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useMemo } from "react";
 
 export default function ProductsPage() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { addToCart } = useCart();
-  const [page, setPage] = useState(1);
-  const limit = 50;
 
-  const { data: productsResponse, isLoading: isLoadingProducts } = useQuery<{
-    data: Product[];
-    pagination: { total: number; page: number; limit: number; totalPages: number };
-  }>({
-    queryKey: ["/api/products", page, limit],
-    queryFn: async () => {
-      const res = await fetch(`/api/products?page=${page}&limit=${limit}`);
-      if (!res.ok) throw new Error("Failed to fetch products");
-      return res.json();
-    },
+  const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
   });
 
   const { data: distributors = [], isLoading: isLoadingDistributors } = useQuery<Distributor[]>({
@@ -50,18 +40,23 @@ export default function ProductsPage() {
 
   // Função para obter os produtos de um distribuidor
   const getDistributorProducts = (distributorId: number) => {
-    if (!productsResponse?.data) return [];
-    return productsResponse.data.filter(product => product.distributorId === distributorId);
+    return products.filter(product => product.distributorId === distributorId);
   };
 
   // Função para encontrar produtos similares
   const findSimilarProducts = (product: Product) => {
-    if (!productsResponse?.data) return [];
-    return productsResponse.data.filter(p => 
+    return products.filter(p => 
       p.id !== product.id && 
       p.barCode === product.barCode && 
       p.name === product.name 
     );
+  };
+
+  // Função para adicionar ao carrinho
+  const handleAddToCart = (product: Product, quantity: number) => {
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product);
+    }
   };
 
   if (isLoadingDistributors || isLoadingProducts) {
@@ -72,13 +67,13 @@ export default function ProductsPage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(3)].map((_, i) => (
-            <Card key={i}>
+            <Card key={i} className="animate-pulse">
               <CardHeader className="space-y-2">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-4 bg-muted rounded w-1/2" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-40" />
+                <div className="h-40 bg-muted rounded" />
               </CardContent>
             </Card>
           ))}
@@ -146,25 +141,6 @@ export default function ProductsPage() {
           );
         })}
       </div>
-
-      {productsResponse?.pagination && productsResponse.pagination.totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-4">
-          <Button
-            variant="outline"
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setPage(p => Math.min(productsResponse.pagination.totalPages, p + 1))}
-            disabled={page === productsResponse.pagination.totalPages}
-          >
-            Próximo
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
