@@ -42,7 +42,7 @@ export function ImageSearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95%] max-w-5xl h-[90vh]">
+      <DialogContent>
         <DialogHeader>
           <div className="flex justify-between items-center">
             <div>
