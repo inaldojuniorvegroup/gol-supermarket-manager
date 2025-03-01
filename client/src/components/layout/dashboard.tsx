@@ -35,6 +35,11 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
   const { data: store } = useQuery<StoreType>({
     queryKey: ["/api/stores", user?.storeId],
     enabled: !!user?.storeId,
+    queryFn: async () => {
+      const res = await fetch(`/api/stores/${user?.storeId}`);
+      if (!res.ok) throw new Error('Failed to fetch store');
+      return res.json();
+    }
   });
 
   const handleLogout = () => {
