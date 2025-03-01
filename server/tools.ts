@@ -22,8 +22,12 @@ export async function searchProductImage(productName: string): Promise<string[]>
     const gramaturaMatch = productName.match(/(\d+\s*(g|kg|ml|l))/i);
     const gramatura = gramaturaMatch ? gramaturaMatch[0] : '';
 
-    // Constrói a query de busca com o nome limpo e a gramatura
-    const searchQuery = `${cleanedName} ${gramatura}`.trim();
+    // Extrai a marca do produto (geralmente a primeira palavra antes do espaço)
+    const brandMatch = cleanedName.match(/^[\w\s-]+?(?=\s)/);
+    const brand = brandMatch ? brandMatch[0].trim() : '';
+
+    // Constrói a query de busca com marca, nome do produto e gramatura
+    const searchQuery = `${brand} ${cleanedName} ${gramatura} embalagem produto package`.trim();
     console.log('Buscando imagens para:', searchQuery);
 
     const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
@@ -35,7 +39,9 @@ export async function searchProductImage(productName: string): Promise<string[]>
         num: 6,  // Buscar 6 imagens
         imgType: 'photo',
         imgSize: 'large', // Preferir imagens grandes
-        safe: 'active'
+        safe: 'active',
+        rights: 'cc_publicdomain', // Preferir imagens de domínio público
+        filter: '1', // Remover resultados duplicados
       }
     });
 
