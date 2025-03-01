@@ -5,6 +5,7 @@ import { Product } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImageIcon, RefreshCw } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState } from "react";
 
 interface ImageSearchDialogProps {
   open: boolean;
@@ -19,6 +20,8 @@ export function ImageSearchDialog({
   product,
   onSelectImage,
 }: ImageSearchDialogProps) {
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
   const { data: searchResults, isLoading, refetch } = useQuery({
     queryKey: ["/api/products", product.id, "search-images"],
     queryFn: async () => {
@@ -28,6 +31,14 @@ export function ImageSearchDialog({
     },
     enabled: open,
   });
+
+  const handleImageError = (imageUrl: string) => {
+    setFailedImages(prev => new Set([...prev, imageUrl]));
+  };
+
+  const validImages = searchResults?.images?.filter(
+    (image: string) => !failedImages.has(image)
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -48,9 +59,9 @@ export function ImageSearchDialog({
                 <Skeleton key={i} className="w-full h-40" />
               ))}
             </div>
-          ) : searchResults?.images && Array.isArray(searchResults.images) && searchResults.images.length > 0 ? (
+          ) : validImages && validImages.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {searchResults.images.map((image: string, index: number) => (
+              {validImages.map((image: string, index: number) => (
                 <div
                   key={index}
                   className="relative group cursor-pointer rounded-lg overflow-hidden"
@@ -61,8 +72,9 @@ export function ImageSearchDialog({
                 >
                   <img
                     src={image}
-                    alt={`Option ${index + 1}`}
-                    className="w-full h-40 object-cover"
+                    alt={`Opção ${index + 1}`}
+                    className="w-full h-40 object-contain bg-white"
+                    onError={() => handleImageError(image)}
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
                     <ImageIcon className="text-white opacity-0 group-hover:opacity-100 h-8 w-8" />
@@ -72,7 +84,7 @@ export function ImageSearchDialog({
             </div>
           ) : (
             <div className="text-center text-muted-foreground">
-              Nenhuma imagem encontrada
+              Nenhuma imagem encontrada para este produto
             </div>
           )}
         </ScrollArea>
