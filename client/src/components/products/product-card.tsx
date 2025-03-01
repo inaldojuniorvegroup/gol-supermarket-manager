@@ -18,9 +18,9 @@ import { Separator } from "@/components/ui/separator";
 import { PriceComparisonDialog } from "./price-comparison-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Função para formatar preços mantendo exatamente 2 casas decimais sem arredondamento
-const formatPrice = (price: number): string => {
-  return (Math.floor(price * 100) / 100).toFixed(2);
+// Função para formatar preços mantendo exatamente 2 casas decimais
+const formatPrice = (price: number | string): string => {
+  return Number(price).toFixed(2);
 };
 
 interface ProductCardProps {
@@ -95,8 +95,8 @@ export function ProductCard({
 
   // Calcular o preço baseado na seleção (unidade ou caixa)
   const currentPrice = isBoxUnit
-    ? (product.boxPrice || (product.unitPrice * product.boxQuantity))
-    : product.unitPrice;
+    ? (product.boxPrice || (Number(product.unitPrice) * product.boxQuantity))
+    : Number(product.unitPrice);
 
   return (
     <motion.div
@@ -156,136 +156,14 @@ export function ProductCard({
         </CardHeader>
 
         {/* Product Details */}
-        <CardContent className="p-4 space-y-4 pt-16">
-          {/* Product Name and Info Button */}
+        <CardContent className="p-4 space-y-4">
           <div>
-            <div className="flex items-center justify-between">
-              <CardTitle className="line-clamp-2 text-base mb-2 flex-1">
-                {product.name}
-              </CardTitle>
-              <HoverCard>
-                <HoverCardTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <Info className="h-4 w-4" />
-                  </Button>
-                </HoverCardTrigger>
-                <HoverCardContent className="w-80">
-                  {/* Códigos Section */}
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-semibold mb-2">Códigos</h4>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Tag className="h-4 w-4" />
-                            <span>Interno: {product.itemCode}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Tag className="h-4 w-4" />
-                            <span>Fornecedor: {product.supplierCode}</span>
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Barcode className="h-4 w-4" />
-                            <span>EAN: {product.barCode}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <PackageOpen className="h-4 w-4" />
-                            <span>Unidade: {product.unit}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Price Comparison Section */}
-                    {hasBetterPrice && bestPriceDistributor && (
-                      <>
-                        <div>
-                          <h4 className="text-sm font-semibold mb-2">Comparação de Preços</h4>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span>Preço atual:</span>
-                              <span className="font-medium">${formatPrice(Number(product.unitPrice))}</span>
-                            </div>
-                            <div className="flex items-center justify-between text-destructive">
-                              <span>Melhor preço:</span>
-                              <span className="font-medium">${formatPrice(bestPrice)}</span>
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              Disponível em: {bestPriceDistributor.name}
-                            </div>
-                          </div>
-                        </div>
-                        <Separator />
-                      </>
-                    )}
-
-                    {/* Embalagem Section */}
-                    <div>
-                      <h4 className="text-sm font-semibold mb-2">Informações da Caixa</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Box className="h-4 w-4" />
-                          <span>Quantidade: {product.boxQuantity} {product.unit}</span>
-                        </div>
-                        {product.boxPrice && (
-                          <div className="flex items-center gap-2">
-                            <span>Preço Caixa: ${formatPrice(Number(product.boxPrice))}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Preços Section */}
-                    <div>
-                      <h4 className="text-sm font-semibold mb-2">Histórico de Preços</h4>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span>Atual:</span>
-                          <span className="font-medium">${formatPrice(Number(product.unitPrice))}</span>
-                        </div>
-                        {product.previousUnitPrice && (
-                          <div className="flex items-center justify-between text-muted-foreground">
-                            <span>Anterior:</span>
-                            <span>${formatPrice(Number(product.previousUnitPrice))}</span>
-                          </div>
-                        )}
-                        {product.boxPrice && (
-                          <>
-                            <div className="flex items-center justify-between mt-2">
-                              <span>Caixa Atual:</span>
-                              <span className="font-medium">${formatPrice(Number(product.boxPrice))}</span>
-                            </div>
-                            {product.previousBoxPrice && (
-                              <div className="flex items-center justify-between text-muted-foreground">
-                                <span>Caixa Anterior:</span>
-                                <span>${formatPrice(Number(product.previousBoxPrice))}</span>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <Separator />
-                    {/* Última Atualização */}
-                    <div className="text-xs text-muted-foreground">
-                      Última atualização {formatDistanceToNow(new Date(product.updatedAt), {
-                        addSuffix: true,
-                        locale: ptBR
-                      })}
-                    </div>
-                  </div>
-                </HoverCardContent>
-              </HoverCard>
-            </div>
+            <CardTitle className="line-clamp-2 text-base mb-2">
+              {product.name}
+            </CardTitle>
           </div>
 
-          {/* Main Product Info */}
+          {/* Códigos e Informações */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -309,67 +187,68 @@ export function ProductCard({
             </div>
           </div>
 
-          {/* Unit/Box Selection and Price */}
-          {onAddToCart && (
-            <div className="space-y-4">
-              <Tabs
-                defaultValue="unit"
-                className="w-full"
-                onValueChange={(value) => setIsBoxUnit(value === "box")}
-              >
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="unit">Unidade</TabsTrigger>
-                  <TabsTrigger value="box">Caixa</TabsTrigger>
-                </TabsList>
-              </Tabs>
-
-              <div className="flex items-baseline justify-between">
-                <span className="font-semibold text-lg text-primary">
-                  ${formatPrice(currentPrice)}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  / {isBoxUnit ? 'caixa' : 'unidade'}
-                </span>
-              </div>
-
-              {isBoxUnit && (
-                <div className="text-xs text-muted-foreground text-right">
-                  (${formatPrice(currentPrice / product.boxQuantity)} por unidade)
-                </div>
+          {/* Preço e Comparação */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-lg">
+                ${formatPrice(currentPrice)}
+              </span>
+              {similarProducts.length > 0 && !isVendorView && (
+                <PriceComparisonDialog
+                  product={product}
+                  similarProducts={similarProducts}
+                  distributors={distributors}
+                />
               )}
+            </div>
 
-              {/* Quantity Selection and Add to Cart */}
-              <div className="flex items-center gap-2 justify-end pt-2">
-                <div className="flex items-center bg-muted rounded-lg">
+            {/* Unidade/Caixa Selection */}
+            {onAddToCart && (
+              <div className="space-y-4">
+                <Tabs
+                  defaultValue="unit"
+                  className="w-full"
+                  onValueChange={(value) => setIsBoxUnit(value === "box")}
+                >
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="unit">Unidade</TabsTrigger>
+                    <TabsTrigger value="box">Caixa</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+
+                {/* Quantidade e Adicionar ao Carrinho */}
+                <div className="flex items-center gap-2 justify-end">
+                  <div className="flex items-center bg-muted rounded-lg">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={decrementQuantity}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-8 text-center">{quantity}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={incrementQuantity}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={decrementQuantity}
+                    size="sm"
+                    onClick={handleAddToCart}
+                    className="flex items-center"
                   >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <span className="w-8 text-center">{quantity}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={incrementQuantity}
-                  >
-                    <Plus className="h-4 w-4" />
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Adicionar
                   </Button>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={handleAddToCart}
-                  className="flex items-center"
-                >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Adicionar
-                </Button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
     </motion.div>
