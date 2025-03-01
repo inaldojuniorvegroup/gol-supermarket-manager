@@ -65,18 +65,27 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        {/* Informações do usuário logado */}
-        <div className="px-4 py-3 mb-4 bg-muted/30 rounded-lg mx-2">
-          <div className="flex items-center gap-2 mb-2">
-            <User className="h-4 w-4" />
-            <span className="font-medium">{user?.username}</span>
-          </div>
-          {store && (
-            <div className="text-sm text-muted-foreground">
-              <strong>Loja:</strong> {store.name}
+        {/* Seção do usuário logado */}
+        <div className="mb-6 border-b pb-4">
+          <div className="px-4 py-3 bg-primary/5 rounded-lg mx-2">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <div className="font-medium text-sm">Usuário</div>
+                <div className="text-base font-semibold">{user?.username}</div>
+              </div>
             </div>
-          )}
+            {store && (
+              <div className="pl-10">
+                <div className="text-sm text-muted-foreground">Loja</div>
+                <div className="font-medium">{store.name}</div>
+              </div>
+            )}
+          </div>
         </div>
+
         <SidebarMenu>
           {navigation.map((item) => {
             const Icon = item.icon;
