@@ -123,8 +123,8 @@ export default function ImportExcel({ distributorId }: ImportExcelProps) {
             description: `Importando ${validProducts.length} produtos...`
           });
 
-          // Importar em lotes
-          const batchSize = 200;
+          // Importar em lotes de 400
+          const batchSize = 400;
           for (let i = 0; i < validProducts.length; i += batchSize) {
             const batch = validProducts.slice(i, i + batchSize);
             await importMutation.mutateAsync(batch);
