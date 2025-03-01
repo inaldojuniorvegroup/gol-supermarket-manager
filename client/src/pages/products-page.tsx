@@ -28,46 +28,20 @@ export default function ProductsPage() {
   const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ["/api/products"],
     staleTime: 1000 * 60 * 5, // 5 minutos
-    cacheTime: 1000 * 60 * 30, // 30 minutos
   });
 
   const { data: distributors = [], isLoading: isLoadingDistributors } = useQuery<Distributor[]>({
     queryKey: ["/api/distributors"],
     staleTime: 1000 * 60 * 5, // 5 minutos
-    cacheTime: 1000 * 60 * 30, // 30 minutos
-  });
-
-  // Mutation para atualizar imagens dos produtos
-  const updateImagesMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/products/update-images");
-      return res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      toast({
-        title: "Imagens atualizadas",
-        description: `${data.updatedCount} produtos foram atualizados com imagens.`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erro ao atualizar imagens",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
   });
 
   // Memorizar o filtro de distribuidores
   const filteredDistributors = useMemo(() => {
     return distributors.filter(distributor => {
-      if (user?.role === 'distributor') {
-        return distributor.id === user.distributorId;
-      }
-      return true;
-    });
-  }, [distributors, user?.role, user?.distributorId]);
+      // Remover o filtro de role para mostrar todos os distribuidores
+      return distributor.active;
+    }).sort((a, b) => a.name.localeCompare(b.name));
+  }, [distributors]);
 
   // Memorizar a função getDistributorProducts
   const getDistributorProducts = useMemo(() => {
@@ -110,9 +84,6 @@ export default function ProductsPage() {
     );
   }
 
-  // Limitar o número de distribuidores mostrados por vez
-  const displayedDistributors = filteredDistributors.slice(0, 8);
-
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex justify-between items-center">
@@ -124,8 +95,9 @@ export default function ProductsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {displayedDistributors.map((distributor) => {
+        {filteredDistributors.map((distributor) => {
           const distributorProducts = getDistributorProducts(distributor.id);
+          console.log(`Distribuidor: ${distributor.name}, ID: ${distributor.id}, Produtos: ${distributorProducts.length}`);
 
           return (
             <Card 
