@@ -18,9 +18,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Store } from "@shared/schema";
 import { useState } from "react";
 
-// Função para formatar preços mantendo exatamente 2 casas decimais sem arredondamento
-const formatPrice = (price: number): string => {
-  return (Math.floor(price * 100) / 100).toFixed(2);
+// Função para formatar preços mantendo exatamente 2 casas decimais
+const formatPrice = (price: number | string): string => {
+  return Number(price).toFixed(2);
 };
 
 export function CartSheet() {
@@ -169,7 +169,7 @@ export function CartSheet() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => removeFromCart(item.product.id)}
+                            onClick={() => removeFromCart(item.product.id, item.isBoxUnit)}
                           >
                             <X className="h-4 w-4" />
                           </Button>
