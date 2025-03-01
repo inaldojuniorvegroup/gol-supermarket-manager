@@ -58,16 +58,12 @@ export default function DistributorsPage() {
   // Otimizar queries com staleTime e cacheTime apropriados
   const { data: distributors = [], isLoading } = useQuery<Distributor[]>({
     queryKey: ["/api/distributors"],
-    staleTime: 1000 * 60 * 5, // 5 minutos
-    cacheTime: 1000 * 60 * 30, // 30 minutos
   });
 
   // Otimizar query de produtos com enabled e cache
   const { data: products = [], isLoading: loadingProducts } = useQuery<Product[]>({
     queryKey: ["/api/products", selectedDistributor],
     enabled: selectedDistributor !== null,
-    staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 30,
   });
 
   // Memorizar o filtro de distribuidores
@@ -167,27 +163,6 @@ export default function DistributorsPage() {
 
   // Limitar número de distribuidores mostrados por vez
   const displayedDistributors = filteredDistributors.slice(0, 8);
-
-  const updateImagesMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/products/update-images");
-      return res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      toast({
-        title: "Imagens atualizadas",
-        description: `${data.updatedCount} produtos foram atualizados com imagens.`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erro ao atualizar imagens",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -371,38 +346,26 @@ export default function DistributorsPage() {
                             Gerencie os produtos deste distribuidor e importe novos itens.
                           </DialogDescription>
                         </div>
-                        <div className="flex items-center gap-3">
-                          {!isVendorView && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => updateImagesMutation.mutate()}
-                                disabled={updateImagesMutation.isPending}
-                              >
-                                <Image className="h-4 w-4 mr-2" />
-                                {updateImagesMutation.isPending ? "Atualizando..." : "Atualizar Imagens"}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(getShareableLink(distributor.id));
-                                  toast({
-                                    title: "Link copiado",
-                                    description: "Link para visualização do vendedor foi copiado para a área de transferência.",
-                                  });
-                                }}
-                              >
-                                <Share2 className="h-4 w-4 mr-2" />
-                                Compartilhar com Vendedor
-                              </Button>
-                            </>
-                          )}
-                        </div>
+                        {!isVendorView && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(getShareableLink(distributor.id));
+                              toast({
+                                title: "Link copiado",
+                                description: "Link para visualização do vendedor foi copiado para a área de transferência.",
+                              });
+                            }}
+                          >
+                            <Share2 className="h-4 w-4 mr-2" />
+                            Compartilhar com Vendedor
+                          </Button>
+                        )}
                       </div>
                     </DialogHeader>
 
+                    {/* Componente de importação de Excel */}
                     {!isVendorView && <ImportExcel distributorId={distributor.id} />}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
@@ -416,23 +379,13 @@ export default function DistributorsPage() {
                           </Card>
                         ))
                       ) : (
-                        getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => {
-                          const similarProducts = products.filter(p =>
-                            p.id !== product.id &&
-                            p.barCode === product.barCode &&
-                            p.name === product.name
-                          );
-
-                          return (
-                            <ProductCard
-                              key={product.id}
-                              product={product}
-                              isVendorView={isVendorView}
-                              similarProducts={similarProducts}
-                              distributors={distributors}
-                            />
-                          );
-                        })
+                        getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => (
+                          <ProductCard
+                            key={product.id}
+                            product={product}
+                            isVendorView={isVendorView}
+                          />
+                        ))
                       )}
                     </div>
 
