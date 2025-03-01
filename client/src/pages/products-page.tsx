@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Product, Distributor } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -11,16 +11,18 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Truck, Package } from "lucide-react";
+import { Truck, Package, Image } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function ProductsPage() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  const { addToCart } = useCart();
+  const { toast } = useToast();
 
   // Otimizar queries com staleTime e cacheTime apropriados
   const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
@@ -33,6 +35,28 @@ export default function ProductsPage() {
     queryKey: ["/api/distributors"],
     staleTime: 1000 * 60 * 5, // 5 minutos
     cacheTime: 1000 * 60 * 30, // 30 minutos
+  });
+
+  // Mutation para atualizar imagens dos produtos
+  const updateImagesMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/products/update-images");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({
+        title: "Imagens atualizadas",
+        description: `${data.updatedCount} produtos foram atualizados com imagens.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar imagens",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   // Memorizar o filtro de distribuidores
@@ -96,7 +120,20 @@ export default function ProductsPage() {
           <Package className="h-8 w-8" />
           Catálogos
         </h1>
-        <CartSheet />
+        <div className="flex items-center gap-3">
+          {user?.role === 'supermarket' && (
+            <Button 
+              variant="outline"
+              className="h-12 px-6"
+              onClick={() => updateImagesMutation.mutate()}
+              disabled={updateImagesMutation.isPending}
+            >
+              <Image className="h-5 w-5 mr-2" />
+              {updateImagesMutation.isPending ? "Atualizando..." : "Atualizar Imagens"}
+            </Button>
+          )}
+          <CartSheet />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

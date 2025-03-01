@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Mail, Plus, Truck, Share2, Trash2, Image } from "lucide-react";
+import { Phone, Mail, Plus, Truck, Share2, Trash2 } from "lucide-react";
 import { ProductCard } from "@/components/products/product-card";
 import { useLocation, useSearch } from "wouter";
 import ImportExcel from "@/components/products/import-excel";
@@ -80,28 +80,6 @@ export default function DistributorsPage() {
     });
   }, [distributors, user?.role, user?.distributorId]);
 
-  // Mutation para atualizar imagens dos produtos
-  const updateImagesMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/products/update-images");
-      return res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      toast({
-        title: "Imagens atualizadas",
-        description: `${data.updatedCount} produtos foram atualizados com imagens.`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erro ao atualizar imagens",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
   const createMutation = useMutation({
     mutationFn: async (data: typeof insertDistributorSchema._type) => {
       const res = await apiRequest("POST", "/api/distributors", data);
@@ -124,29 +102,6 @@ export default function DistributorsPage() {
       });
     }
   });
-
-  const getDistributorProducts = useMemo(() => {
-    return (distributorId: number) => {
-      if (!products) return [];
-      return products.filter(product => product.distributorId === distributorId);
-    };
-  }, [products]);
-
-  const getPaginatedProducts = useMemo(() => {
-    return (products: Product[]) => {
-      const startIndex = (page - 1) * ITEMS_PER_PAGE;
-      return products.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-    };
-  }, [page, ITEMS_PER_PAGE]);
-
-  const [, setLocation] = useLocation();
-  const search = useSearch();
-  const isVendorView = new URLSearchParams(search).get('view') === 'vendor';
-
-  const getShareableLink = (distributorId: number) => {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/distributors?view=vendor&distributor=${distributorId}`;
-  };
 
   const deleteMutation = useMutation({
     mutationFn: async (distributorId: number) => {
@@ -185,120 +140,133 @@ export default function DistributorsPage() {
     }
   });
 
+  // Memorizar a função getDistributorProducts
+  const getDistributorProducts = useMemo(() => {
+    return (distributorId: number) => {
+      if (!products) return [];
+      return products.filter(product => product.distributorId === distributorId);
+    };
+  }, [products]);
+
+  // Memorizar a função getPaginatedProducts
+  const getPaginatedProducts = useMemo(() => {
+    return (products: Product[]) => {
+      const startIndex = (page - 1) * ITEMS_PER_PAGE;
+      return products.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    };
+  }, [page, ITEMS_PER_PAGE]);
+
+  const [, setLocation] = useLocation();
+  const search = useSearch();
+  const isVendorView = new URLSearchParams(search).get('view') === 'vendor';
+
+  const getShareableLink = (distributorId: number) => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/distributors?view=vendor&distributor=${distributorId}`;
+  };
+
+  // Limitar número de distribuidores mostrados por vez
   const displayedDistributors = filteredDistributors.slice(0, 8);
 
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Distribuidores</h1>
-        <div className="flex gap-3">
-          {user?.role === 'supermarket' && (
-            <>
-              <Button 
-                variant="outline"
-                className="h-12 px-6"
-                onClick={() => updateImagesMutation.mutate()}
-                disabled={updateImagesMutation.isPending}
-              >
-                <Image className="h-5 w-5 mr-2" />
-                {updateImagesMutation.isPending ? "Atualizando..." : "Atualizar Imagens"}
+        {user?.role === 'supermarket' && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="h-12 px-6">
+                <Plus className="h-5 w-5 mr-2" />
+                Adicionar Distribuidor
               </Button>
-              <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger asChild>
-                  <Button className="h-12 px-6">
-                    <Plus className="h-5 w-5 mr-2" />
-                    Adicionar Distribuidor
+            </DialogTrigger>
+            <DialogContent className="w-[95%] max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Adicionar Novo Distribuidor</DialogTitle>
+                <DialogDescription>
+                  Preencha os dados abaixo para cadastrar um novo distribuidor.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit((data) => createMutation.mutate(data))}
+                  className="space-y-4"
+                >
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Código do Distribuidor</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contact"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contato</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Telefone</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={createMutation.isPending}>
+                    Criar Distribuidor
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="w-[95%] max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Adicionar Novo Distribuidor</DialogTitle>
-                    <DialogDescription>
-                      Preencha os dados abaixo para cadastrar um novo distribuidor.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <Form {...form}>
-                    <form
-                      onSubmit={form.handleSubmit((data) => createMutation.mutate(data))}
-                      className="space-y-4"
-                    >
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="code"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Código do Distribuidor</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="contact"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Contato</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="phone"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Telefone</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
-                                <Input type="email" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-                        Criar Distribuidor
-                      </Button>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-            </>
-          )}
-        </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
