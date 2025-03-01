@@ -1,12 +1,18 @@
 import { read, utils } from 'xlsx';
-import fs from 'fs';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import fetch from 'node-fetch';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 async function importProducts() {
   try {
     console.log('Iniciando processo de importação...');
 
     // Ler o arquivo Excel
-    const excelBuffer = fs.readFileSync('attached_assets/JULINA FOODS (3).xlsx');
+    const excelBuffer = readFileSync('attached_assets/JULINA FOODS (3).xlsx');
     const workbook = read(excelBuffer);
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const products = utils.sheet_to_json(worksheet);
@@ -15,7 +21,7 @@ async function importProducts() {
     console.log('Amostra do primeiro produto:', JSON.stringify(products[0], null, 2));
 
     // Mapear os produtos para o formato esperado pela API
-    const mappedProducts = products.map((row: any) => {
+    const mappedProducts = products.map((row) => {
       const mapped = {
         name: String(row['Nome'] || '').trim(),
         itemCode: String(row['Código'] || '').trim(),
@@ -47,7 +53,7 @@ async function importProducts() {
     console.log(`\nProdutos válidos encontrados: ${validProducts.length}`);
 
     // Processar em lotes menores
-    const batchSize = 25;
+    const batchSize = 10;
     let totalImported = 0;
     let totalErrors = 0;
 
@@ -68,20 +74,16 @@ async function importProducts() {
           const error = await response.text();
           console.error(`Erro no lote ${Math.floor(i/batchSize) + 1}:`, error);
           totalErrors += batch.length;
-
-          // Log detalhado dos produtos que falharam
           console.log('Produtos do lote que falharam:', JSON.stringify(batch, null, 2));
         } else {
           const result = await response.json();
           console.log(`Resultado do lote ${Math.floor(i/batchSize) + 1}:`, result);
           totalImported += result.productsImported || 0;
 
-          // Log dos produtos importados com sucesso
           if (result.success && result.success.length > 0) {
             console.log('IDs dos produtos importados:', result.success);
           }
 
-          // Log dos erros específicos
           if (result.errors && result.errors.length > 0) {
             console.log('Erros detalhados:', result.errors);
           }

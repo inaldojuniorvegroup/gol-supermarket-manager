@@ -131,7 +131,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/products", async (req, res) => {
     try {
       const distributorId = req.query.distributorId ? Number(req.query.distributorId) : undefined;
-      const products = await storage.getProducts(distributorId);
+      console.log('Fetching products for distributor:', distributorId);
+
+      const products = distributorId 
+        ? await storage.getProductsByDistributor(distributorId)
+        : await storage.getProducts();
+
+      console.log(`Found ${products.length} products`);
       res.json(products);
     } catch (error) {
       console.error('Error fetching products:', error);
