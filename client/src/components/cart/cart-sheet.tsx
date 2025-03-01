@@ -143,8 +143,10 @@ export function CartSheet() {
             ) : (
               <div className="space-y-4 pr-4">
                 {items.map((item) => {
-                  const price = item.isBoxUnit ? item.product.boxPrice : item.product.unitPrice;
-                  const total = Number(price) * item.quantity;
+                  const price = item.isBoxUnit ? 
+                    Number(item.product.boxPrice || 0) : 
+                    Number(item.product.unitPrice || 0);
+                  const total = price * item.quantity;
 
                   return (
                     <div key={`${item.product.id}-${item.isBoxUnit}`} className="bg-muted/30 p-4 rounded-lg">
@@ -159,10 +161,10 @@ export function CartSheet() {
                                     <Box className="h-3 w-3" />
                                     <span>Caixa com {item.product.boxQuantity} unidades</span>
                                   </div>
-                                  <div>Preço por caixa: ${formatPrice(Number(item.product.boxPrice))}</div>
+                                  <div>Preço por caixa: ${formatPrice(item.product.boxPrice || 0)}</div>
                                 </>
                               ) : (
-                                <div>Preço por unidade: ${formatPrice(Number(item.product.unitPrice))}</div>
+                                <div>Preço por unidade: ${formatPrice(item.product.unitPrice || 0)}</div>
                               )}
                             </div>
                           </div>

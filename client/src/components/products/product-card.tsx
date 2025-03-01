@@ -140,8 +140,8 @@ export function ProductCard({
   }
 
   // Calcular o preço baseado na seleção (unidade ou caixa)
-  const currentPrice = isBoxUnit
-    ? (product.boxPrice || (Number(product.unitPrice) * product.boxQuantity))
+  const currentPrice = isBoxUnit && product.boxPrice
+    ? Number(product.boxPrice)
     : Number(product.unitPrice);
 
   return (
@@ -254,9 +254,14 @@ export function ProductCard({
           {/* Preço e Comparação */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-lg">
-                ${formatPrice(currentPrice)}
-              </span>
+              <div>
+                <span className="font-semibold text-lg">
+                  ${formatPrice(currentPrice)}
+                </span>
+                <div className="text-sm text-muted-foreground">
+                  {isBoxUnit ? `por caixa (${product.boxQuantity} unidades)` : "por unidade"}
+                </div>
+              </div>
               {similarProducts.length > 0 && !isVendorView && (
                 <PriceComparisonDialog
                   product={product}
