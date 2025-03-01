@@ -120,20 +120,7 @@ export default function ProductsPage() {
           <Package className="h-8 w-8" />
           Catálogos
         </h1>
-        <div className="flex items-center gap-3">
-          {user?.role === 'supermarket' && (
-            <Button 
-              variant="outline"
-              className="h-12 px-6"
-              onClick={() => updateImagesMutation.mutate()}
-              disabled={updateImagesMutation.isPending}
-            >
-              <Image className="h-5 w-5 mr-2" />
-              {updateImagesMutation.isPending ? "Atualizando..." : "Atualizar Imagens"}
-            </Button>
-          )}
-          <CartSheet />
-        </div>
+        <CartSheet />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

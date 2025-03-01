@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Mail, Plus, Truck, Share2, Trash2 } from "lucide-react";
+import { Phone, Mail, Plus, Truck, Share2, Trash2, Image } from "lucide-react";
 import { ProductCard } from "@/components/products/product-card";
 import { useLocation, useSearch } from "wouter";
 import ImportExcel from "@/components/products/import-excel";
@@ -167,6 +167,27 @@ export default function DistributorsPage() {
 
   // Limitar número de distribuidores mostrados por vez
   const displayedDistributors = filteredDistributors.slice(0, 8);
+
+  const updateImagesMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/products/update-images");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({
+        title: "Imagens atualizadas",
+        description: `${data.updatedCount} produtos foram atualizados com imagens.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar imagens",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -350,22 +371,35 @@ export default function DistributorsPage() {
                             Gerencie os produtos deste distribuidor e importe novos itens.
                           </DialogDescription>
                         </div>
-                        {!isVendorView && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              navigator.clipboard.writeText(getShareableLink(distributor.id));
-                              toast({
-                                title: "Link copiado",
-                                description: "Link para visualização do vendedor foi copiado para a área de transferência.",
-                              });
-                            }}
-                          >
-                            <Share2 className="h-4 w-4 mr-2" />
-                            Compartilhar com Vendedor
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-3">
+                          {!isVendorView && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateImagesMutation.mutate()}
+                                disabled={updateImagesMutation.isPending}
+                              >
+                                <Image className="h-4 w-4 mr-2" />
+                                {updateImagesMutation.isPending ? "Atualizando..." : "Atualizar Imagens"}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(getShareableLink(distributor.id));
+                                  toast({
+                                    title: "Link copiado",
+                                    description: "Link para visualização do vendedor foi copiado para a área de transferência.",
+                                  });
+                                }}
+                              >
+                                <Share2 className="h-4 w-4 mr-2" />
+                                Compartilhar com Vendedor
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </DialogHeader>
 
