@@ -33,12 +33,18 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
 
   // Buscar informações da loja do usuário
   const { data: store } = useQuery<StoreType>({
-    queryKey: ["/api/stores", user?.storeId],
+    queryKey: [`/api/stores/${user?.storeId}`],
     enabled: !!user?.storeId,
     queryFn: async () => {
+      console.log("Fetching store data for storeId:", user?.storeId);
       const res = await fetch(`/api/stores/${user?.storeId}`);
-      if (!res.ok) throw new Error('Failed to fetch store');
-      return res.json();
+      if (!res.ok) {
+        console.error("Failed to fetch store:", res.status, res.statusText);
+        throw new Error('Failed to fetch store');
+      }
+      const data = await res.json();
+      console.log("Store data received:", data);
+      return data;
     }
   });
 
@@ -67,7 +73,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
           </div>
           {store && (
             <div className="text-sm text-muted-foreground">
-              Loja: {store.name}
+              <strong>Loja:</strong> {store.name}
             </div>
           )}
         </div>
