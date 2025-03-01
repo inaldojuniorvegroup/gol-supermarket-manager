@@ -253,19 +253,12 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Preparar os dados para atualização
-    let updateData = { ...item };
-
-    // Se tiver um novo preço, calcular o novo total usando a quantidade existente
-    if (item.price !== undefined) {
-      const total = Number(currentItem.quantity) * Number(item.price);
-      updateData.total = total.toFixed(2);
-    }
-
-    // Se tiver uma nova quantidade, calcular o novo total usando o preço existente
-    if (item.quantity !== undefined) {
-      const total = Number(item.quantity) * Number(currentItem.price);
-      updateData.total = total.toFixed(2);
-    }
+    let updateData: Partial<OrderItem> = {
+      ...item,
+      // Garantir que os valores numéricos sejam strings com 2 casas decimais
+      receivedQuantity: item.receivedQuantity ? Number(item.receivedQuantity).toFixed(2) : undefined,
+      missingQuantity: item.missingQuantity ? Number(item.missingQuantity).toFixed(2) : undefined,
+    };
 
     const [updatedItem] = await db
       .update(orderItems)

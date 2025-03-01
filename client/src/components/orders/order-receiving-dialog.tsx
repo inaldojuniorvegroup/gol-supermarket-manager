@@ -11,7 +11,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { OrderWithDetails } from "@/pages/shared-order-page";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format } from "date-fns";
 
 interface OrderReceivingDialogProps {
   order: OrderWithDetails;
@@ -68,8 +67,8 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
                     : 'partial';
 
         return apiRequest("PATCH", `/api/order-items/${itemId}`, {
-          receivedQuantity: data.receivedQuantity,
-          missingQuantity: data.missingQuantity,
+          receivedQuantity: receivedQty.toString(),
+          missingQuantity: missingQty.toString(),
           receivingStatus: status,
           receivingNotes: data.notes
         });
@@ -112,7 +111,7 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
     if (!receivedData) return 'pending';
     const received = Number(receivedData.receivedQuantity);
     const ordered = Number(item.quantity);
-    
+
     if (received === ordered) return 'received';
     if (received === 0) return 'missing';
     return 'partial';
@@ -178,6 +177,7 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
                           onChange={(e) => handleQuantityChange(item.id, 'receivedQuantity', e.target.value)}
                           min="0"
                           max={item.quantity}
+                          step="any"
                         />
                       </div>
                       <div className="space-y-2">
@@ -190,6 +190,7 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
                           value={receivedData?.missingQuantity}
                           onChange={(e) => handleQuantityChange(item.id, 'missingQuantity', e.target.value)}
                           min="0"
+                          step="any"
                         />
                       </div>
                     </div>
