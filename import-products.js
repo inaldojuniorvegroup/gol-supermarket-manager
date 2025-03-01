@@ -35,31 +35,20 @@ async function importProducts() {
 
     console.log(`\nProdutos válidos encontrados: ${validProducts.length}`);
 
-    // Processar em lotes menores
-    const batchSize = 5;
+    // Processar em lotes de 50 (reduzido de 400 para evitar payload too large)
+    const batchSize = 50;
     let totalImported = 0;
     let totalSkipped = 0;
     let totalErrors = 0;
-    let lastProcessedIndex = 0;
 
-    // Processar o primeiro lote
-    await processNextBatch();
-
-    async function processNextBatch() {
-      if (lastProcessedIndex >= validProducts.length) {
-        console.log('\nResumo final da importação:');
-        console.log(`Total de produtos processados: ${validProducts.length}`);
-        console.log(`Produtos importados com sucesso: ${totalImported}`);
-        console.log(`Produtos ignorados (já existem): ${totalSkipped}`);
-        console.log(`Produtos com erro: ${totalErrors}`);
-        return;
-      }
-
-      const batch = validProducts.slice(lastProcessedIndex, lastProcessedIndex + batchSize);
-      const currentBatch = Math.floor(lastProcessedIndex/batchSize) + 1;
+    // Processar os lotes
+    for (let i = 0; i < validProducts.length; i += batchSize) {
+      const batch = validProducts.slice(i, i + batchSize);
+      const currentBatch = Math.floor(i/batchSize) + 1;
       const totalBatches = Math.ceil(validProducts.length/batchSize);
 
       console.log(`\nProcessando lote ${currentBatch} de ${totalBatches}`);
+      console.log(`Produtos no lote: ${batch.length}`);
 
       try {
         const response = await fetch('http://localhost:5000/api/products/import', {
@@ -85,15 +74,15 @@ async function importProducts() {
         totalErrors += batch.length;
       }
 
-      // Atualizar o índice e agendar o próximo lote
-      lastProcessedIndex += batchSize;
-
       // Pequena pausa entre os lotes para não sobrecarregar
       await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Processar próximo lote
-      await processNextBatch();
     }
+
+    console.log('\nResumo da importação:');
+    console.log(`Total de produtos no arquivo: ${validProducts.length}`);
+    console.log(`Produtos importados com sucesso: ${totalImported}`);
+    console.log(`Produtos ignorados (já existem): ${totalSkipped}`);
+    console.log(`Produtos com erro: ${totalErrors}`);
 
   } catch (error) {
     console.error('\nErro crítico durante a importação:', error);
