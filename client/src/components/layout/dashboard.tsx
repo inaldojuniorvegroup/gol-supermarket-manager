@@ -113,9 +113,9 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
         {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* User info header */}
-          <div className="bg-background border-b py-2">
+          <div className="bg-background border-b py-3">
             <div className="max-w-screen-xl mx-auto px-4">
-              <div className="flex justify-center items-center gap-2">
+              <div className="flex flex-wrap justify-center items-center gap-3">
                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                   <User className="h-5 w-5 text-primary" />
                 </div>
