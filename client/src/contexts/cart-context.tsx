@@ -43,7 +43,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         );
       }
 
-      // Adicionar novo item
+      // Adicionar novo item com a flag isBoxUnit
       return [...currentItems, { 
         product, 
         quantity, 
@@ -79,6 +79,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   };
 
+  // Calcular o total usando o preço correto (caixa ou unidade)
   const total = items.reduce((sum, item) => {
     const price = item.isBoxUnit 
       ? Number(item.product.boxPrice || 0)

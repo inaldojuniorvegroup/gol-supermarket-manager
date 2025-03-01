@@ -9,12 +9,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { PriceComparisonDialog } from "./price-comparison-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ImageSearchDialog } from "./image-search-dialog";
-
 
 // Função para formatar preços mantendo exatamente 2 casas decimais
 const formatPrice = (price: number | string): string => {
@@ -53,32 +52,6 @@ export function ProductCard({
   const [imageUrl, setImageUrl] = useState("");
   const { toast } = useToast();
 
-  const updateImageMutation = useMutation({
-    mutationFn: async (newImageUrl: string) => {
-      if (!product) return;
-      const res = await apiRequest("PATCH", `/api/products/${product.id}`, {
-        imageUrl: newImageUrl
-      });
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      setImageDialogOpen(false);
-      setImageSearchDialogOpen(false);
-      toast({
-        title: "Imagem atualizada",
-        description: "A imagem do produto foi atualizada com sucesso."
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erro ao atualizar imagem",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
-
   const handleAddToCart = () => {
     if (product && onAddToCart) {
       // Verifica se tem preço de caixa quando está no modo caixa
@@ -86,17 +59,6 @@ export function ProductCard({
         toast({
           title: "Erro ao adicionar ao carrinho",
           description: "Este produto não possui preço de caixa definido.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Garantir que o preço correto seja usado
-      const price = isBoxUnit ? product.boxPrice : product.unitPrice;
-      if (!price) {
-        toast({
-          title: "Erro ao adicionar ao carrinho",
-          description: "Produto sem preço definido.",
           variant: "destructive"
         });
         return;
@@ -111,43 +73,11 @@ export function ProductCard({
     }
   };
 
-  const handleUpdateImage = () => {
-    if (!imageUrl.trim()) {
-      toast({
-        title: "URL inválida",
-        description: "Por favor, insira uma URL de imagem válida.",
-        variant: "destructive"
-      });
-      return;
-    }
-    updateImageMutation.mutate(imageUrl);
-  };
-
-  const handleImageClick = () => {
-    if (!isVendorView) {
-      setImageUrl(product?.imageUrl || "");
-      setImageDialogOpen(true);
-    }
-  };
-
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
 
   if (isLoading || !product) {
-    return (
-      <Card className="h-full">
-        <CardHeader className="space-y-2">
-          <Skeleton className="h-48 w-full rounded-lg" />
-          <Skeleton className="h-5 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-2/3" />
-          <Skeleton className="h-8 w-full" />
-        </CardContent>
-      </Card>
-    );
+    return <Skeleton />;
   }
 
   // Calcular o preço baseado na seleção (unidade ou caixa)
@@ -286,7 +216,7 @@ export function ProductCard({
             {onAddToCart && (
               <div className="space-y-4">
                 <Tabs
-                  defaultValue="unit"
+                  value={isBoxUnit ? "box" : "unit"}
                   className="w-full"
                   onValueChange={(value) => setIsBoxUnit(value === "box")}
                 >
@@ -331,52 +261,6 @@ export function ProductCard({
           </div>
         </CardContent>
       </Card>
-
-      {/* Image Update Dialog */}
-      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Atualizar Imagem do Produto</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="URL da imagem"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-              />
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setImageDialogOpen(false);
-                  setImageSearchDialogOpen(true);
-                }}
-              >
-                <Search className="h-4 w-4 mr-2" />
-                Buscar
-              </Button>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setImageDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleUpdateImage} disabled={updateImageMutation.isPending}>
-                {updateImageMutation.isPending ? "Atualizando..." : "Atualizar"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Image Search Dialog */}
-      {product && (
-        <ImageSearchDialog
-          open={imageSearchDialogOpen}
-          onOpenChange={setImageSearchDialogOpen}
-          product={product}
-          onSelectImage={(url) => updateImageMutation.mutate(url)}
-        />
-      )}
     </motion.div>
   );
 }
