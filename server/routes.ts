@@ -159,72 +159,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sampleProduct: products[0]
       });
 
-      // Log do primeiro produto para debug
-      if (products.length > 0) {
-        console.log('Estrutura do primeiro produto:', JSON.stringify(products[0], null, 2));
-      }
 
       const importedProducts = [];
-      const batchSize = 50; // Processar em lotes de 50 produtos
+      const skippedProducts = [];
       const errors = [];
 
-      for (let i = 0; i < products.length; i += batchSize) {
-        const batch = products.slice(i, i + batchSize);
-        console.log(`Processando lote ${i/batchSize + 1} de ${Math.ceil(products.length/batchSize)}`);
-
-        for (const product of batch) {
-          try {
-            // Verificar dados obrigatórios
-            if (!product.name || !product.itemCode || !product.distributorId) {
-              const error = `Produto ignorado - dados obrigatórios faltando: ${JSON.stringify(product)}`;
-              console.log(error);
-              errors.push(error);
-              continue;
-            }
-
-            // Garantir que os tipos estejam corretos
-            const productData = {
-              name: String(product.name).trim(),
-              itemCode: String(product.itemCode).trim(),
-              supplierCode: product.supplierCode ? String(product.supplierCode).trim() : '',
-              barCode: product.barCode ? String(product.barCode).trim() : '',
-              distributorId: Number(product.distributorId),
-              unitPrice: typeof product.unitPrice === 'number' ? product.unitPrice : Number(String(product.unitPrice || '0').replace(',', '.')),
-              boxPrice: product.boxPrice ? Number(String(product.boxPrice).replace(',', '.')) : null,
-              boxQuantity: typeof product.boxQuantity === 'number' ? product.boxQuantity : Number(String(product.boxQuantity || '1').replace(',', '.')),
-              unit: product.unit ? String(product.unit).trim() : 'un',
-              description: product.description ? String(product.description).trim() : '',
-              imageUrl: null,
-              isSpecialOffer: false
-            };
-
-            console.log('Tentando inserir produto:', {
-              name: productData.name,
-              itemCode: productData.itemCode,
-              unitPrice: productData.unitPrice,
-              boxPrice: productData.boxPrice,
-              boxQuantity: productData.boxQuantity
-            });
-
-            const parsed = insertProductSchema.parse(productData);
-            const savedProduct = await storage.createProduct(parsed);
-            importedProducts.push(savedProduct);
-            console.log('Produto importado com sucesso:', {
-              id: savedProduct.id,
-              name: savedProduct.name,
-              boxPrice: savedProduct.boxPrice
-            });
-          } catch (error) {
-            const errorMsg = `Erro ao importar produto: ${JSON.stringify(product)}, Error: ${error.message}`;
-            console.error(errorMsg);
-            errors.push(errorMsg);
+      for (const product of products) {
+        try {
+          // Verificar dados obrigatórios
+          if (!product.name || !product.itemCode || !product.distributorId) {
+            const error = `Produto ignorado - dados obrigatórios faltando: ${JSON.stringify(product)}`;
+            console.log(error);
+            errors.push(error);
+            continue;
           }
+
+          // Verificar se o produto já existe
+          const existingProducts = await storage.getProducts();
+          const exists = existingProducts.some(p =>
+            p.itemCode === product.itemCode &&
+            p.distributorId === product.distributorId
+          );
+
+          if (exists) {
+            console.log(`Produto já existe: ${product.name} (${product.itemCode})`);
+            skippedProducts.push(product);
+            continue;
+          }
+
+          // Garantir que os tipos estejam corretos
+          const productData = {
+            name: String(product.name).trim(),
+            itemCode: String(product.itemCode).trim(),
+            supplierCode: product.supplierCode ? String(product.supplierCode).trim() : '',
+            barCode: product.barCode ? String(product.barCode).trim() : '',
+            distributorId: Number(product.distributorId),
+            unitPrice: typeof product.unitPrice === 'number' ? product.unitPrice : Number(String(product.unitPrice || '0').replace(',', '.')),
+            boxPrice: product.boxPrice ? Number(String(product.boxPrice).replace(',', '.')) : null,
+            boxQuantity: typeof product.boxQuantity === 'number' ? product.boxQuantity : Number(String(product.boxQuantity || '1').replace(',', '.')),
+            unit: product.unit ? String(product.unit).trim() : 'un',
+            description: product.description ? String(product.description).trim() : '',
+            imageUrl: null,
+            isSpecialOffer: false
+          };
+
+          const parsed = insertProductSchema.parse(productData);
+          const savedProduct = await storage.createProduct(parsed);
+          importedProducts.push(savedProduct);
+          console.log('Produto importado com sucesso:', {
+            id: savedProduct.id,
+            name: savedProduct.name
+          });
+        } catch (error) {
+          const errorMsg = `Erro ao importar produto: ${JSON.stringify(product)}, Error: ${error.message}`;
+          console.error(errorMsg);
+          errors.push(errorMsg);
         }
       }
 
       res.status(201).json({
-        message: `${importedProducts.length} produtos importados com sucesso`,
+        message: `${importedProducts.length} produtos importados com sucesso, ${skippedProducts.length} produtos ignorados`,
         productsImported: importedProducts.length,
+        productsSkipped: skippedProducts.length,
         totalProducts: products.length,
         errors: errors,
         success: importedProducts.map(p => p.id)
@@ -259,7 +255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for (let i = 0; i < productsWithoutImages.length; i += batchSize) {
         const batch = productsWithoutImages.slice(i, i + batchSize);
-        console.log(`Processando lote ${Math.floor(i/batchSize) + 1} de ${Math.ceil(productsWithoutImages.length/batchSize)}`);
+        console.log(`Processando lote ${Math.floor(i / batchSize) + 1} de ${Math.ceil(productsWithoutImages.length / batchSize)}`);
 
         for (const product of batch) {
           try {
