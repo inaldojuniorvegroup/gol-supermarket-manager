@@ -73,11 +73,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const total = items.reduce((sum, item) => {
-    if (item.isBoxUnit) {
-      if (!item.product.boxPrice) return sum;
-      return sum + (Number(item.product.boxPrice) * item.quantity);
-    }
-    return sum + (Number(item.product.unitPrice) * item.quantity);
+    // Usar o preço correto baseado em isBoxUnit
+    const price = item.isBoxUnit ? 
+      Number(item.product.boxPrice || 0) : 
+      Number(item.product.unitPrice || 0);
+
+    return sum + (price * item.quantity);
   }, 0);
 
   return (

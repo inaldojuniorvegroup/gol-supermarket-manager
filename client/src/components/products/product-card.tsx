@@ -24,7 +24,7 @@ const formatPrice = (price: number | string): string => {
 interface ProductCardProps {
   product: Product | null;
   isLoading?: boolean;
-  onAddToCart?: (product: Product, quantity: number) => void;
+  onAddToCart?: (product: Product, quantity: number, isBoxUnit: boolean) => void;
   similarProducts?: Product[];
   distributors?: Distributor[];
   hasBetterPrice?: boolean;
@@ -91,7 +91,7 @@ export function ProductCard({
         return;
       }
 
-      onAddToCart(product, quantity);
+      onAddToCart(product, quantity, isBoxUnit);
       toast({
         title: "Adicionado ao carrinho",
         description: `${quantity}x ${isBoxUnit ? 'caixas' : 'unidades'} de ${product.name} foi adicionado ao seu carrinho.`

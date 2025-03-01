@@ -35,8 +35,8 @@ async function importProducts() {
 
     console.log(`\nProdutos válidos encontrados: ${validProducts.length}`);
 
-    // Processar em lotes de 50 (reduzido de 400 para evitar payload too large)
-    const batchSize = 50;
+    // Processar em lotes menores (25 produtos por vez para evitar timeout)
+    const batchSize = 25;
     let totalImported = 0;
     let totalSkipped = 0;
     let totalErrors = 0;
@@ -68,6 +68,10 @@ async function importProducts() {
           console.log(`Resultado do lote ${currentBatch}:`, result);
           totalImported += result.productsImported || 0;
           totalSkipped += result.productsSkipped || 0;
+
+          // Mostrar progresso
+          const progress = ((i + batch.length) / validProducts.length * 100).toFixed(1);
+          console.log(`Progresso: ${progress}% completo`);
         }
       } catch (error) {
         console.error(`\nErro ao processar lote ${currentBatch}:`, error);
@@ -75,7 +79,7 @@ async function importProducts() {
       }
 
       // Pequena pausa entre os lotes para não sobrecarregar
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     console.log('\nResumo da importação:');
