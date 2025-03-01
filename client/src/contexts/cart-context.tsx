@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from "react";
-import { Product } from "@shared/schema";
+import { Product, Distributor } from "@shared/schema";
 
 interface CartItem {
   product: Product;
@@ -7,13 +7,19 @@ interface CartItem {
   isBoxUnit: boolean;
 }
 
-interface CartContextType {
+interface DistributorCart {
+  distributorId: number;
   items: CartItem[];
+}
+
+interface CartContextType {
+  carts: DistributorCart[];
   addToCart: (product: Product, quantity?: number, isBoxUnit?: boolean) => void;
-  removeFromCart: (productId: number) => void;
-  updateQuantity: (productId: number, quantity: number, isBoxUnit: boolean) => void;
-  clearCart: () => void;
-  total: number;
+  removeFromCart: (productId: number, distributorId: number) => void;
+  updateQuantity: (productId: number, distributorId: number, quantity: number, isBoxUnit: boolean) => void;
+  clearCart: (distributorId?: number) => void;
+  getCartTotal: (distributorId: number) => number;
+  getDistributorCart: (distributorId: number) => CartItem[];
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -24,65 +30,117 @@ const formatPrice = (price: number): string => {
 };
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [carts, setCarts] = useState<DistributorCart[]>([]);
 
-  const addToCart = (product: Product, quantity = 1, isBoxUnit = true) => { // Default to true for box units
-    // Não adicionar se não tiver preço de caixa quando isBoxUnit é true
+  const addToCart = (product: Product, quantity = 1, isBoxUnit = true) => {
     if (isBoxUnit && !product.boxPrice) {
       return;
     }
 
-    setItems(currentItems => {
-      const existingItem = currentItems.find(
+    setCarts(currentCarts => {
+      const distributorCartIndex = currentCarts.findIndex(
+        cart => cart.distributorId === product.distributorId
+      );
+
+      if (distributorCartIndex === -1) {
+        // Create new cart for distributor
+        return [...currentCarts, {
+          distributorId: product.distributorId,
+          items: [{ product, quantity, isBoxUnit }]
+        }];
+      }
+
+      const updatedCarts = [...currentCarts];
+      const existingItemIndex = updatedCarts[distributorCartIndex].items.findIndex(
         item => item.product.id === product.id && item.isBoxUnit === isBoxUnit
       );
 
-      if (existingItem) {
-        return currentItems.map(item =>
-          item.product.id === product.id && item.isBoxUnit === isBoxUnit
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
+      if (existingItemIndex === -1) {
+        updatedCarts[distributorCartIndex].items.push({ product, quantity, isBoxUnit });
+      } else {
+        updatedCarts[distributorCartIndex].items[existingItemIndex].quantity += quantity;
       }
 
-      return [...currentItems, { product, quantity, isBoxUnit }];
+      return updatedCarts;
     });
   };
 
-  const removeFromCart = (productId: number) => {
-    setItems(currentItems => currentItems.filter(item => item.product.id !== productId));
+  const removeFromCart = (productId: number, distributorId: number) => {
+    setCarts(currentCarts => {
+      const updatedCarts = currentCarts.map(cart => {
+        if (cart.distributorId === distributorId) {
+          return {
+            ...cart,
+            items: cart.items.filter(item => item.product.id !== productId)
+          };
+        }
+        return cart;
+      }).filter(cart => cart.items.length > 0); // Remove empty carts
+
+      return updatedCarts;
+    });
   };
 
-  const updateQuantity = (productId: number, quantity: number, isBoxUnit: boolean) => {
+  const updateQuantity = (productId: number, distributorId: number, quantity: number, isBoxUnit: boolean) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(productId, distributorId);
       return;
     }
 
-    setItems(currentItems =>
-      currentItems.map(item =>
-        item.product.id === productId && item.isBoxUnit === isBoxUnit
-          ? { ...item, quantity }
-          : item
-      )
+    setCarts(currentCarts => 
+      currentCarts.map(cart => {
+        if (cart.distributorId === distributorId) {
+          return {
+            ...cart,
+            items: cart.items.map(item =>
+              item.product.id === productId && item.isBoxUnit === isBoxUnit
+                ? { ...item, quantity }
+                : item
+            )
+          };
+        }
+        return cart;
+      })
     );
   };
 
-  const clearCart = () => {
-    setItems([]);
+  const clearCart = (distributorId?: number) => {
+    if (distributorId) {
+      setCarts(currentCarts => currentCarts.filter(cart => cart.distributorId !== distributorId));
+    } else {
+      setCarts([]);
+    }
   };
 
-  const total = items.reduce((sum, item) => {
-    if (item.isBoxUnit) {
-      if (!item.product.boxPrice) return sum;
-      return sum + (Number(item.product.boxPrice) * item.quantity);
-    }
-    return sum + (Number(item.product.unitPrice) * item.quantity);
-  }, 0);
+  const getCartTotal = (distributorId: number): number => {
+    const cart = carts.find(cart => cart.distributorId === distributorId);
+    if (!cart) return 0;
+
+    return cart.items.reduce((sum, item) => {
+      if (item.isBoxUnit) {
+        if (!item.product.boxPrice) return sum;
+        return sum + (Number(item.product.boxPrice) * item.quantity);
+      }
+      return sum + (Number(item.product.unitPrice) * item.quantity);
+    }, 0);
+  };
+
+  const getDistributorCart = (distributorId: number): CartItem[] => {
+    const cart = carts.find(cart => cart.distributorId === distributorId);
+    return cart?.items || [];
+  };
 
   return (
     <CartContext.Provider
-      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, total }}
+      value={{ 
+        carts, 
+        addToCart, 
+        removeFromCart, 
+        updateQuantity, 
+        clearCart, 
+        getCartTotal,
+        getDistributorCart
+      }}
     >
       {children}
     </CartContext.Provider>
