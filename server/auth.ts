@@ -36,12 +36,20 @@ function isSupermarket(req: Express.Request, res: Express.Response, next: Functi
   res.status(403).json({ message: "Apenas usuários do Gol Supermarket podem realizar esta ação" });
 }
 
-// Middleware to check if user is a distributor
-function isDistributor(req: Express.Request, res: Express.Response, next: Function) {
-  if (req.isAuthenticated() && req.user.role === 'distributor') {
+// Middleware to check if user is from Hyannis store (main store)
+function isHyannisStore(req: Express.Request, res: Express.Response, next: Function) {
+  if (req.isAuthenticated() && req.user.role === 'supermarket' && req.user.storeId === 1) {
     return next();
   }
-  res.status(403).json({ message: "Apenas distribuidores podem realizar esta ação" });
+  res.status(403).json({ message: "Apenas a loja de Hyannis pode realizar esta ação" });
+}
+
+// Middleware to check if user is a store manager
+function isStoreManager(req: Express.Request, res: Express.Response, next: Function) {
+  if (req.isAuthenticated() && req.user.role === 'supermarket' && req.user.storeId) {
+    return next();
+  }
+  res.status(403).json({ message: "Apenas gerentes de loja podem realizar esta ação" });
 }
 
 export function setupAuth(app: Express) {
@@ -102,7 +110,42 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Rota especial para o primeiro usuário (Gol Supermarket)
+  // Nova rota para registro de usuários das lojas
+  app.post("/api/register/store", isHyannisStore, async (req, res) => {
+    try {
+      const { username, password, storeId } = req.body;
+
+      // Verificar se já existe um usuário com este username
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username já existe" });
+      }
+
+      // Verificar se a loja existe
+      const store = await storage.getStore(storeId);
+      if (!store) {
+        return res.status(404).json({ message: "Loja não encontrada" });
+      }
+
+      // Não permitir criar usuário para a loja de Hyannis (ID 1)
+      if (storeId === 1) {
+        return res.status(400).json({ message: "Não é permitido criar usuários para a loja de Hyannis por esta rota" });
+      }
+
+      const user = await storage.createUser({
+        username,
+        password: await hashPassword(password),
+        role: 'supermarket',
+        storeId
+      });
+
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Erro ao criar usuário da loja:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+    // Rota especial para o primeiro usuário (Gol Supermarket)
   app.post("/api/register/supermarket", async (req, res, next) => {
     const users = await storage.getUsers();
     if (users.length > 0) {
@@ -169,4 +212,4 @@ export function setupAuth(app: Express) {
   });
 }
 
-export { isSupermarket, isDistributor };
+export { isSupermarket, isHyannisStore, isStoreManager, isDistributor };

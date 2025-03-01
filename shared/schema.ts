@@ -8,6 +8,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: text("role").notNull().default('distributor'), // 'supermarket' or 'distributor'
   distributorId: integer("distributor_id").references(() => distributors.id),
+  storeId: integer("store_id").references(() => stores.id), // Added store reference
 });
 
 export const stores = pgTable("stores", {
@@ -71,21 +72,18 @@ export const orderItems = pgTable("order_items", {
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
 });
 
-// Zod schemas for product creation/update with proper type coercion
+// Zod schemas
 const productInsertSchema = createInsertSchema(products).extend({
   unitPrice: z.number().or(z.string().transform(val => parseFloat(val.replace(',', '.')))),
   boxQuantity: z.number().or(z.string().transform(val => parseInt(val))),
   boxPrice: z.number().nullable().or(z.string().transform(val => parseFloat(val.replace(',', '.')))).nullable(),
 });
 
-// Other insert schemas
 export const insertUserSchema = createInsertSchema(users);
 export const insertStoreSchema = createInsertSchema(stores);
 export const insertDistributorSchema = createInsertSchema(distributors);
 export const insertOrderSchema = createInsertSchema(orders);
 export const insertOrderItemSchema = createInsertSchema(orderItems);
-
-// Export the product schema
 export const insertProductSchema = productInsertSchema;
 
 // Types
