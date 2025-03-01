@@ -4,7 +4,7 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertStoreSchema, insertDistributorSchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema } from "@shared/schema";
 import * as express from 'express';
-import { execute_sql_tool } from "./tools";
+import { execute_sql_tool, searchProductImage } from "./tools";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -238,6 +238,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(product);
   });
 
+  // Add new route for updating product images
+  app.post("/api/products/update-images", async (_req, res) => {
+    try {
+      // Buscar todos os produtos sem imagem
+      const products = await storage.getProducts();
+      const productsWithoutImages = products.filter(p => !p.imageUrl);
+
+      console.log(`Encontrados ${productsWithoutImages.length} produtos sem imagem`);
+
+      // Processar em lotes de 10 para não sobrecarregar a API
+      const batchSize = 10;
+      let updatedCount = 0;
+
+      for (let i = 0; i < productsWithoutImages.length; i += batchSize) {
+        const batch = productsWithoutImages.slice(i, i + batchSize);
+        console.log(`Processando lote ${Math.floor(i/batchSize) + 1} de ${Math.ceil(productsWithoutImages.length/batchSize)}`);
+
+        for (const product of batch) {
+          try {
+            // Buscar imagem do produto
+            const imageUrl = await searchProductImage(product.name);
+            if (imageUrl) {
+              // Atualizar produto com a URL da imagem
+              await storage.updateProduct(product.id, { imageUrl });
+              updatedCount++;
+              console.log(`Imagem encontrada para ${product.name}: ${imageUrl}`);
+            }
+          } catch (error) {
+            console.error(`Erro ao processar produto ${product.name}:`, error);
+          }
+
+          // Pequena pausa entre as requisições para não sobrecarregar a API
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      res.json({
+        message: `Processo concluído. ${updatedCount} produtos atualizados com imagens.`,
+        totalProcessed: productsWithoutImages.length,
+        updatedCount
+      });
+
+    } catch (error) {
+      console.error('Erro ao atualizar imagens:', error);
+      res.status(500).json({ error: 'Falha ao atualizar imagens dos produtos' });
+    }
+  });
+
+
   // Orders
   app.get("/api/orders", async (_req, res) => {
     try {
@@ -339,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Resultado da deleção:', result);
 
-      res.json({ 
+      res.json({
         message: "Distribuidor e catálogo deletados com sucesso"
       });
     } catch (error) {
