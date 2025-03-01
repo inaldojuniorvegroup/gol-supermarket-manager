@@ -38,7 +38,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { OrderPDF } from '@/components/order-pdf';
-
+import { OrderReceivingDialog } from "@/components/orders/order-receiving-dialog";
 
 export interface OrderWithDetails extends Order {
   store?: {
@@ -56,6 +56,10 @@ export interface OrderWithDetails extends Order {
     quantity: string;
     price: string;
     total: string;
+    receivedQuantity?: string;
+    missingQuantity?: string;
+    receivingStatus?: string;
+    receivingNotes?: string;
     product?: {
       id: number;
       name: string;
@@ -65,6 +69,10 @@ export interface OrderWithDetails extends Order {
       boxQuantity: number;
     } | null;
   }> | null;
+  receivedAt?: Date;
+  receivedBy?: string;
+  receivingNotes?: string;
+  updatedAt: Date;
 }
 
 const orderStatuses = {
@@ -72,7 +80,10 @@ const orderStatuses = {
   'processing': { label: 'Em Processamento', color: 'warning' },
   'shipped': { label: 'Enviado', color: 'info' },
   'delivered': { label: 'Entregue', color: 'success' },
-  'cancelled': { label: 'Cancelado', color: 'destructive' }
+  'cancelled': { label: 'Cancelado', color: 'destructive' },
+  'receiving': { label: 'Em Recebimento', color: 'warning' },
+  'received': { label: 'Recebido', color: 'success' },
+  'partially_received': { label: 'Recebido Parcialmente', color: 'warning' }
 } as const;
 
 export default function SharedOrderPage() {
@@ -87,6 +98,7 @@ export default function SharedOrderPage() {
   const [editedItems, setEditedItems] = useState<{[key: number]: { quantity: string; price: string }}>({});
   const [viewMode, setViewMode] = useState<'supplier' | 'internal'>('supplier');
   const [orderTotal, setOrderTotal] = useState("0");
+  const [isReceivingDialogOpen, setIsReceivingDialogOpen] = useState(false);
 
   const { data: order, isLoading } = useQuery<OrderWithDetails>({
     queryKey: [`/api/orders/share/${orderId}`],
@@ -296,6 +308,7 @@ export default function SharedOrderPage() {
   }
 
   const canUpdateStatus = user?.role === 'distributor' || user?.role === 'supermarket';
+  const canManageReceiving = user?.role === 'supermarket' && order.status === 'delivered';
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
@@ -339,6 +352,16 @@ export default function SharedOrderPage() {
                     {orderStatuses[order.status as keyof typeof orderStatuses]?.label || order.status}
                   </Badge>
                 )}
+                {canManageReceiving && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => setIsReceivingDialogOpen(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Package className="h-4 w-4" />
+                    Gerenciar Recebimento
+                  </Button>
+                )}
                 <PDFDownloadLink
                   document={<OrderPDF order={order} isVendorView={isVendorView} />}
                   fileName={`pedido-${order.id}.pdf`}
@@ -356,8 +379,14 @@ export default function SharedOrderPage() {
               </div>
               <span className="text-sm text-muted-foreground flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                Última atualização: {format(new Date(order.updatedAt || order.createdAt), "dd/MM HH:mm")}
+                Última atualização: {format(new Date(order.updatedAt), "dd/MM HH:mm")}
               </span>
+              {order.receivedAt && (
+                <span className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Package className="h-3 w-3" />
+                  Recebido em: {format(new Date(order.receivedAt), "dd/MM HH:mm")} por {order.receivedBy}
+                </span>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -544,6 +573,11 @@ export default function SharedOrderPage() {
             </div>
           </div>
         </CardContent>
+        <OrderReceivingDialog
+          order={order}
+          open={isReceivingDialogOpen}
+          onOpenChange={setIsReceivingDialogOpen}
+        />
       </Card>
     </div>
   );

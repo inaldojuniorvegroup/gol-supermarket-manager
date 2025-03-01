@@ -8,7 +8,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: text("role").notNull().default('distributor'), // 'supermarket' or 'distributor'
   distributorId: integer("distributor_id").references(() => distributors.id),
-  storeId: integer("store_id").references(() => stores.id), // Added store reference
+  storeId: integer("store_id").references(() => stores.id),
 });
 
 export const stores = pgTable("stores", {
@@ -58,9 +58,13 @@ export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
   distributorId: integer("distributor_id").notNull().references(() => distributors.id),
   storeId: integer("store_id").notNull().references(() => stores.id),
-  status: text("status").notNull().default('pending'),
+  status: text("status").notNull().default('pending'), // 'pending', 'processing', 'shipped', 'delivered', 'cancelled', 'receiving', 'received', 'partially_received'
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  receivedAt: timestamp("received_at"), // Nova coluna para rastrear quando o pedido foi recebido
+  receivedBy: text("received_by"), // Nova coluna para rastrear quem recebeu o pedido
+  receivingNotes: text("receiving_notes"), // Nova coluna para notas sobre o recebimento
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const orderItems = pgTable("order_items", {
@@ -70,6 +74,10 @@ export const orderItems = pgTable("order_items", {
   quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  receivedQuantity: decimal("received_quantity", { precision: 10, scale: 2 }), // Nova coluna para quantidade recebida
+  missingQuantity: decimal("missing_quantity", { precision: 10, scale: 2 }), // Nova coluna para quantidade faltante
+  receivingStatus: text("receiving_status").default('pending'), // 'pending', 'received', 'partial', 'missing'
+  receivingNotes: text("receiving_notes"), // Notas específicas do item
 });
 
 // Zod schemas
