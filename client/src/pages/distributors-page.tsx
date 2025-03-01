@@ -55,19 +55,17 @@ export default function DistributorsPage() {
   const ITEMS_PER_PAGE = 10;
   const { user } = useAuth();
 
-  // Otimizar queries com staleTime e cacheTime apropriados
+  // Otimizar queries com staleTime apropriado
   const { data: distributors = [], isLoading } = useQuery<Distributor[]>({
     queryKey: ["/api/distributors"],
     staleTime: 1000 * 60 * 5, // 5 minutos
-    cacheTime: 1000 * 60 * 30, // 30 minutos
   });
 
   // Otimizar query de produtos com enabled e cache
   const { data: products = [], isLoading: loadingProducts } = useQuery<Product[]>({
     queryKey: ["/api/products", selectedDistributor],
     enabled: selectedDistributor !== null,
-    staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
   // Memorizar o filtro de distribuidores
@@ -143,7 +141,6 @@ export default function DistributorsPage() {
   // Memorizar a função getDistributorProducts
   const getDistributorProducts = useMemo(() => {
     return (distributorId: number) => {
-      if (!products) return [];
       return products.filter(product => product.distributorId === distributorId);
     };
   }, [products]);
@@ -174,7 +171,7 @@ export default function DistributorsPage() {
       return res.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products", selectedDistributor] });
       toast({
         title: "Imagens atualizadas",
         description: `${data.updatedCount} produtos foram atualizados com imagens.`,
@@ -405,7 +402,7 @@ export default function DistributorsPage() {
 
                     {!isVendorView && <ImportExcel distributorId={distributor.id} />}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto mt-4">
                       {loadingProducts ? (
                         [...Array(4)].map((_, i) => (
                           <Card key={i} className="animate-pulse">
@@ -416,23 +413,19 @@ export default function DistributorsPage() {
                           </Card>
                         ))
                       ) : (
-                        getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => {
-                          const similarProducts = products.filter(p =>
-                            p.id !== product.id &&
-                            p.barCode === product.barCode &&
-                            p.name === product.name
-                          );
-
-                          return (
-                            <ProductCard
-                              key={product.id}
-                              product={product}
-                              isVendorView={isVendorView}
-                              similarProducts={similarProducts}
-                              distributors={distributors}
-                            />
-                          );
-                        })
+                        getPaginatedProducts(getDistributorProducts(distributor.id)).map((product) => (
+                          <ProductCard
+                            key={product.id}
+                            product={product}
+                            isVendorView={isVendorView}
+                            similarProducts={products.filter(p =>
+                              p.id !== product.id &&
+                              p.barCode === product.barCode &&
+                              p.name === product.name
+                            )}
+                            distributors={distributors}
+                          />
+                        ))
                       )}
                     </div>
 
