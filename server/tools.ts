@@ -13,35 +13,23 @@ export async function execute_sql_tool(sql_query: string): Promise<any> {
 
 export async function searchProductImage(productName: string): Promise<string[]> {
   try {
+    // Remover apenas unidades de medida, manter números para gramatura
     const cleanedName = productName
-      .replace(/\b(un|cx|ea|g|kg|ml|l)\b/gi, '') // Remove unidades de medida
-      .replace(/\s+/g, ' ')                     // Remove espaços extras
-      .trim();                                  // Remove espaços nas bordas
+      .replace(/\b(un|cx|ea)\b/gi, '') // Remove apenas unidades que não são medidas
+      .replace(/\s+/g, ' ')           // Remove espaços extras
+      .trim();                        // Remove espaços nas bordas
 
-    // Extrai a gramatura do nome (números seguidos por g, kg, ml, l)
-    const gramaturaMatch = productName.match(/(\d+\s*(g|kg|ml|l))/i);
-    const gramatura = gramaturaMatch ? gramaturaMatch[0] : '';
-
-    // Extrai a marca do produto (geralmente a primeira palavra antes do espaço)
-    const brandMatch = cleanedName.match(/^[\w\s-]+?(?=\s)/);
-    const brand = brandMatch ? brandMatch[0].trim() : '';
-
-    // Constrói a query de busca com marca, nome do produto e gramatura
-    const searchQuery = `${brand} ${cleanedName} ${gramatura} embalagem produto package`.trim();
-    console.log('Buscando imagens para:', searchQuery);
+    console.log('Buscando imagens para:', cleanedName);
 
     const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
       params: {
         key: process.env.GOOGLE_API_KEY,
         cx: process.env.GOOGLE_SEARCH_ENGINE_ID,
-        q: searchQuery,
+        q: `${cleanedName} produto embalagem`,
         searchType: 'image',
-        num: 6,  // Buscar 6 imagens
-        imgType: 'photo',
-        imgSize: 'large', // Preferir imagens grandes
-        safe: 'active',
-        rights: 'cc_publicdomain', // Preferir imagens de domínio público
-        filter: '1', // Remover resultados duplicados
+        num: 6,           // Buscar 6 imagens
+        imgType: 'photo', // Apenas fotos
+        safe: 'active'    // Filtro de conteúdo seguro
       }
     });
 
