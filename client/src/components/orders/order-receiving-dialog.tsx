@@ -6,8 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Package, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { OrderWithDetails } from "@/pages/shared-order-page";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,7 +21,6 @@ interface OrderReceivingDialogProps {
 export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivingDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const [notes, setNotes] = useState("");
   const [receivedItems, setReceivedItems] = useState<Record<number, { 
     receivedQuantity: string;
@@ -40,56 +39,37 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
 
   const updateOrderReceivingMutation = useMutation({
     mutationFn: async () => {
-      if (!order.items?.length) return;
+      try {
+        // Primeiro, atualize o status do pedido para 'receiving'
+        await apiRequest("PATCH", `/api/orders/${order.id}`, {
+          status: "receiving",
+          receivedBy: user?.username,
+          receivedAt: new Date().toISOString(),
+          receivingNotes: notes
+        });
 
-      // Primeiro atualizar o status do pedido
-      const orderResponse = await apiRequest("PATCH", `/api/orders/${order.id}`, {
-        status: "receiving",
-        receivedBy: user?.username,
-        receivedAt: new Date().toISOString(),
-        receivingNotes: notes
-      });
+        // Depois atualize cada item individualmente
+        for (const [itemId, data] of Object.entries(receivedItems)) {
+          const receivedQty = Number(data.receivedQuantity) || 0;
+          const missingQty = Number(data.missingQuantity) || 0;
 
-      if (!orderResponse.ok) {
-        throw new Error("Falha ao atualizar o status do pedido");
-      }
-
-      // Depois atualizar cada item
-      const itemPromises = Object.entries(receivedItems).map(([itemId, data]) => {
-        const item = order.items?.find(i => i.id === Number(itemId));
-        if (!item) return Promise.resolve();
-
-        const receivedQty = Number(data.receivedQuantity) || 0;
-        const missingQty = Number(data.missingQuantity) || 0;
-        const orderedQty = Number(item.quantity);
-
-        let status = 'pending';
-        if (receivedQty === orderedQty) {
-          status = 'received';
-        } else if (receivedQty === 0) {
-          status = 'missing';
-        } else if (receivedQty < orderedQty) {
-          status = 'partial';
+          await apiRequest("PATCH", `/api/order-items/${itemId}`, {
+            receivedQuantity: receivedQty.toFixed(2),
+            missingQuantity: missingQty.toFixed(2),
+            receivingNotes: data.notes,
+            receivingStatus: getItemStatus(itemId, receivedQty)
+          });
         }
 
-        return apiRequest("PATCH", `/api/order-items/${itemId}`, {
-          receivedQuantity: receivedQty.toFixed(2),
-          missingQuantity: missingQty.toFixed(2),
-          receivingStatus: status,
-          receivingNotes: data.notes
+        // Por fim, atualize o status final do pedido
+        const finalStatus = calculateFinalStatus();
+        await apiRequest("PATCH", `/api/orders/${order.id}`, {
+          status: finalStatus
         });
-      });
 
-      await Promise.all(itemPromises);
-
-      // Atualizar o status final do pedido baseado nos itens
-      const finalStatus = order.items.every(item => 
-        receivedItems[item.id]?.receivedQuantity === item.quantity
-      ) ? 'received' : 'partially_received';
-
-      await apiRequest("PATCH", `/api/orders/${order.id}`, {
-        status: finalStatus
-      });
+      } catch (error) {
+        throw new Error("Falha ao atualizar o recebimento");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/orders/share/${order.id}`] });
@@ -122,16 +102,28 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
     }));
   };
 
-  const getItemStatus = (item: NonNullable<OrderWithDetails['items']>[number], receivedData: typeof receivedItems[number]) => {
-    if (!receivedData) return 'pending';
+  const getItemStatus = (itemId: string, receivedQty: number) => {
+    const item = order.items?.find(i => i.id === Number(itemId));
+    if (!item) return 'pending';
 
-    const received = Number(receivedData.receivedQuantity) || 0;
-    const ordered = Number(item.quantity);
+    const orderedQty = Number(item.quantity);
 
-    if (received === ordered) return 'received';
-    if (received === 0) return 'missing';
-    if (received < ordered) return 'partial';
+    if (receivedQty === orderedQty) return 'received';
+    if (receivedQty === 0) return 'missing';
+    if (receivedQty < orderedQty) return 'partial';
     return 'pending';
+  };
+
+  const calculateFinalStatus = () => {
+    if (!order.items) return 'pending';
+
+    const allReceived = order.items.every(item => {
+      const receivedQty = Number(receivedItems[item.id]?.receivedQuantity) || 0;
+      const orderedQty = Number(item.quantity);
+      return receivedQty === orderedQty;
+    });
+
+    return allReceived ? 'received' : 'partially_received';
   };
 
   const statusBadgeVariant = {
@@ -164,69 +156,64 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-[60vh]">
             <div className="space-y-6 p-1">
-              {order.items?.map(item => {
-                const receivedData = receivedItems[item.id];
-                const status = getItemStatus(item, receivedData);
-
-                return (
-                  <div key={item.id} className="bg-muted/30 p-4 rounded-lg space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h4 className="font-medium">{item.product?.name}</h4>
-                        <div className="text-sm text-muted-foreground">
-                          Quantidade pedida: {item.quantity}
-                        </div>
-                      </div>
-                      <Badge variant={statusBadgeVariant[status]}>
-                        {statusLabel[status]}
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          Quantidade Recebida
-                        </label>
-                        <Input
-                          type="number"
-                          value={receivedData?.receivedQuantity}
-                          onChange={(e) => handleQuantityChange(item.id, 'receivedQuantity', e.target.value)}
-                          min="0"
-                          max={item.quantity}
-                          step="any"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium flex items-center gap-2">
-                          <XCircle className="h-4 w-4 text-red-500" />
-                          Quantidade Faltante
-                        </label>
-                        <Input
-                          type="number"
-                          value={receivedData?.missingQuantity}
-                          onChange={(e) => handleQuantityChange(item.id, 'missingQuantity', e.target.value)}
-                          min="0"
-                          step="any"
-                        />
+              {order.items?.map(item => (
+                <div key={item.id} className="bg-muted/30 p-4 rounded-lg space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <h4 className="font-medium">{item.product?.name}</h4>
+                      <div className="text-sm text-muted-foreground">
+                        Quantidade pedida: {item.quantity}
                       </div>
                     </div>
+                    <Badge variant={statusBadgeVariant[getItemStatus(item.id.toString(), Number(receivedItems[item.id]?.receivedQuantity || 0))]}>
+                        {statusLabel[getItemStatus(item.id.toString(), Number(receivedItems[item.id]?.receivedQuantity || 0))]}
+                    </Badge>
+                  </div>
 
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                        Observações do Item
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        Quantidade Recebida
                       </label>
-                      <Textarea
-                        value={receivedData?.notes}
-                        onChange={(e) => handleQuantityChange(item.id, 'notes', e.target.value)}
-                        placeholder="Registre aqui qualquer observação sobre o recebimento deste item..."
-                        className="resize-none"
+                      <Input
+                        type="number"
+                        value={receivedItems[item.id]?.receivedQuantity}
+                        onChange={(e) => handleQuantityChange(item.id, 'receivedQuantity', e.target.value)}
+                        min="0"
+                        max={item.quantity}
+                        step="any"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <XCircle className="h-4 w-4 text-red-500" />
+                        Quantidade Faltante
+                      </label>
+                      <Input
+                        type="number"
+                        value={receivedItems[item.id]?.missingQuantity}
+                        onChange={(e) => handleQuantityChange(item.id, 'missingQuantity', e.target.value)}
+                        min="0"
+                        step="any"
                       />
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                      Observações do Item
+                    </label>
+                    <Textarea
+                      value={receivedItems[item.id]?.notes}
+                      onChange={(e) => handleQuantityChange(item.id, 'notes', e.target.value)}
+                      placeholder="Registre aqui qualquer observação sobre o recebimento deste item..."
+                      className="resize-none"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </ScrollArea>
         </div>

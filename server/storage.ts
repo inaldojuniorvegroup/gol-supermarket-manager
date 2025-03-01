@@ -14,7 +14,6 @@ import { promisify } from "util";
 const scryptAsync = promisify(scrypt);
 const MemoryStore = createMemoryStore(session);
 
-// Função para gerar hash da senha
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
@@ -225,11 +224,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateOrder(id: number, order: Partial<Order>): Promise<Order> {
+    const updateData: Partial<Order> = {
+      ...order,
+      updatedAt: new Date()
+    };
+
+    if (order.receivedAt && typeof order.receivedAt === 'string') {
+      updateData.receivedAt = new Date(order.receivedAt);
+    }
+
     const [updatedOrder] = await db
       .update(orders)
-      .set(order)
+      .set(updateData)
       .where(eq(orders.id, id))
       .returning();
+
     return updatedOrder;
   }
 
@@ -242,23 +251,17 @@ export class DatabaseStorage implements IStorage {
     return newItem;
   }
   async updateOrderItem(id: number, item: Partial<OrderItem>): Promise<OrderItem> {
-    // Primeiro, buscar o item atual para ter acesso à quantidade
-    const [currentItem] = await db
-      .select()
-      .from(orderItems)
-      .where(eq(orderItems.id, id));
-
-    if (!currentItem) {
-      throw new Error("Item not found");
-    }
-
-    // Preparar os dados para atualização
-    let updateData: Partial<OrderItem> = {
-      ...item,
-      // Garantir que os valores numéricos sejam strings com 2 casas decimais
-      receivedQuantity: item.receivedQuantity ? Number(item.receivedQuantity).toFixed(2) : undefined,
-      missingQuantity: item.missingQuantity ? Number(item.missingQuantity).toFixed(2) : undefined,
+    const updateData: Partial<OrderItem> = {
+      ...item
     };
+
+    // Garantir que os valores numéricos sejam strings com precisão correta
+    if (item.receivedQuantity !== undefined) {
+      updateData.receivedQuantity = Number(item.receivedQuantity).toFixed(2);
+    }
+    if (item.missingQuantity !== undefined) {
+      updateData.missingQuantity = Number(item.missingQuantity).toFixed(2);
+    }
 
     const [updatedItem] = await db
       .update(orderItems)
