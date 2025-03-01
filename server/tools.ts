@@ -13,32 +13,62 @@ export async function execute_sql_tool(sql_query: string): Promise<any> {
 
 export async function searchProductImage(productName: string): Promise<string[]> {
   try {
-    // Remover apenas unidades de medida, manter números para gramatura
+    // Limpar o nome do produto
     const cleanedName = productName
-      .replace(/\b(un|cx|ea)\b/gi, '') // Remove apenas unidades que não são medidas
-      .replace(/\s+/g, ' ')           // Remove espaços extras
-      .trim();                        // Remove espaços nas bordas
+      .replace(/['"`]/g, '') // Remove apóstrofos e aspas
+      .replace(/\b(un|cx|ea)\b/gi, '') // Remove unidades
+      .replace(/\s+/g, ' ') // Remove espaços extras
+      .trim();
 
-    console.log('Buscando imagens para:', cleanedName);
+    // Separar marca e nome do produto
+    const parts = cleanedName.split(' ');
+    const brand = parts[0]; // Primeira palavra (geralmente a marca)
+    const nameWithoutBrand = parts.slice(1).join(' ');
 
-    const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
-      params: {
-        key: process.env.GOOGLE_API_KEY,
-        cx: process.env.GOOGLE_SEARCH_ENGINE_ID,
-        q: `${cleanedName} produto`,
-        searchType: 'image',
-        num: 6,           // Buscar 6 imagens
-        imgType: 'photo', // Apenas fotos
-        safe: 'active'    // Filtro de conteúdo seguro
-      }
+    console.log('Buscando imagens para:', {
+      original: productName,
+      cleaned: cleanedName,
+      brand,
+      nameWithoutBrand
     });
 
-    if (response.data.items && response.data.items.length > 0) {
-      // Retornar array com todas as URLs de imagem encontradas
-      return response.data.items.map((item: any) => item.link);
+    // Tentar diferentes combinações de busca
+    const searchQueries = [
+      `${cleanedName}`, // Nome completo limpo
+      `${brand} ${nameWithoutBrand}`, // Marca + nome
+      `${nameWithoutBrand} ${brand}`, // Nome + marca
+      `${nameWithoutBrand}` // Apenas o nome sem a marca
+    ];
+
+    let allImages: string[] = [];
+
+    // Fazer busca para cada variação
+    for (const query of searchQueries) {
+      if (allImages.length >= 6) break; // Se já temos imagens suficientes, para
+
+      const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
+        params: {
+          key: process.env.GOOGLE_API_KEY,
+          cx: process.env.GOOGLE_SEARCH_ENGINE_ID,
+          q: `${query} produto alimento`,
+          searchType: 'image',
+          num: 6,
+          imgType: 'photo',
+          safe: 'active'
+        }
+      });
+
+      if (response.data.items && response.data.items.length > 0) {
+        const newImages = response.data.items
+          .map((item: any) => item.link)
+          .filter((url: string) => !allImages.includes(url));
+
+        allImages = [...allImages, ...newImages];
+      }
     }
 
-    return [];
+    // Retornar no máximo 6 imagens únicas
+    return allImages.slice(0, 6);
   } catch (error) {
     console.error('Error searching for product images:', error);
     return [];
