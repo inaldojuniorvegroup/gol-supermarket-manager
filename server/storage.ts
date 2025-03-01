@@ -1,9 +1,8 @@
 import { 
-  users, stores, distributors, products, orders, orderItems, storeProducts,
+  users, stores, distributors, products, orders, orderItems,
   type User, type InsertUser, type Store, type InsertStore,
   type Distributor, type InsertDistributor, type Product, type InsertProduct,
-  type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
-  type StoreProduct, type InsertStoreProduct
+  type Order, type InsertOrder, type OrderItem, type InsertOrderItem
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -56,13 +55,6 @@ export interface IStorage {
   createOrderItem(item: InsertOrderItem): Promise<OrderItem>;
   updateOrderItem(id: number, item: Partial<OrderItem>): Promise<OrderItem>;
 
-  // Store products operations
-  getStoreProducts(storeId: number): Promise<StoreProduct[]>;
-  getStoreProduct(id: number): Promise<StoreProduct | undefined>;
-  createStoreProduct(product: InsertStoreProduct): Promise<StoreProduct>;
-  updateStoreProduct(id: number, product: Partial<StoreProduct>): Promise<StoreProduct>;
-  updateStoreProductStock(id: number, quantity: number): Promise<StoreProduct>;
-
   sessionStore: session.Store;
 }
 
@@ -98,29 +90,11 @@ export class DatabaseStorage implements IStorage {
   private async initializeGolStores() {
     try {
       const stores = [
-        { 
-          name: "Gol Supermarket Hyannis", 
-          code: "HYA", 
-          address: "Hyannis", 
-          city: "Hyannis", 
-          state: "MA", 
-          phone: "(123) 456-7890", 
-          active: true,
-          isMainStore: true 
-        },
-        { 
-          name: "Gol Supermarket Fall River", 
-          code: "FAL", 
-          address: "Fall River", 
-          city: "Fall River", 
-          state: "MA", 
-          phone: "(123) 456-7890", 
-          active: true,
-          isMainStore: false
-        },
-        { name: "Gol Supermarket Falmouth", code: "FLM", address: "Falmouth", city: "Falmouth", state: "MA", phone: "(123) 456-7890", active: true, isMainStore: false },
-        { name: "Gol Supermarket Leominster", code: "LEO", address: "Leominster", city: "Leominster", state: "MA", phone: "(123) 456-7890", active: true, isMainStore: false },
-        { name: "Gol Supermarket Sturbridge", code: "STU", address: "Sturbridge", city: "Sturbridge", state: "MA", phone: "(123) 456-7890", active: true, isMainStore: false }
+        { name: "Gol Supermarket Hyannis", code: "HYA", address: "Hyannis", city: "Hyannis", state: "MA", phone: "(123) 456-7890", active: true },
+        { name: "Gol Supermarket Fall River", code: "FAL", address: "Fall River", city: "Fall River", state: "MA", phone: "(123) 456-7890", active: true },
+        { name: "Gol Supermarket Falmouth", code: "FLM", address: "Falmouth", city: "Falmouth", state: "MA", phone: "(123) 456-7890", active: true },
+        { name: "Gol Supermarket Leominster", code: "LEO", address: "Leominster", city: "Leominster", state: "MA", phone: "(123) 456-7890", active: true },
+        { name: "Gol Supermarket Sturbridge", code: "STU", address: "Sturbridge", city: "Sturbridge", state: "MA", phone: "(123) 456-7890", active: true }
       ];
 
       const existingStores = await this.getStores();
@@ -241,10 +215,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOrder(order: InsertOrder): Promise<Order> {
-    const [newOrder] = await db.insert(orders).values({
-      ...order,
-      orderType: order.sourceStoreId ? 'store' : 'distributor'
-    }).returning();
+    const [newOrder] = await db.insert(orders).values(order).returning();
     return newOrder;
   }
 
@@ -298,38 +269,6 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return updatedItem;
-  }
-
-  // Store Products operations
-  async getStoreProducts(storeId: number): Promise<StoreProduct[]> {
-    return await db.select().from(storeProducts).where(eq(storeProducts.storeId, storeId));
-  }
-
-  async getStoreProduct(id: number): Promise<StoreProduct | undefined> {
-    const [product] = await db.select().from(storeProducts).where(eq(storeProducts.id, id));
-    return product;
-  }
-
-  async createStoreProduct(product: InsertStoreProduct): Promise<StoreProduct> {
-    const [newProduct] = await db.insert(storeProducts).values(product).returning();
-    return newProduct;
-  }
-
-  async updateStoreProduct(id: number, product: Partial<StoreProduct>): Promise<StoreProduct> {
-    const [updatedProduct] = await db
-      .update(storeProducts)
-      .set({ ...product, updatedAt: new Date() })
-      .where(eq(storeProducts.id, id))
-      .returning();
-    return updatedProduct;
-  }
-
-  async updateStoreProductStock(id: number, quantity: number): Promise<StoreProduct> {
-    const product = await this.getStoreProduct(id);
-    if (!product) throw new Error("Product not found");
-
-    const newStock = product.stock + quantity;
-    return this.updateStoreProduct(id, { stock: newStock });
   }
 }
 

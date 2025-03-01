@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertStoreSchema, insertDistributorSchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertStoreProductSchema } from "@shared/schema";
+import { insertStoreSchema, insertDistributorSchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema } from "@shared/schema";
 import * as express from 'express';
 import { execute_sql_tool, searchProductImage } from "./tools";
 
@@ -13,43 +13,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.json({ limit: '500mb' }));
   app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
-  // Store Products
-  app.get("/api/store-products", async (req, res) => {
+  // Adicionar rota pública para compartilhamento de pedidos
+  app.get("/api/orders/share/:id", async (req, res) => {
     try {
-      const storeId = Number(req.query.storeId) || req.user?.storeId;
-      if (!storeId) {
-        return res.status(400).json({ error: "Store ID is required" });
+      const orderId = Number(req.params.id);
+      const order = await storage.getOrder(orderId);
+
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
       }
-      const products = await storage.getStoreProducts(storeId);
-      res.json(products);
+
+      // Buscar detalhes adicionais do pedido
+      const store = await storage.getStore(order.storeId);
+      const distributor = await storage.getDistributor(order.distributorId);
+      const items = await storage.getOrderItems(order.id);
+
+      // Buscar detalhes dos produtos para cada item
+      const itemsWithProducts = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return { ...item, product };
+      }));
+
+      // Retornar pedido completo com todos os detalhes
+      const orderWithDetails = {
+        ...order,
+        store,
+        distributor,
+        items: itemsWithProducts
+      };
+
+      res.json(orderWithDetails);
     } catch (error) {
-      console.error('Error fetching store products:', error);
+      console.error('Error fetching shared order:', error);
       res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  app.post("/api/store-products", async (req, res) => {
-    try {
-      const parsed = insertStoreProductSchema.parse(req.body);
-      const product = await storage.createStoreProduct(parsed);
-      res.status(201).json(product);
-    } catch (error) {
-      console.error('Error creating store product:', error);
-      res.status(400).json({ error: error.message });
-    }
-  });
-
-  app.patch("/api/store-products/:id/stock", async (req, res) => {
-    try {
-      const { quantity } = req.body;
-      if (typeof quantity !== 'number') {
-        return res.status(400).json({ error: "Quantity must be a number" });
-      }
-      const product = await storage.updateStoreProductStock(Number(req.params.id), quantity);
-      res.json(product);
-    } catch (error) {
-      console.error('Error updating store product stock:', error);
-      res.status(400).json({ error: error.message });
     }
   });
 

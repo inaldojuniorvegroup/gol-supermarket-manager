@@ -14,7 +14,6 @@ import OrdersPage from "@/pages/orders-page";
 import StoresPage from "@/pages/stores-page";
 import DistributorsPage from "@/pages/distributors-page";
 import SharedOrderPage from "@/pages/shared-order-page";
-import StoreCatalogPage from "@/pages/store-catalog-page";
 
 function Router() {
   return (
@@ -39,11 +38,6 @@ function Router() {
       <ProtectedRoute path="/stores" component={() => (
         <Dashboard>
           <StoresPage />
-        </Dashboard>
-      )} />
-      <ProtectedRoute path="/store-catalog" component={() => (
-        <Dashboard>
-          <StoreCatalogPage />
         </Dashboard>
       )} />
       <ProtectedRoute path="/distributors" component={() => (
