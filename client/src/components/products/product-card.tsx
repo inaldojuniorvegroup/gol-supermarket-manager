@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Product, Distributor } from "@shared/schema";
-import { Package, Tag, ShoppingCart, Barcode, Box, Info, FolderOpen, Plus, Minus, Scale, PackageOpen, LayersIcon, ImageIcon } from "lucide-react";
+import { Package, Tag, ShoppingCart, Barcode, Box, FolderOpen, Plus, Minus, Scale, PackageOpen, LayersIcon, ImageIcon, Pencil } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -108,6 +108,13 @@ export function ProductCard({
     updateImageMutation.mutate();
   };
 
+  const handleImageClick = () => {
+    if (!isVendorView) {
+      setImageUrl(product?.imageUrl || "");
+      setImageDialogOpen(true);
+    }
+  };
+
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
 
@@ -177,28 +184,35 @@ export function ProductCard({
 
         {/* Product Image */}
         <CardHeader className="p-0 relative">
-          <div className="flex items-center justify-center w-full h-48 bg-muted">
+          <div 
+            className="flex items-center justify-center w-full h-48 bg-muted cursor-pointer relative group"
+            onClick={handleImageClick}
+          >
             {product.imageUrl ? (
-              <img
-                src={product.imageUrl}
-                alt={product.name}
-                className="object-contain h-full w-full"
-              />
+              <>
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="object-contain h-full w-full"
+                />
+                {!isVendorView && (
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                    <Pencil className="text-white opacity-0 group-hover:opacity-100 h-8 w-8" />
+                  </div>
+                )}
+              </>
             ) : (
-              <Package className="h-12 w-12 text-muted-foreground" />
+              <div className="flex flex-col items-center justify-center gap-2">
+                <Package className="h-12 w-12 text-muted-foreground" />
+                {!isVendorView && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <ImageIcon className="h-3 w-3" />
+                    Clique para adicionar imagem
+                  </Badge>
+                )}
+              </div>
             )}
           </div>
-          {!isVendorView && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="absolute bottom-2 right-2"
-              onClick={() => setImageDialogOpen(true)}
-            >
-              <ImageIcon className="h-4 w-4 mr-2" />
-              Editar Imagem
-            </Button>
-          )}
         </CardHeader>
 
         {/* Product Details */}
