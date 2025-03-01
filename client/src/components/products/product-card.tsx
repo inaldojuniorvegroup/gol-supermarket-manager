@@ -3,20 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Product, Distributor } from "@shared/schema";
-import { Package, Tag, ShoppingCart, Barcode, Box, Info, FolderOpen, Plus, Minus, Scale, PackageOpen, LayersIcon } from "lucide-react";
+import { Package, Tag, ShoppingCart, Barcode, Box, Info, FolderOpen, Plus, Minus, Scale, PackageOpen, LayersIcon, ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Separator } from "@/components/ui/separator";
 import { PriceComparisonDialog } from "./price-comparison-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // Função para formatar preços mantendo exatamente 2 casas decimais
 const formatPrice = (price: number | string): string => {
@@ -50,7 +46,34 @@ export function ProductCard({
 }: ProductCardProps) {
   const [quantity, setQuantity] = useState(1);
   const [isBoxUnit, setIsBoxUnit] = useState(false);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
   const { toast } = useToast();
+
+  const updateImageMutation = useMutation({
+    mutationFn: async () => {
+      if (!product) return;
+      const res = await apiRequest("PATCH", `/api/products/${product.id}`, {
+        imageUrl: imageUrl
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      setImageDialogOpen(false);
+      toast({
+        title: "Imagem atualizada",
+        description: "A imagem do produto foi atualizada com sucesso."
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar imagem",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
 
   const handleAddToCart = () => {
     if (product && onAddToCart) {
@@ -71,6 +94,18 @@ export function ProductCard({
       });
       setQuantity(1);
     }
+  };
+
+  const handleUpdateImage = () => {
+    if (!imageUrl.trim()) {
+      toast({
+        title: "URL inválida",
+        description: "Por favor, insira uma URL de imagem válida.",
+        variant: "destructive"
+      });
+      return;
+    }
+    updateImageMutation.mutate();
   };
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
@@ -141,7 +176,7 @@ export function ProductCard({
         </div>
 
         {/* Product Image */}
-        <CardHeader className="p-0">
+        <CardHeader className="p-0 relative">
           <div className="flex items-center justify-center w-full h-48 bg-muted">
             {product.imageUrl ? (
               <img
@@ -153,6 +188,17 @@ export function ProductCard({
               <Package className="h-12 w-12 text-muted-foreground" />
             )}
           </div>
+          {!isVendorView && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="absolute bottom-2 right-2"
+              onClick={() => setImageDialogOpen(true)}
+            >
+              <ImageIcon className="h-4 w-4 mr-2" />
+              Editar Imagem
+            </Button>
+          )}
         </CardHeader>
 
         {/* Product Details */}
@@ -251,6 +297,33 @@ export function ProductCard({
           </div>
         </CardContent>
       </Card>
+
+      {/* Image Update Dialog */}
+      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Atualizar Imagem do Produto</DialogTitle>
+            <DialogDescription>
+              Insira a URL da nova imagem para este produto
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="URL da imagem"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setImageDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleUpdateImage} disabled={updateImageMutation.isPending}>
+                {updateImageMutation.isPending ? "Atualizando..." : "Atualizar"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
