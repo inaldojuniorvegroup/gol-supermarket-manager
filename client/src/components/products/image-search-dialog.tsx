@@ -44,15 +44,18 @@ export function ImageSearchDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Buscar Imagens para: {product.name}</span>
-            <Button variant="outline" size="icon" onClick={() => refetch()}>
-              <RefreshCw className="h-4 w-4" />
+          <div className="flex justify-between items-center">
+            <div>
+              <DialogTitle>Buscar Imagens para: {product.name}</DialogTitle>
+              <DialogDescription>
+                Selecione uma das imagens abaixo para associar ao produto ou volte para adicionar uma URL manualmente.
+              </DialogDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Atualizar
             </Button>
-          </DialogTitle>
-          <DialogDescription>
-            Selecione uma das imagens abaixo para associar ao produto ou volte para adicionar uma URL manualmente.
-          </DialogDescription>
+          </div>
         </DialogHeader>
 
         <ScrollArea className="h-[400px] w-full rounded-md border p-4">
@@ -73,14 +76,19 @@ export function ImageSearchDialog({
                     onOpenChange(false);
                   }}
                 >
-                  <img
-                    src={image}
-                    alt={`Opção ${index + 1}`}
-                    className="w-full h-40 object-contain bg-white"
-                    onError={() => handleImageError(image)}
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
-                    <ImageIcon className="text-white opacity-0 group-hover:opacity-100 h-8 w-8" />
+                  <div className="relative aspect-square">
+                    <img
+                      src={image}
+                      alt={`Opção ${index + 1}`}
+                      className="w-full h-full object-contain bg-white absolute inset-0 transition-transform duration-200 group-hover:scale-110"
+                      onError={() => handleImageError(image)}
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                      <ImageIcon className="text-white opacity-0 group-hover:opacity-100 h-8 w-8" />
+                    </div>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-black bg-opacity-50 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    Clique para selecionar
                   </div>
                 </div>
               ))}
