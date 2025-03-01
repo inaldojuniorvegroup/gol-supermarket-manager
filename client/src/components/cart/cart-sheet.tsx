@@ -7,6 +7,7 @@ import {
   SheetTitle,
   SheetDescription,
   SheetTrigger,
+  SheetClose,
 } from "@/components/ui/sheet";
 import { useCart } from "@/contexts/cart-context";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -15,12 +16,12 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { Store } from "@shared/schema";
+import { Store, Product } from "@shared/schema";
 import { useState } from "react";
 
-// Função para formatar preços mantendo exatamente 2 casas decimais
-const formatPrice = (price: number | string): string => {
-  return Number(price).toFixed(2);
+// Função para formatar preços mantendo exatamente 2 casas decimais sem arredondamento
+const formatPrice = (price: number): string => {
+  return (Math.floor(price * 100) / 100).toFixed(2);
 };
 
 export function CartSheet() {
@@ -54,8 +55,11 @@ export function CartSheet() {
       // Criar um pedido para cada distribuidor
       const orderPromises = Object.entries(itemsByDistributor).map(async ([distributorId, items]) => {
         const orderTotal = items.reduce((sum, item) => {
-          const price = item.isBoxUnit ? Number(item.product.boxPrice || 0) : Number(item.product.unitPrice || 0);
-          return sum + (price * item.quantity);
+          if (item.isBoxUnit) {
+            if (!item.product.boxPrice) return sum;
+            return sum + (Number(item.product.boxPrice) * item.quantity);
+          }
+          return sum + (Number(item.product.unitPrice) * item.quantity);
         }, 0);
 
         // Criar o pedido
@@ -139,11 +143,8 @@ export function CartSheet() {
             ) : (
               <div className="space-y-4 pr-4">
                 {items.map((item) => {
-                  // Garantir que o preço correto seja usado baseado em isBoxUnit
-                  const price = item.isBoxUnit ? 
-                    Number(item.product.boxPrice || 0) : 
-                    Number(item.product.unitPrice || 0);
-                  const total = price * item.quantity;
+                  const price = item.isBoxUnit ? item.product.boxPrice : item.product.unitPrice;
+                  const total = Number(price) * item.quantity;
 
                   return (
                     <div key={`${item.product.id}-${item.isBoxUnit}`} className="bg-muted/30 p-4 rounded-lg">
@@ -158,10 +159,10 @@ export function CartSheet() {
                                     <Box className="h-3 w-3" />
                                     <span>Caixa com {item.product.boxQuantity} unidades</span>
                                   </div>
-                                  <div>Preço por caixa: ${formatPrice(Number(item.product.boxPrice || 0))}</div>
+                                  <div>Preço por caixa: ${formatPrice(Number(item.product.boxPrice))}</div>
                                 </>
                               ) : (
-                                <div>Preço por unidade: ${formatPrice(Number(item.product.unitPrice || 0))}</div>
+                                <div>Preço por unidade: ${formatPrice(Number(item.product.unitPrice))}</div>
                               )}
                             </div>
                           </div>
@@ -169,7 +170,7 @@ export function CartSheet() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => removeFromCart(item.product.id, item.isBoxUnit)}
+                            onClick={() => removeFromCart(item.product.id)}
                           >
                             <X className="h-4 w-4" />
                           </Button>

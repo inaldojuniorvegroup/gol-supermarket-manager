@@ -10,7 +10,7 @@ interface CartItem {
 interface CartContextType {
   items: CartItem[];
   addToCart: (product: Product, quantity?: number, isBoxUnit?: boolean) => void;
-  removeFromCart: (productId: number, isBoxUnit: boolean) => void;
+  removeFromCart: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number, isBoxUnit: boolean) => void;
   clearCart: () => void;
   total: number;
@@ -18,51 +18,44 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+// Função para formatar preços mantendo exatamente 2 casas decimais sem arredondamento
+const formatPrice = (price: number): string => {
+  return (Math.floor(price * 100) / 100).toFixed(2);
+};
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
   const addToCart = (product: Product, quantity = 1, isBoxUnit = false) => {
-    // Verificar se tem preço de caixa quando isBoxUnit é true
+    // Não adicionar se não tiver preço de caixa quando isBoxUnit é true
     if (isBoxUnit && !product.boxPrice) {
-      console.warn("Tentativa de adicionar produto sem preço de caixa como caixa");
       return;
     }
 
     setItems(currentItems => {
-      // Encontrar item existente com mesmo ID e mesmo tipo (caixa/unidade)
-      const existingItemIndex = currentItems.findIndex(
+      const existingItem = currentItems.find(
         item => item.product.id === product.id && item.isBoxUnit === isBoxUnit
       );
 
-      if (existingItemIndex >= 0) {
-        // Atualizar quantidade se o item já existe
-        return currentItems.map((item, index) =>
-          index === existingItemIndex
+      if (existingItem) {
+        return currentItems.map(item =>
+          item.product.id === product.id && item.isBoxUnit === isBoxUnit
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
 
-      // Adicionar novo item com a flag isBoxUnit
-      return [...currentItems, { 
-        product, 
-        quantity, 
-        isBoxUnit 
-      }];
+      return [...currentItems, { product, quantity, isBoxUnit }];
     });
   };
 
-  const removeFromCart = (productId: number, isBoxUnit: boolean) => {
-    setItems(currentItems => 
-      currentItems.filter(item => 
-        !(item.product.id === productId && item.isBoxUnit === isBoxUnit)
-      )
-    );
+  const removeFromCart = (productId: number) => {
+    setItems(currentItems => currentItems.filter(item => item.product.id !== productId));
   };
 
   const updateQuantity = (productId: number, quantity: number, isBoxUnit: boolean) => {
     if (quantity <= 0) {
-      removeFromCart(productId, isBoxUnit);
+      removeFromCart(productId);
       return;
     }
 
@@ -79,25 +72,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   };
 
-  // Calcular o total usando o preço correto (caixa ou unidade)
   const total = items.reduce((sum, item) => {
-    const price = item.isBoxUnit 
-      ? Number(item.product.boxPrice || 0)
-      : Number(item.product.unitPrice || 0);
-
-    return sum + (price * item.quantity);
+    if (item.isBoxUnit) {
+      if (!item.product.boxPrice) return sum;
+      return sum + (Number(item.product.boxPrice) * item.quantity);
+    }
+    return sum + (Number(item.product.unitPrice) * item.quantity);
   }, 0);
 
   return (
     <CartContext.Provider
-      value={{ 
-        items, 
-        addToCart, 
-        removeFromCart, 
-        updateQuantity, 
-        clearCart, 
-        total 
-      }}
+      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, total }}
     >
       {children}
     </CartContext.Provider>

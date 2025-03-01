@@ -9,11 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { PriceComparisonDialog } from "./price-comparison-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ImageSearchDialog } from "./image-search-dialog";
+
 
 // Função para formatar preços mantendo exatamente 2 casas decimais
 const formatPrice = (price: number | string): string => {
@@ -23,7 +24,7 @@ const formatPrice = (price: number | string): string => {
 interface ProductCardProps {
   product: Product | null;
   isLoading?: boolean;
-  onAddToCart?: (product: Product, quantity: number, isBoxUnit: boolean) => void;
+  onAddToCart?: (product: Product, quantity: number) => void;
   similarProducts?: Product[];
   distributors?: Distributor[];
   hasBetterPrice?: boolean;
@@ -78,10 +79,24 @@ export function ProductCard({
     }
   });
 
-  const handleImageClick = () => {
-    if (!isVendorView) {
-      setImageUrl(product?.imageUrl || "");
-      setImageDialogOpen(true);
+  const handleAddToCart = () => {
+    if (product && onAddToCart) {
+      // Verifica se tem preço de caixa quando está no modo caixa
+      if (isBoxUnit && !product.boxPrice) {
+        toast({
+          title: "Erro ao adicionar ao carrinho",
+          description: "Este produto não possui preço de caixa definido.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      onAddToCart(product, quantity);
+      toast({
+        title: "Adicionado ao carrinho",
+        description: `${quantity}x ${isBoxUnit ? 'caixas' : 'unidades'} de ${product.name} foi adicionado ao seu carrinho.`
+      });
+      setQuantity(1);
     }
   };
 
@@ -97,24 +112,10 @@ export function ProductCard({
     updateImageMutation.mutate(imageUrl);
   };
 
-  const handleAddToCart = () => {
-    if (product && onAddToCart) {
-      // Verifica se tem preço de caixa quando está no modo caixa
-      if (isBoxUnit && !product.boxPrice) {
-        toast({
-          title: "Erro ao adicionar ao carrinho",
-          description: "Este produto não possui preço de caixa definido.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      onAddToCart(product, quantity, isBoxUnit);
-      toast({
-        title: "Adicionado ao carrinho",
-        description: `${quantity}x ${isBoxUnit ? 'caixas' : 'unidades'} de ${product.name} foi adicionado ao seu carrinho.`
-      });
-      setQuantity(1);
+  const handleImageClick = () => {
+    if (!isVendorView) {
+      setImageUrl(product?.imageUrl || "");
+      setImageDialogOpen(true);
     }
   };
 
@@ -122,12 +123,25 @@ export function ProductCard({
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
 
   if (isLoading || !product) {
-    return <Skeleton />;
+    return (
+      <Card className="h-full">
+        <CardHeader className="space-y-2">
+          <Skeleton className="h-48 w-full rounded-lg" />
+          <Skeleton className="h-5 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-8 w-full" />
+        </CardContent>
+      </Card>
+    );
   }
 
   // Calcular o preço baseado na seleção (unidade ou caixa)
-  const currentPrice = isBoxUnit && product.boxPrice
-    ? Number(product.boxPrice)
+  const currentPrice = isBoxUnit
+    ? (product.boxPrice || (Number(product.unitPrice) * product.boxQuantity))
     : Number(product.unitPrice);
 
   return (
@@ -147,6 +161,30 @@ export function ProductCard({
             </Badge>
           </div>
         )}
+
+        {/* Badges */}
+        <div className="absolute top-2 left-2 right-2 z-10 flex flex-col gap-1">
+          <div className="flex flex-wrap gap-1">
+            {product.description && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <FolderOpen className="h-3 w-3" />
+                {product.description}
+              </Badge>
+            )}
+            {similarProducts.length > 0 && !isVendorView && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Scale className="h-3 w-3" />
+                {similarProducts.length} outros fornecedores
+              </Badge>
+            )}
+          </div>
+          {product.grupo && (
+            <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+              <LayersIcon className="h-3 w-3" />
+              {product.grupo}
+            </Badge>
+          )}
+        </div>
 
         {/* Product Image */}
         <CardHeader className="p-0 relative">
@@ -216,14 +254,9 @@ export function ProductCard({
           {/* Preço e Comparação */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <div>
-                <span className="font-semibold text-lg">
-                  ${formatPrice(currentPrice)}
-                </span>
-                <div className="text-sm text-muted-foreground">
-                  {isBoxUnit ? `por caixa (${product.boxQuantity} unidades)` : "por unidade"}
-                </div>
-              </div>
+              <span className="font-semibold text-lg">
+                ${formatPrice(currentPrice)}
+              </span>
               {similarProducts.length > 0 && !isVendorView && (
                 <PriceComparisonDialog
                   product={product}
@@ -237,7 +270,7 @@ export function ProductCard({
             {onAddToCart && (
               <div className="space-y-4">
                 <Tabs
-                  value={isBoxUnit ? "box" : "unit"}
+                  defaultValue="unit"
                   className="w-full"
                   onValueChange={(value) => setIsBoxUnit(value === "box")}
                 >
