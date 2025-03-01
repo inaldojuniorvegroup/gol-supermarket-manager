@@ -305,9 +305,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Construir query de busca com nome e unidade do produto
       const searchQuery = `${product.name} ${product.unit}`;
-      const images = await searchProductImage(searchQuery, 10); // Buscar 10 imagens
+      const imageResults = await searchProductImage(searchQuery); // Já retorna um array de URLs
 
-      res.json({ images });
+      res.json({ images: imageResults || [] });
     } catch (error) {
       console.error('Error searching product images:', error);
       res.status(500).json({ error: "Failed to search product images" });

@@ -48,7 +48,7 @@ export function ImageSearchDialog({
                 <Skeleton key={i} className="w-full h-40" />
               ))}
             </div>
-          ) : searchResults?.images?.length > 0 ? (
+          ) : searchResults?.images && searchResults.images.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {searchResults.images.map((image: string, index: number) => (
                 <div
