@@ -26,7 +26,7 @@ const formatPrice = (price: number): string => {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  const addToCart = (product: Product, quantity = 1, isBoxUnit = false) => {
+  const addToCart = (product: Product, quantity = 1, isBoxUnit = true) => { // Default to true for box units
     // Não adicionar se não tiver preço de caixa quando isBoxUnit é true
     if (isBoxUnit && !product.boxPrice) {
       return;
