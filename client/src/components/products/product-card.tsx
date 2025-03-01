@@ -91,6 +91,17 @@ export function ProductCard({
         return;
       }
 
+      // Garantir que o preço correto seja usado
+      const price = isBoxUnit ? product.boxPrice : product.unitPrice;
+      if (!price) {
+        toast({
+          title: "Erro ao adicionar ao carrinho",
+          description: "Produto sem preço definido.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       onAddToCart(product, quantity, isBoxUnit);
       toast({
         title: "Adicionado ao carrinho",

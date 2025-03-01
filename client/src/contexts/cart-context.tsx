@@ -18,10 +18,6 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Função para formatar preços mantendo exatamente 2 casas decimais sem arredondamento
-const formatPrice = (price: number): string => {
-  return (Math.floor(price * 100) / 100).toFixed(2);
-};
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -72,8 +68,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   };
 
+  // Calcular o total do carrinho usando o preço correto para cada item
   const total = items.reduce((sum, item) => {
-    // Usar o preço correto baseado em isBoxUnit
     const price = item.isBoxUnit ? 
       Number(item.product.boxPrice || 0) : 
       Number(item.product.unitPrice || 0);
