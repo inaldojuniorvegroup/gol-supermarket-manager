@@ -11,7 +11,7 @@ export async function execute_sql_tool(sql_query: string): Promise<any> {
   }
 }
 
-export async function searchProductImage(productName: string): Promise<string[]> {
+export async function searchProductImage(productName: string, startIndex: number = 1): Promise<{items: string[], totalResults: number}> {
   try {
     // Limpar o nome do produto removendo apenas aspas e apóstrofos
     const cleanedName = productName
@@ -26,18 +26,17 @@ export async function searchProductImage(productName: string): Promise<string[]>
         cx: process.env.GOOGLE_SEARCH_ENGINE_ID,
         q: `produtos ${cleanedName}`,    // Adicionar "produtos" para ajudar na busca
         searchType: 'image',
-        num: 10                          // Retornar 10 resultados
+        num: 10,                         // Número de resultados por página
+        start: startIndex                // Índice inicial para paginação
       }
     });
 
-    if (response.data.items && response.data.items.length > 0) {
-      // Retornar todas as URLs de imagem encontradas
-      return response.data.items.map((item: any) => item.link);
-    }
-
-    return [];
+    return {
+      items: response.data.items?.map((item: any) => item.link) || [],
+      totalResults: Number(response.data.searchInformation?.totalResults) || 0
+    };
   } catch (error) {
     console.error('Error searching for product images:', error);
-    return [];
+    return { items: [], totalResults: 0 };
   }
 }

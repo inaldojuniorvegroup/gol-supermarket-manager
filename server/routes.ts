@@ -297,17 +297,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/products/:id/search-images", async (req, res) => {
     try {
       const productId = Number(req.params.id);
+      const page = Number(req.query.page) || 1;
+      const startIndex = ((page - 1) * 10) + 1;
+
       const product = await storage.getProduct(productId);
 
       if (!product) {
         return res.status(404).json({ error: "Produto não encontrado" });
       }
 
-      // Construir query de busca com nome e unidade do produto
-      const searchQuery = `${product.name} ${product.unit}`;
-      const imageResults = await searchProductImage(searchQuery); // Já retorna um array de URLs
+      const searchQuery = `${product.name}`;
+      const searchResults = await searchProductImage(searchQuery, startIndex);
 
-      res.json({ images: imageResults || [] });
+      res.json({
+        images: searchResults.items,
+        totalResults: searchResults.totalResults,
+        currentPage: page
+      });
     } catch (error) {
       console.error('Error searching product images:', error);
       res.status(500).json({ error: "Failed to search product images" });

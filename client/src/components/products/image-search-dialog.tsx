@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Product } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ImageIcon, RefreshCw, Package } from "lucide-react";
+import { ImageIcon, RefreshCw, Package, ChevronLeft, ChevronRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
 
@@ -21,11 +21,12 @@ export function ImageSearchDialog({
   onSelectImage,
 }: ImageSearchDialogProps) {
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: searchResults, isLoading, refetch } = useQuery({
-    queryKey: ["/api/products", product.id, "search-images"],
+    queryKey: ["/api/products", product.id, "search-images", currentPage],
     queryFn: async () => {
-      const res = await fetch(`/api/products/${product.id}/search-images`);
+      const res = await fetch(`/api/products/${product.id}/search-images?page=${currentPage}`);
       if (!res.ok) throw new Error('Failed to search images');
       return res.json();
     },
@@ -39,6 +40,13 @@ export function ImageSearchDialog({
   const validImages = searchResults?.images?.filter(
     (image: string) => !failedImages.has(image)
   );
+
+  const totalPages = Math.ceil((searchResults?.totalResults || 0) / 10);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    setFailedImages(new Set());
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -66,33 +74,60 @@ export function ImageSearchDialog({
               ))}
             </div>
           ) : validImages && validImages.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {validImages.map((image: string, index: number) => (
-                <div
-                  key={index}
-                  className="relative group cursor-pointer rounded-lg overflow-hidden"
-                  onClick={() => {
-                    onSelectImage(image);
-                    onOpenChange(false);
-                  }}
-                >
-                  <div className="relative aspect-square">
-                    <img
-                      src={image}
-                      alt={`Opção ${index + 1}`}
-                      className="w-full h-full object-contain bg-white absolute inset-0 transition-transform duration-200 group-hover:scale-110"
-                      onError={() => handleImageError(image)}
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
-                      <ImageIcon className="text-white opacity-0 group-hover:opacity-100 h-8 w-8" />
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {validImages.map((image: string, index: number) => (
+                  <div
+                    key={index}
+                    className="relative group cursor-pointer rounded-lg overflow-hidden"
+                    onClick={() => {
+                      onSelectImage(image);
+                      onOpenChange(false);
+                    }}
+                  >
+                    <div className="relative aspect-square">
+                      <img
+                        src={image}
+                        alt={`Opção ${index + 1}`}
+                        className="w-full h-full object-contain bg-white absolute inset-0 transition-transform duration-200 group-hover:scale-110"
+                        onError={() => handleImageError(image)}
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                        <ImageIcon className="text-white opacity-0 group-hover:opacity-100 h-8 w-8" />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-black bg-opacity-50 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      Clique para selecionar
                     </div>
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-black bg-opacity-50 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    Clique para selecionar
-                  </div>
+                ))}
+              </div>
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Anterior
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage >= totalPages}
+                  >
+                    Próxima
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center gap-4 py-8 text-center">
               <Package className="h-12 w-12 text-muted-foreground" />
