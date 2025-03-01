@@ -74,6 +74,12 @@ export default function CatalogPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleAddToCart = (product: Product, quantity: number) => {
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product);
+    }
+  };
+
   if (isLoadingProducts) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -119,6 +125,7 @@ export default function CatalogPage() {
                 product={product}
                 similarProducts={similarProducts}
                 distributors={distributors}
+                onAddToCart={handleAddToCart}
               />
             );
           })}
