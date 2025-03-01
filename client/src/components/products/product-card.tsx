@@ -26,9 +26,13 @@ const formatPrice = (price: number): string => {
 interface ProductCardProps {
   product: Product | null;
   isLoading?: boolean;
-  onAddToCart?: (product: Product, quantity: number, isBoxUnit: boolean) => void;
+  onAddToCart?: (product: Product, quantity: number) => void;
   similarProducts?: Product[];
   distributors?: Distributor[];
+  hasBetterPrice?: boolean;
+  priceDifference?: number;
+  bestPrice?: number;
+  bestPriceDistributor?: Distributor;
   isVendorView?: boolean;
 }
 
@@ -38,6 +42,10 @@ export function ProductCard({
   onAddToCart,
   similarProducts = [],
   distributors = [],
+  hasBetterPrice = false,
+  priceDifference = 0,
+  bestPrice = 0,
+  bestPriceDistributor,
   isVendorView = false
 }: ProductCardProps) {
   const [quantity, setQuantity] = useState(1);
@@ -56,7 +64,7 @@ export function ProductCard({
         return;
       }
 
-      onAddToCart(product, quantity, isBoxUnit);
+      onAddToCart(product, quantity);
       toast({
         title: "Adicionado ao carrinho",
         description: `${quantity}x ${isBoxUnit ? 'caixas' : 'unidades'} de ${product.name} foi adicionado ao seu carrinho.`
@@ -98,6 +106,16 @@ export function ProductCard({
       transition={{ duration: 0.2 }}
     >
       <Card className="group relative h-full overflow-hidden hover:shadow-lg transition-all duration-200">
+        {/* Price Comparison Badge */}
+        {hasBetterPrice && bestPriceDistributor && (
+          <div className="absolute top-2 right-2 z-20">
+            <Badge variant="destructive" className="flex items-center gap-1">
+              <Scale className="h-3 w-3" />
+              {priceDifference.toFixed(1)}% mais caro
+            </Badge>
+          </div>
+        )}
+
         {/* Badges */}
         <div className="absolute top-2 left-2 right-2 z-10 flex flex-col gap-1">
           <div className="flex flex-wrap gap-1">
@@ -182,6 +200,29 @@ export function ProductCard({
 
                     <Separator />
 
+                    {/* Price Comparison Section */}
+                    {hasBetterPrice && bestPriceDistributor && (
+                      <>
+                        <div>
+                          <h4 className="text-sm font-semibold mb-2">Comparação de Preços</h4>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span>Preço atual:</span>
+                              <span className="font-medium">${formatPrice(Number(product.unitPrice))}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-destructive">
+                              <span>Melhor preço:</span>
+                              <span className="font-medium">${formatPrice(bestPrice)}</span>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Disponível em: {bestPriceDistributor.name}
+                            </div>
+                          </div>
+                        </div>
+                        <Separator />
+                      </>
+                    )}
+
                     {/* Embalagem Section */}
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Informações da Caixa</h4>
@@ -230,9 +271,7 @@ export function ProductCard({
                         )}
                       </div>
                     </div>
-
                     <Separator />
-
                     {/* Última Atualização */}
                     <div className="text-xs text-muted-foreground">
                       Última atualização {formatDistanceToNow(new Date(product.updatedAt), {

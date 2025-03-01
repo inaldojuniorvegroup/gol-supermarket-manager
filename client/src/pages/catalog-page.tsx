@@ -54,13 +54,32 @@ export default function CatalogPage() {
     return Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   }, [filteredProducts]);
 
+  // Encontra produtos similares e calcula a diferença de preço
   const findSimilarProducts = useMemo(() => {
     return (product: Product) => {
-      return products.filter(p => 
+      const similarProducts = products.filter(p => 
         p.id !== product.id && 
-        p.itemCode === product.itemCode &&
+        p.barCode === product.barCode &&
         p.name === product.name
       );
+
+      // Ordenar por preço para encontrar a melhor oferta
+      const sortedProducts = [...similarProducts].sort((a, b) => 
+        Number(a.unitPrice) - Number(b.unitPrice)
+      );
+
+      // Calcular a diferença de preço em porcentagem
+      const currentPrice = Number(product.unitPrice);
+      const bestPrice = sortedProducts[0] ? Number(sortedProducts[0].unitPrice) : currentPrice;
+      const priceDifference = ((currentPrice - bestPrice) / bestPrice) * 100;
+
+      return {
+        similarProducts: sortedProducts,
+        hasBetterPrice: priceDifference > 0,
+        priceDifference: Math.abs(priceDifference),
+        bestPrice,
+        bestPriceDistributor: sortedProducts[0]?.distributorId
+      };
     };
   }, [products]);
 
@@ -118,12 +137,16 @@ export default function CatalogPage() {
       <div className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {paginatedProducts.map((product) => {
-            const similarProducts = findSimilarProducts(product);
+            const priceComparison = findSimilarProducts(product);
             return (
               <ProductCard
                 key={product.id}
                 product={product}
-                similarProducts={similarProducts}
+                similarProducts={priceComparison.similarProducts}
+                hasBetterPrice={priceComparison.hasBetterPrice}
+                priceDifference={priceComparison.priceDifference}
+                bestPrice={priceComparison.bestPrice}
+                bestPriceDistributor={distributors.find(d => d.id === priceComparison.bestPriceDistributor)}
                 distributors={distributors}
                 onAddToCart={handleAddToCart}
               />
