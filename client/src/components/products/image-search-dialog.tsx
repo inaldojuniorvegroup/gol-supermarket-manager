@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Product } from "@shared/schema";
@@ -42,7 +42,7 @@ export function ImageSearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Buscar Imagens para: {product.name}</span>
@@ -50,6 +50,9 @@ export function ImageSearchDialog({
               <RefreshCw className="h-4 w-4" />
             </Button>
           </DialogTitle>
+          <DialogDescription>
+            Selecione uma das imagens abaixo para associar ao produto. Você pode clicar no botão de atualizar para buscar mais opções.
+          </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="h-[400px] w-full rounded-md border p-4">

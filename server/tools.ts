@@ -25,7 +25,7 @@ export async function searchProductImage(productName: string): Promise<string[]>
       params: {
         key: process.env.GOOGLE_API_KEY,
         cx: process.env.GOOGLE_SEARCH_ENGINE_ID,
-        q: `${cleanedName} produto embalagem`,
+        q: `${cleanedName} produto`,
         searchType: 'image',
         num: 6,           // Buscar 6 imagens
         imgType: 'photo', // Apenas fotos
