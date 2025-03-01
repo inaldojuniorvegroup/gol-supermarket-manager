@@ -8,6 +8,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: text("role").notNull().default('distributor'), // 'supermarket' or 'distributor'
   distributorId: integer("distributor_id").references(() => distributors.id),
+  storeId: integer("store_id").references(() => stores.id),
 });
 
 export const stores = pgTable("stores", {
@@ -19,6 +20,7 @@ export const stores = pgTable("stores", {
   state: text("state").notNull(),
   phone: text("phone").notNull(),
   active: boolean("active").notNull().default(true),
+  isMainStore: boolean("is_main_store").notNull().default(false),
 });
 
 export const distributors = pgTable("distributors", {
@@ -53,11 +55,27 @@ export const products = pgTable("products", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Nova tabela para produtos da loja principal
+export const storeProducts = pgTable("store_products", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  productId: integer("product_id").notNull().references(() => products.id),
+  stock: integer("stock").notNull().default(0),
+  minStock: integer("min_stock").notNull().default(0),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  boxPrice: decimal("box_price", { precision: 10, scale: 2 }),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
-  distributorId: integer("distributor_id").notNull().references(() => distributors.id),
+  distributorId: integer("distributor_id").references(() => distributors.id),
   storeId: integer("store_id").notNull().references(() => stores.id),
+  sourceStoreId: integer("source_store_id").references(() => stores.id), // Para pedidos entre lojas
   status: text("status").notNull().default('pending'),
+  orderType: text("order_type").notNull().default('distributor'), // 'distributor' ou 'store'
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -71,19 +89,20 @@ export const orderItems = pgTable("order_items", {
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
 });
 
-// Zod schemas for product creation/update with proper type coercion
+// Zod schemas
 const productInsertSchema = createInsertSchema(products).extend({
   unitPrice: z.number().or(z.string().transform(val => parseFloat(val.replace(',', '.')))),
   boxQuantity: z.number().or(z.string().transform(val => parseInt(val))),
   boxPrice: z.number().nullable().or(z.string().transform(val => parseFloat(val.replace(',', '.')))).nullable(),
 });
 
-// Other insert schemas
+// Insert schemas para todas as tabelas
 export const insertUserSchema = createInsertSchema(users);
 export const insertStoreSchema = createInsertSchema(stores);
 export const insertDistributorSchema = createInsertSchema(distributors);
 export const insertOrderSchema = createInsertSchema(orders);
 export const insertOrderItemSchema = createInsertSchema(orderItems);
+export const insertStoreProductSchema = createInsertSchema(storeProducts);
 
 // Export the product schema
 export const insertProductSchema = productInsertSchema;
@@ -95,6 +114,7 @@ export type InsertDistributor = z.infer<typeof insertDistributorSchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
+export type InsertStoreProduct = z.infer<typeof insertStoreProductSchema>;
 
 export type User = typeof users.$inferSelect;
 export type Store = typeof stores.$inferSelect;
@@ -102,3 +122,4 @@ export type Distributor = typeof distributors.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
+export type StoreProduct = typeof storeProducts.$inferSelect;
