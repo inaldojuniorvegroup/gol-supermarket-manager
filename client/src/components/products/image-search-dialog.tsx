@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Product } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ImageIcon, RefreshCw } from "lucide-react";
+import { ImageIcon, RefreshCw, Package } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
 
@@ -51,7 +51,7 @@ export function ImageSearchDialog({
             </Button>
           </DialogTitle>
           <DialogDescription>
-            Selecione uma das imagens abaixo para associar ao produto. Você pode clicar no botão de atualizar para buscar mais opções.
+            Selecione uma das imagens abaixo para associar ao produto ou volte para adicionar uma URL manualmente.
           </DialogDescription>
         </DialogHeader>
 
@@ -86,8 +86,15 @@ export function ImageSearchDialog({
               ))}
             </div>
           ) : (
-            <div className="text-center text-muted-foreground">
-              Nenhuma imagem encontrada para este produto
+            <div className="flex flex-col items-center justify-center gap-4 py-8 text-center">
+              <Package className="h-12 w-12 text-muted-foreground" />
+              <div className="space-y-2">
+                <p className="text-lg font-medium">Nenhuma imagem encontrada</p>
+                <p className="text-sm text-muted-foreground">
+                  Não encontramos imagens para este produto na nossa busca automática.
+                  Você pode voltar e adicionar uma URL de imagem manualmente.
+                </p>
+              </div>
             </div>
           )}
         </ScrollArea>
