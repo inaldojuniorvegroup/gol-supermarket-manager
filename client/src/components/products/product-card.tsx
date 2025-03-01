@@ -52,6 +52,51 @@ export function ProductCard({
   const [imageUrl, setImageUrl] = useState("");
   const { toast } = useToast();
 
+  const updateImageMutation = useMutation({
+    mutationFn: async (newImageUrl: string) => {
+      if (!product) return;
+      const res = await apiRequest("PATCH", `/api/products/${product.id}`, {
+        imageUrl: newImageUrl
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      setImageDialogOpen(false);
+      setImageSearchDialogOpen(false);
+      toast({
+        title: "Imagem atualizada",
+        description: "A imagem do produto foi atualizada com sucesso."
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar imagem",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleImageClick = () => {
+    if (!isVendorView) {
+      setImageUrl(product?.imageUrl || "");
+      setImageDialogOpen(true);
+    }
+  };
+
+  const handleUpdateImage = () => {
+    if (!imageUrl.trim()) {
+      toast({
+        title: "URL inválida",
+        description: "Por favor, insira uma URL de imagem válida.",
+        variant: "destructive"
+      });
+      return;
+    }
+    updateImageMutation.mutate(imageUrl);
+  };
+
   const handleAddToCart = () => {
     if (product && onAddToCart) {
       // Verifica se tem preço de caixa quando está no modo caixa
@@ -102,30 +147,6 @@ export function ProductCard({
             </Badge>
           </div>
         )}
-
-        {/* Badges */}
-        <div className="absolute top-2 left-2 right-2 z-10 flex flex-col gap-1">
-          <div className="flex flex-wrap gap-1">
-            {product.description && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <FolderOpen className="h-3 w-3" />
-                {product.description}
-              </Badge>
-            )}
-            {similarProducts.length > 0 && !isVendorView && (
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Scale className="h-3 w-3" />
-                {similarProducts.length} outros fornecedores
-              </Badge>
-            )}
-          </div>
-          {product.grupo && (
-            <Badge variant="secondary" className="flex items-center gap-1 w-fit">
-              <LayersIcon className="h-3 w-3" />
-              {product.grupo}
-            </Badge>
-          )}
-        </div>
 
         {/* Product Image */}
         <CardHeader className="p-0 relative">
@@ -261,6 +282,52 @@ export function ProductCard({
           </div>
         </CardContent>
       </Card>
+
+      {/* Image Update Dialog */}
+      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Atualizar Imagem do Produto</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="URL da imagem"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+              />
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setImageDialogOpen(false);
+                  setImageSearchDialogOpen(true);
+                }}
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Buscar
+              </Button>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setImageDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleUpdateImage} disabled={updateImageMutation.isPending}>
+                {updateImageMutation.isPending ? "Atualizando..." : "Atualizar"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Search Dialog */}
+      {product && (
+        <ImageSearchDialog
+          open={imageSearchDialogOpen}
+          onOpenChange={setImageSearchDialogOpen}
+          product={product}
+          onSelectImage={(url) => updateImageMutation.mutate(url)}
+        />
+      )}
     </motion.div>
   );
 }
