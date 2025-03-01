@@ -73,8 +73,8 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
                 <User className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <div className="font-medium text-sm">Usuário</div>
-                <div className="text-base font-semibold">{user?.username}</div>
+                <div className="text-sm text-muted-foreground">Usuário</div>
+                <div className="font-semibold">{user?.username}</div>
               </div>
             </div>
             {store && (
