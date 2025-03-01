@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { Store as StoreType } from "@shared/schema";
 import { 
   Package, Store, Truck, ShoppingCart, Menu, LogOut,
-  ChevronRight
+  ChevronRight, User
 } from "lucide-react";
 import { 
   SidebarProvider, 
@@ -27,7 +29,13 @@ const navigation = [
 
 export default function Dashboard({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const { logoutMutation } = useAuth();
+  const { user, logoutMutation } = useAuth();
+
+  // Buscar informações da loja do usuário
+  const { data: store } = useQuery<StoreType>({
+    queryKey: ["/api/stores", user?.storeId],
+    enabled: !!user?.storeId,
+  });
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -46,6 +54,18 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
         </div>
       </SidebarHeader>
       <SidebarContent>
+        {/* Informações do usuário logado */}
+        <div className="px-4 py-3 mb-4 bg-muted/30 rounded-lg mx-2">
+          <div className="flex items-center gap-2 mb-2">
+            <User className="h-4 w-4" />
+            <span className="font-medium">{user?.username}</span>
+          </div>
+          {store && (
+            <div className="text-sm text-muted-foreground">
+              Loja: {store.name}
+            </div>
+          )}
+        </div>
         <SidebarMenu>
           {navigation.map((item) => {
             const Icon = item.icon;
