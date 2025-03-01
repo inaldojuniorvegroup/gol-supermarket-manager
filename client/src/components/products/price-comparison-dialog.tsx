@@ -29,18 +29,23 @@ export function PriceComparisonDialog({
   distributors,
 }: PriceComparisonDialogProps) {
   const allProducts = [product, ...similarProducts];
-  
+
   const getDistributorName = (distributorId: number) => {
     return distributors.find(d => d.id === distributorId)?.name || "Unknown";
   };
 
-  // Sort products by price
-  const sortedProducts = allProducts.sort((a, b) => Number(a.unitPrice) - Number(b.unitPrice));
-  
+  // Sort products by box price
+  const sortedProducts = allProducts.sort((a, b) => {
+    const aPrice = a.boxPrice || (Number(a.unitPrice) * a.boxQuantity);
+    const bPrice = b.boxPrice || (Number(b.unitPrice) * b.boxQuantity);
+    return Number(aPrice) - Number(bPrice);
+  });
+
   // Calculate price difference percentage
-  const calculatePriceDiff = (price: number) => {
-    const lowestPrice = Number(sortedProducts[0].unitPrice);
-    const diff = ((price - lowestPrice) / lowestPrice) * 100;
+  const calculatePriceDiff = (product: Product) => {
+    const currentBoxPrice = product.boxPrice || (Number(product.unitPrice) * product.boxQuantity);
+    const lowestBoxPrice = sortedProducts[0].boxPrice || (Number(sortedProducts[0].unitPrice) * sortedProducts[0].boxQuantity);
+    const diff = ((Number(currentBoxPrice) - Number(lowestBoxPrice)) / Number(lowestBoxPrice)) * 100;
     return diff.toFixed(1);
   };
 
@@ -61,15 +66,17 @@ export function PriceComparisonDialog({
             <TableRow>
               <TableHead>Distribuidor</TableHead>
               <TableHead>Código</TableHead>
-              <TableHead className="text-right">Preço Unit.</TableHead>
+              <TableHead className="text-right">Preço Cx.</TableHead>
+              <TableHead className="text-right">Preço Un.</TableHead>
               <TableHead className="text-right">Diferença</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedProducts.map((p) => {
-              const priceDiff = calculatePriceDiff(Number(p.unitPrice));
+              const priceDiff = calculatePriceDiff(p);
               const isLowestPrice = p === sortedProducts[0];
-              
+              const boxPrice = p.boxPrice || (Number(p.unitPrice) * p.boxQuantity);
+
               return (
                 <TableRow key={`${p.distributorId}-${p.itemCode}`}>
                   <TableCell className="font-medium">
@@ -78,8 +85,11 @@ export function PriceComparisonDialog({
                   <TableCell>{p.itemCode}</TableCell>
                   <TableCell className="text-right">
                     <span className={isLowestPrice ? "text-green-600 font-bold" : ""}>
-                      ${Number(p.unitPrice).toFixed(2)}
+                      ${Number(boxPrice).toFixed(2)}
                     </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    ${Number(p.unitPrice).toFixed(2)}
                   </TableCell>
                   <TableCell className="text-right">
                     {isLowestPrice ? (

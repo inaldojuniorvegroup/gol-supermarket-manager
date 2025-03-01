@@ -47,7 +47,7 @@ export function ProductCard({
   isVendorView = false
 }: ProductCardProps) {
   const [quantity, setQuantity] = useState(1);
-  const [isBoxUnit, setIsBoxUnit] = useState(false);
+  const [isBoxUnit, setIsBoxUnit] = useState(true); // Default to box unit
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [imageSearchDialogOpen, setImageSearchDialogOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
@@ -254,9 +254,14 @@ export function ProductCard({
           {/* Preço e Comparação */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-lg">
-                ${formatPrice(currentPrice)}
-              </span>
+              <div className="space-y-1">
+                <span className="font-semibold text-lg">
+                  ${formatPrice(product.boxPrice || (Number(product.unitPrice) * product.boxQuantity))} /cx
+                </span>
+                <div className="text-sm text-muted-foreground">
+                  ${formatPrice(product.unitPrice)} /un
+                </div>
+              </div>
               {similarProducts.length > 0 && !isVendorView && (
                 <PriceComparisonDialog
                   product={product}
@@ -270,13 +275,13 @@ export function ProductCard({
             {onAddToCart && (
               <div className="space-y-4">
                 <Tabs
-                  defaultValue="unit"
+                  defaultValue="box"
                   className="w-full"
                   onValueChange={(value) => setIsBoxUnit(value === "box")}
                 >
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="unit">Unidade</TabsTrigger>
                     <TabsTrigger value="box">Caixa</TabsTrigger>
+                    <TabsTrigger value="unit">Unidade</TabsTrigger>
                   </TabsList>
                 </Tabs>
 
