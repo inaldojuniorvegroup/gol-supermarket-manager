@@ -308,7 +308,11 @@ export default function SharedOrderPage() {
   }
 
   const canUpdateStatus = user?.role === 'distributor' || user?.role === 'supermarket';
-  const canManageReceiving = user?.role === 'supermarket' && order.status === 'delivered';
+  const canManageReceiving = user?.role === 'supermarket' && (
+    order.status === 'delivered' || 
+    order.status === 'receiving' || 
+    order.status === 'partially_received'
+  );
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
