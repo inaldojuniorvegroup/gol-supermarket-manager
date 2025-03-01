@@ -49,7 +49,7 @@ async function importGolCatalog() {
             supplierCode: '',
             barCode: '',
             description: currentCategory,
-            distributorId: 1, // ID do Gol Supermarket
+            distributorId: 13, // ID do GOL SUPERMARKET (recém-criado)
             unitPrice: 0, // Preço inicial 0, para ser atualizado depois
             boxPrice: null,
             boxQuantity: 1,
@@ -80,6 +80,7 @@ async function importGolCatalog() {
     // Processar em lotes
     const batchSize = 5;
     let totalImported = 0;
+    let totalSkipped = 0;
     let totalErrors = 0;
 
     for (let i = 0; i < products.length; i += batchSize) {
@@ -103,6 +104,7 @@ async function importGolCatalog() {
           const result = await response.json();
           console.log(`Resultado do lote ${Math.floor(i/batchSize) + 1}:`, result);
           totalImported += result.productsImported || 0;
+          totalSkipped += result.productsSkipped || 0;
         }
       } catch (error) {
         console.error(`\nErro ao processar lote ${Math.floor(i/batchSize) + 1}:`, error);
@@ -116,6 +118,7 @@ async function importGolCatalog() {
     console.log('\nResumo da importação:');
     console.log(`Total de produtos no arquivo: ${products.length}`);
     console.log(`Produtos importados com sucesso: ${totalImported}`);
+    console.log(`Produtos ignorados (já existem): ${totalSkipped}`);
     console.log(`Produtos com erro: ${totalErrors}`);
 
   } catch (error) {
