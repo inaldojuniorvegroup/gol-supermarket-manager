@@ -42,39 +42,54 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
     mutationFn: async () => {
       if (!order.items?.length) return;
 
-      // Atualizar o status do pedido
+      // Primeiro atualizar o status do pedido
       const orderResponse = await apiRequest("PATCH", `/api/orders/${order.id}`, {
         status: "receiving",
         receivedBy: user?.username,
         receivedAt: new Date().toISOString(),
-        receivingNotes: notes,
-        updatedAt: new Date().toISOString()
+        receivingNotes: notes
       });
 
       if (!orderResponse.ok) {
         throw new Error("Falha ao atualizar o status do pedido");
       }
 
-      // Atualizar cada item
+      // Depois atualizar cada item
       const itemPromises = Object.entries(receivedItems).map(([itemId, data]) => {
         const item = order.items?.find(i => i.id === Number(itemId));
         if (!item) return Promise.resolve();
 
-        const receivedQty = Number(data.receivedQuantity);
-        const missingQty = Number(data.missingQuantity);
-        const status = receivedQty === Number(item.quantity) ? 'received' 
-                    : receivedQty === 0 ? 'missing'
-                    : 'partial';
+        const receivedQty = Number(data.receivedQuantity) || 0;
+        const missingQty = Number(data.missingQuantity) || 0;
+        const orderedQty = Number(item.quantity);
+
+        let status = 'pending';
+        if (receivedQty === orderedQty) {
+          status = 'received';
+        } else if (receivedQty === 0) {
+          status = 'missing';
+        } else if (receivedQty < orderedQty) {
+          status = 'partial';
+        }
 
         return apiRequest("PATCH", `/api/order-items/${itemId}`, {
-          receivedQuantity: receivedQty.toString(),
-          missingQuantity: missingQty.toString(),
+          receivedQuantity: receivedQty.toFixed(2),
+          missingQuantity: missingQty.toFixed(2),
           receivingStatus: status,
           receivingNotes: data.notes
         });
       });
 
       await Promise.all(itemPromises);
+
+      // Atualizar o status final do pedido baseado nos itens
+      const finalStatus = order.items.every(item => 
+        receivedItems[item.id]?.receivedQuantity === item.quantity
+      ) ? 'received' : 'partially_received';
+
+      await apiRequest("PATCH", `/api/orders/${order.id}`, {
+        status: finalStatus
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/orders/share/${order.id}`] });
@@ -107,14 +122,16 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
     }));
   };
 
-  const getItemStatus = (item: OrderWithDetails['items'][0], receivedData: typeof receivedItems[number]) => {
+  const getItemStatus = (item: NonNullable<OrderWithDetails['items']>[number], receivedData: typeof receivedItems[number]) => {
     if (!receivedData) return 'pending';
-    const received = Number(receivedData.receivedQuantity);
+
+    const received = Number(receivedData.receivedQuantity) || 0;
     const ordered = Number(item.quantity);
 
     if (received === ordered) return 'received';
     if (received === 0) return 'missing';
-    return 'partial';
+    if (received < ordered) return 'partial';
+    return 'pending';
   };
 
   const statusBadgeVariant = {
