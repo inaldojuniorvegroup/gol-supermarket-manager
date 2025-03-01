@@ -133,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const distributorId = req.query.distributorId ? Number(req.query.distributorId) : undefined;
       console.log('Fetching products for distributor:', distributorId);
 
-      const products = distributorId 
+      const products = distributorId
         ? await storage.getProductsByDistributor(distributorId)
         : await storage.getProducts();
 
@@ -292,6 +292,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+  // Add the new route for product image search
+  app.get("/api/products/:id/search-images", async (req, res) => {
+    try {
+      const productId = Number(req.params.id);
+      const product = await storage.getProduct(productId);
+
+      if (!product) {
+        return res.status(404).json({ error: "Produto não encontrado" });
+      }
+
+      // Construir query de busca com nome e unidade do produto
+      const searchQuery = `${product.name} ${product.unit}`;
+      const images = await searchProductImage(searchQuery, 10); // Buscar 10 imagens
+
+      res.json({ images });
+    } catch (error) {
+      console.error('Error searching product images:', error);
+      res.status(500).json({ error: "Failed to search product images" });
+    }
+  });
 
   // Orders
   app.get("/api/orders", async (_req, res) => {

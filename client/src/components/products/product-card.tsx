@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Product, Distributor } from "@shared/schema";
-import { Package, Tag, ShoppingCart, Barcode, Box, FolderOpen, Plus, Minus, Scale, PackageOpen, LayersIcon, ImageIcon, Pencil } from "lucide-react";
+import { Package, Tag, ShoppingCart, Barcode, Box, FolderOpen, Plus, Minus, Scale, PackageOpen, LayersIcon, ImageIcon, Pencil, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { ImageSearchDialog } from "./image-search-dialog";
+
 
 // Função para formatar preços mantendo exatamente 2 casas decimais
 const formatPrice = (price: number | string): string => {
@@ -47,20 +49,22 @@ export function ProductCard({
   const [quantity, setQuantity] = useState(1);
   const [isBoxUnit, setIsBoxUnit] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [imageSearchDialogOpen, setImageSearchDialogOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const { toast } = useToast();
 
   const updateImageMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (newImageUrl: string) => {
       if (!product) return;
       const res = await apiRequest("PATCH", `/api/products/${product.id}`, {
-        imageUrl: imageUrl
+        imageUrl: newImageUrl
       });
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       setImageDialogOpen(false);
+      setImageSearchDialogOpen(false);
       toast({
         title: "Imagem atualizada",
         description: "A imagem do produto foi atualizada com sucesso."
@@ -105,7 +109,7 @@ export function ProductCard({
       });
       return;
     }
-    updateImageMutation.mutate();
+    updateImageMutation.mutate(imageUrl);
   };
 
   const handleImageClick = () => {
@@ -184,7 +188,7 @@ export function ProductCard({
 
         {/* Product Image */}
         <CardHeader className="p-0 relative">
-          <div 
+          <div
             className="flex items-center justify-center w-full h-48 bg-muted cursor-pointer relative group"
             onClick={handleImageClick}
           >
@@ -317,16 +321,25 @@ export function ProductCard({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Atualizar Imagem do Produto</DialogTitle>
-            <DialogDescription>
-              Insira a URL da nova imagem para este produto
-            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <Input
-              placeholder="URL da imagem"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-            />
+            <div className="flex gap-2">
+              <Input
+                placeholder="URL da imagem"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+              />
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setImageDialogOpen(false);
+                  setImageSearchDialogOpen(true);
+                }}
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Buscar
+              </Button>
+            </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setImageDialogOpen(false)}>
                 Cancelar
@@ -338,6 +351,16 @@ export function ProductCard({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Image Search Dialog */}
+      {product && (
+        <ImageSearchDialog
+          open={imageSearchDialogOpen}
+          onOpenChange={setImageSearchDialogOpen}
+          product={product}
+          onSelectImage={(url) => updateImageMutation.mutate(url)}
+        />
+      )}
     </motion.div>
   );
 }
