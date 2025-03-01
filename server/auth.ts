@@ -22,13 +22,18 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  try {
+    const [hashed, salt] = stored.split(".");
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error("Error comparing passwords:", error);
+    return false;
+  }
 }
 
-// Middleware to check if user is from Gol Supermarket
+// Middleware para verificar se é usuário do Gol Supermarket
 function isSupermarket(req: Express.Request, res: Express.Response, next: Function) {
   if (req.isAuthenticated() && req.user.role === 'supermarket') {
     return next();
@@ -36,7 +41,7 @@ function isSupermarket(req: Express.Request, res: Express.Response, next: Functi
   res.status(403).json({ message: "Apenas usuários do Gol Supermarket podem realizar esta ação" });
 }
 
-// Middleware to check if user is from Hyannis store (main store)
+// Middleware para verificar se é da loja Hyannis (loja principal)
 function isHyannisStore(req: Express.Request, res: Express.Response, next: Function) {
   if (req.isAuthenticated() && req.user.role === 'supermarket' && req.user.storeId === 1) {
     return next();
@@ -44,7 +49,7 @@ function isHyannisStore(req: Express.Request, res: Express.Response, next: Funct
   res.status(403).json({ message: "Apenas a loja de Hyannis pode realizar esta ação" });
 }
 
-// Middleware to check if user is a store manager
+// Middleware para verificar se é gerente de loja
 function isStoreManager(req: Express.Request, res: Express.Response, next: Function) {
   if (req.isAuthenticated() && req.user.role === 'supermarket' && req.user.storeId) {
     return next();
@@ -76,14 +81,14 @@ export function setupAuth(app: Express) {
         console.log("Login attempt:", { username, userFound: !!user });
 
         if (!user) {
-          return done(null, false, { message: "User not found" });
+          return done(null, false, { message: "Usuário não encontrado" });
         }
 
         const isValid = await comparePasswords(password, user.password);
         console.log("Password validation:", { isValid });
 
         if (!isValid) {
-          return done(null, false, { message: "Invalid password" });
+          return done(null, false, { message: "Senha inválida" });
         }
 
         return done(null, user);
@@ -110,91 +115,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Nova rota para registro de usuários das lojas
-  app.post("/api/register/store", isHyannisStore, async (req, res) => {
-    try {
-      const { username, password, storeId } = req.body;
-
-      // Verificar se já existe um usuário com este username
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username já existe" });
-      }
-
-      // Verificar se a loja existe
-      const store = await storage.getStore(storeId);
-      if (!store) {
-        return res.status(404).json({ message: "Loja não encontrada" });
-      }
-
-      // Não permitir criar usuário para a loja de Hyannis (ID 1)
-      if (storeId === 1) {
-        return res.status(400).json({ message: "Não é permitido criar usuários para a loja de Hyannis por esta rota" });
-      }
-
-      const user = await storage.createUser({
-        username,
-        password: await hashPassword(password),
-        role: 'supermarket',
-        storeId
-      });
-
-      res.status(201).json(user);
-    } catch (error) {
-      console.error("Erro ao criar usuário da loja:", error);
-      res.status(500).json({ message: "Erro interno do servidor" });
-    }
-  });
-    // Rota especial para o primeiro usuário (Gol Supermarket)
-  app.post("/api/register/supermarket", async (req, res, next) => {
-    const users = await storage.getUsers();
-    if (users.length > 0) {
-      return res.status(403).send("Gol Supermarket user already exists");
-    }
-
-    const user = await storage.createUser({
-      ...req.body,
-      password: await hashPassword(req.body.password),
-      role: 'supermarket'
-    });
-
-    req.login(user, (err) => {
-      if (err) return next(err);
-      res.status(201).json(user);
-    });
-  });
-
-  // Nova rota para registro de usuários distribuidores
-  app.post("/api/register/distributor", async (req, res, next) => {
-    try {
-      const { username, password, distributorId } = req.body;
-
-      // Verificar se já existe um usuário com este username
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-
-      // Verificar se o distribuidor existe
-      const distributor = await storage.getDistributor(distributorId);
-      if (!distributor) {
-        return res.status(404).json({ message: "Distributor not found" });
-      }
-
-      const user = await storage.createUser({
-        username,
-        password: await hashPassword(password),
-        role: 'distributor',
-        distributorId
-      });
-
-      res.status(201).json(user);
-    } catch (error) {
-      console.error("Error creating distributor user:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
     res.status(200).json(req.user);
   });
@@ -212,4 +132,4 @@ export function setupAuth(app: Express) {
   });
 }
 
-export { isSupermarket, isHyannisStore, isStoreManager, isDistributor };
+export { isSupermarket, isHyannisStore, isStoreManager };
