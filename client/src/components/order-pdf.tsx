@@ -73,6 +73,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     padding: 5,
   },
+  tableCellHighlight: {
+    backgroundColor: '#fee2e2',
+  },
   tableColCode: {
     width: '15%',
   },
@@ -145,62 +148,28 @@ const styles = StyleSheet.create({
     color: '#666666',
     marginTop: 2,
   },
-  receivingInfo: {
-    marginTop: 10,
-    padding: 5,
-    backgroundColor: '#f8f8f8',
-    borderRadius: 3,
-  },
-  receivingTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  receivingStatus: {
-    fontSize: 10,
-    color: '#666666',
-    marginBottom: 3,
-  },
-  receivingTable: {
-    width: '100%',
-    marginTop: 5,
-  },
-  receivingRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#CCCCCC',
-    paddingVertical: 3,
-  },
-  receivingLabel: {
-    fontSize: 9,
-    color: '#666666',
-    width: '30%',
-  },
-  receivingValue: {
-    fontSize: 9,
-    width: '70%',
-  },
   itemReceivingInfo: {
     fontSize: 9,
     color: '#666666',
     marginTop: 2,
     fontStyle: 'italic',
   },
-  differenceRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 2,
-    paddingTop: 2,
-    borderTopWidth: 1,
-    borderTopColor: '#CCCCCC',
-    borderTopStyle: 'dashed',
+  receivingInfo: {
+    marginTop: 10,
+    padding: 5,
+    backgroundColor: '#f8f8f8',
+  },
+  receivingNotes: {
+    fontSize: 10,
+    color: '#666666',
+    marginTop: 5,
   },
   missingAmount: {
-    color: '#dc2626', 
+    color: '#dc2626',
     fontSize: 10,
   },
   receivedAmount: {
-    color: '#16a34a', 
+    color: '#16a34a',
     fontSize: 10,
   }
 });
@@ -264,11 +233,11 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
 
           {order.receivingNotes && (
             <View style={styles.receivingInfo}>
-              <Text style={styles.receivingTitle}>Informações do Recebimento</Text>
-              <Text style={styles.receivingStatus}>
-                Status: {statusLabels[order.status as keyof typeof statusLabels] || order.status}
+              <Text style={styles.label}>Status do Recebimento</Text>
+              <Text style={styles.value}>
+                {statusLabels[order.status as keyof typeof statusLabels] || order.status}
               </Text>
-              <Text style={styles.value}>{order.receivingNotes}</Text>
+              <Text style={styles.receivingNotes}>{order.receivingNotes}</Text>
             </View>
           )}
         </View>
@@ -293,11 +262,11 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
               return (
                 <View key={item.id} style={[
                   styles.tableRow,
-                  isPartialOrMissing && { backgroundColor: '#fee2e2' } 
+                  isPartialOrMissing && styles.tableCellHighlight
                 ]}>
-                  <Text style={[styles.tableCell, styles.tableColCode]}>
-                    {item.product?.supplierCode}
-                  </Text>
+                  <View style={[styles.tableCell, styles.tableColCode]}>
+                    <Text>{item.product?.supplierCode}</Text>
+                  </View>
                   <View style={[styles.tableCell, styles.tableColProduct]}>
                     <Text>{item.product?.name}</Text>
                     {!isVendorView && (
@@ -307,21 +276,22 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
                     )}
                     {item.receivedQuantity && (
                       <Text style={styles.itemReceivingInfo}>
-                        Pedido: {item.quantity} | 
-                        Recebido: {item.receivedQuantity}
+                        Pedido: {item.quantity} | Recebido: {item.receivedQuantity}
                         {item.missingQuantity && Number(item.missingQuantity) > 0 ? 
                           ` | Faltante: ${item.missingQuantity}` : ''}
                         {item.receivingNotes ? `\nObs: ${item.receivingNotes}` : ''}
                       </Text>
                     )}
                   </View>
-                  <Text style={[styles.tableCell, styles.tableColQty]}>{item.quantity}</Text>
-                  <Text style={[styles.tableCell, styles.tableColPrice]}>
-                    ${Number(item.price).toFixed(2)}
-                  </Text>
-                  <Text style={[styles.tableCell, styles.tableColTotal]}>
-                    ${Number(item.total).toFixed(2)}
-                  </Text>
+                  <View style={[styles.tableCell, styles.tableColQty]}>
+                    <Text>{item.quantity}</Text>
+                  </View>
+                  <View style={[styles.tableCell, styles.tableColPrice]}>
+                    <Text>${Number(item.price).toFixed(2)}</Text>
+                  </View>
+                  <View style={[styles.tableCell, styles.tableColTotal]}>
+                    <Text>${Number(item.total).toFixed(2)}</Text>
+                  </View>
                 </View>
               );
             })}
@@ -335,13 +305,13 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
 
             {order.receivedAt && (
               <>
-                <View style={styles.differenceRow}>
+                <View style={styles.totalRow}>
                   <Text style={[styles.totalLabel, styles.receivedAmount]}>
                     Valor Recebido: ${receivedSubtotal.toFixed(2)}
                   </Text>
                 </View>
                 {missingAmount > 0 && (
-                  <View style={styles.differenceRow}>
+                  <View style={styles.totalRow}>
                     <Text style={[styles.totalLabel, styles.missingAmount]}>
                       Valor Faltante: -${missingAmount.toFixed(2)}
                     </Text>
