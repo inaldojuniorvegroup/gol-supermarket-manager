@@ -48,52 +48,29 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      <div className="flex items-center justify-center p-8 relative overflow-hidden">
-        {/* Background gradient animation */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary-foreground/20 animate-gradient-x" />
-
-        <Card className="w-full max-w-md relative backdrop-blur-sm bg-white/80 border-primary/20">
-          <CardHeader className="text-center">
+      <div className="flex items-center justify-center p-8 bg-background relative">
+        <Card className="w-full max-w-md border-none shadow-none">
+          <CardHeader className="text-center space-y-6">
             <motion.div 
-              className="mx-auto mb-4 relative"
-              initial={{ opacity: 0, y: -50 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{
-                type: "spring",
-                stiffness: 260,
-                damping: 20,
-                delay: 0.2
-              }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
             >
-              {/* Glow effect behind logo */}
-              <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
-              <motion.img 
+              <img 
                 src="/assets/LOGO.png" 
                 alt="Gol Supermarket Logo" 
-                className="h-24 w-24 mx-auto object-contain relative z-10"
-                initial={{ scale: 0.5, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 260,
-                  damping: 20,
-                  delay: 0.3
-                }}
-                whileHover={{ 
-                  scale: 1.05,
-                  transition: { duration: 0.2 }
-                }}
+                className="h-20 w-20 mx-auto object-contain"
               />
             </motion.div>
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-foreground">
+              <CardTitle className="text-2xl font-semibold">
                 Bem-vindo ao Gol Supermarket
               </CardTitle>
-              <CardDescription className="mt-2">
+              <CardDescription className="mt-2 text-base">
                 Acesse o sistema de gerenciamento de pedidos
               </CardDescription>
             </motion.div>
@@ -102,12 +79,12 @@ export default function AuthPage() {
             <Form {...loginForm}>
               <form
                 onSubmit={loginForm.handleSubmit(handleSubmit)}
-                className="space-y-4"
+                className="space-y-5"
               >
                 <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.3 }}
                 >
                   <FormField
                     control={loginForm.control}
@@ -116,7 +93,11 @@ export default function AuthPage() {
                       <FormItem>
                         <FormLabel>Usuário</FormLabel>
                         <FormControl>
-                          <Input {...field} className="bg-white/50 backdrop-blur-sm" />
+                          <Input 
+                            {...field}
+                            className="h-11"
+                            placeholder="Digite seu usuário"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -124,9 +105,9 @@ export default function AuthPage() {
                   />
                 </motion.div>
                 <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.7 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 }}
                 >
                   <FormField
                     control={loginForm.control}
@@ -135,7 +116,12 @@ export default function AuthPage() {
                       <FormItem>
                         <FormLabel>Senha</FormLabel>
                         <FormControl>
-                          <Input type="password" {...field} className="bg-white/50 backdrop-blur-sm" />
+                          <Input 
+                            type="password" 
+                            {...field}
+                            className="h-11"
+                            placeholder="Digite sua senha"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -143,13 +129,13 @@ export default function AuthPage() {
                   />
                 </motion.div>
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
+                  transition={{ duration: 0.4, delay: 0.5 }}
                 >
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-primary to-primary-foreground hover:opacity-90 transition-opacity"
+                    className="w-full h-11 text-base"
                     disabled={loginMutation.isPending}
                   >
                     {loginMutation.isPending ? "Entrando..." : "Entrar"}
@@ -161,57 +147,25 @@ export default function AuthPage() {
         </Card>
       </div>
 
-      <div className="hidden lg:flex items-center justify-center p-8 bg-gradient-to-br from-primary to-primary-foreground text-primary-foreground relative overflow-hidden">
-        {/* Animated background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <motion.div
-            className="absolute inset-0"
-            animate={{
-              backgroundPosition: ["0% 0%", "100% 100%"],
-            }}
-            transition={{
-              duration: 20,
-              repeat: Infinity,
-              repeatType: "reverse",
-            }}
-            style={{
-              backgroundImage: "linear-gradient(45deg, currentColor 25%, transparent 25%, transparent 75%, currentColor 75%, currentColor), linear-gradient(45deg, currentColor 25%, transparent 25%, transparent 75%, currentColor 75%, currentColor)",
-              backgroundSize: "40px 40px",
-              backgroundPosition: "0 0, 20px 20px",
-            }}
-          />
-        </div>
-
-        <motion.div 
-          className="max-w-md text-center relative z-10"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5 }}
+      <div className="hidden lg:block bg-primary relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/[0.05]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-primary" />
+        <div className="relative h-full flex items-center justify-center p-8">
+          <motion.div 
+            className="max-w-lg text-primary-foreground text-center"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Store className="mx-auto h-16 w-16 mb-6" />
+            <Store className="mx-auto h-12 w-12 mb-6 opacity-90" />
+            <h1 className="text-3xl font-semibold mb-4">
+              Sistema de Gestão de Pedidos
+            </h1>
+            <p className="text-lg opacity-90">
+              Gerencie seus pedidos e controle seu estoque em várias lojas com nosso sistema completo e intuitivo.
+            </p>
           </motion.div>
-          <motion.h1 
-            className="text-4xl font-bold mb-4"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            Gol Supermarket - Gestão de Pedidos
-          </motion.h1>
-          <motion.p 
-            className="text-lg opacity-90"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.7 }}
-          >
-            Gerencie seus pedidos e controle seu estoque em várias lojas com nosso sistema completo de gerenciamento.
-          </motion.p>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
