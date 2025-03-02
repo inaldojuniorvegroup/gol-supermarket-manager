@@ -50,12 +50,12 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
 
         // Depois atualize cada item individualmente
         for (const [itemId, data] of Object.entries(receivedItems)) {
-          const receivedQty = Number(data.receivedQuantity) || 0;
-          const missingQty = Number(data.missingQuantity) || 0;
+          const receivedQty = parseFloat(data.receivedQuantity) || 0;
+          const missingQty = parseFloat(data.missingQuantity) || 0;
 
           await apiRequest("PATCH", `/api/order-items/${itemId}`, {
-            receivedQuantity: receivedQty.toFixed(2),
-            missingQuantity: missingQty.toFixed(2),
+            receivedQuantity: receivedQty.toString(),
+            missingQuantity: missingQty.toString(),
             receivingNotes: data.notes,
             receivingStatus: getItemStatus(itemId, receivedQty)
           });
@@ -93,11 +93,21 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
     field: 'receivedQuantity' | 'missingQuantity' | 'notes',
     value: string
   ) => {
+    let finalValue = value;
+
+    // Validar e formatar números
+    if (field === 'receivedQuantity' || field === 'missingQuantity') {
+      const numValue = parseFloat(value);
+      if (isNaN(numValue) || numValue < 0) {
+        finalValue = "0";
+      }
+    }
+
     setReceivedItems(prev => ({
       ...prev,
       [itemId]: {
         ...prev[itemId],
-        [field]: value
+        [field]: finalValue
       }
     }));
   };
@@ -106,7 +116,7 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
     const item = order.items?.find(i => i.id === Number(itemId));
     if (!item) return 'pending';
 
-    const orderedQty = Number(item.quantity);
+    const orderedQty = parseFloat(item.quantity);
 
     if (receivedQty === orderedQty) return 'received';
     if (receivedQty === 0) return 'missing';
@@ -118,8 +128,8 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
     if (!order.items) return 'pending';
 
     const allReceived = order.items.every(item => {
-      const receivedQty = Number(receivedItems[item.id]?.receivedQuantity) || 0;
-      const orderedQty = Number(item.quantity);
+      const receivedQty = parseFloat(receivedItems[item.id]?.receivedQuantity) || 0;
+      const orderedQty = parseFloat(item.quantity);
       return receivedQty === orderedQty;
     });
 

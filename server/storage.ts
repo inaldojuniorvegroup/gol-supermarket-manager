@@ -251,18 +251,29 @@ export class DatabaseStorage implements IStorage {
     return newItem;
   }
   async updateOrderItem(id: number, item: Partial<OrderItem>): Promise<OrderItem> {
-    const updateData: Partial<OrderItem> = {
-      ...item
-    };
+    const updateData: Record<string, any> = {};
 
-    // Garantir que os valores numéricos sejam strings com precisão correta
+    // Processar campos numéricos
     if (item.receivedQuantity !== undefined) {
-      updateData.receivedQuantity = Number(item.receivedQuantity).toFixed(2);
-    }
-    if (item.missingQuantity !== undefined) {
-      updateData.missingQuantity = Number(item.missingQuantity).toFixed(2);
+      const value = parseFloat(item.receivedQuantity.toString());
+      updateData.receivedQuantity = isNaN(value) ? "0.00" : value.toFixed(2);
     }
 
+    if (item.missingQuantity !== undefined) {
+      const value = parseFloat(item.missingQuantity.toString());
+      updateData.missingQuantity = isNaN(value) ? "0.00" : value.toFixed(2);
+    }
+
+    // Copiar campos não numéricos
+    if (item.receivingStatus !== undefined) {
+      updateData.receivingStatus = item.receivingStatus;
+    }
+
+    if (item.receivingNotes !== undefined) {
+      updateData.receivingNotes = item.receivingNotes;
+    }
+
+    // Atualizar o item no banco de dados
     const [updatedItem] = await db
       .update(orderItems)
       .set(updateData)
