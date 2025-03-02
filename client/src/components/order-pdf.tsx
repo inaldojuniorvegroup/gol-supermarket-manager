@@ -127,11 +127,6 @@ const styles = StyleSheet.create({
     width: '15%',
     textAlign: 'right',
   },
-  subtotalSection: {
-    borderTopWidth: 1,
-    borderTopColor: '#CCCCCC',
-    paddingTop: 5,
-  },
   grandTotal: {
     borderTopWidth: 2,
     borderTopColor: '#000000',
@@ -224,7 +219,9 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
           </View>
           <View>
             <Text style={styles.orderInfo}>Pedido #{order.id}</Text>
-            <Text style={styles.orderInfo}>Data: {format(new Date(order.createdAt), "dd/MM/yyyy")}</Text>
+            <Text style={styles.orderInfo}>
+              Data: {format(new Date(order.createdAt), "dd/MM/yyyy")}
+            </Text>
             {order.receivedAt && (
               <Text style={styles.orderInfo}>
                 Recebido em: {format(new Date(order.receivedAt), "dd/MM/yyyy 'às' HH:mm")}
@@ -240,12 +237,16 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
             <View style={styles.infoBlock}>
               <Text style={styles.label}>Loja</Text>
               <Text style={styles.value}>{order.store?.name}</Text>
-              <Text style={styles.value}>{order.store?.code}</Text>
+              {order.store?.code && (
+                <Text style={styles.value}>{order.store.code}</Text>
+              )}
             </View>
             <View style={styles.infoBlock}>
               <Text style={styles.label}>Distribuidor</Text>
               <Text style={styles.value}>{order.distributor?.name}</Text>
-              <Text style={styles.value}>{order.distributor?.code}</Text>
+              {order.distributor?.code && (
+                <Text style={styles.value}>{order.distributor.code}</Text>
+              )}
             </View>
           </View>
 
@@ -283,18 +284,18 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
                   isPartialOrMissing && styles.tableCellHighlight
                 ]}>
                   <View style={[styles.tableCell, styles.tableColCode]}>
-                    <Text>{item.product?.supplierCode}</Text>
+                    <Text>{item.product?.supplierCode || ''}</Text>
                   </View>
                   <View style={[styles.tableCell, styles.tableColProduct]}>
-                    <Text>{item.product?.name}</Text>
+                    <Text>{item.product?.name || ''}</Text>
                     {!isVendorView && (
                       <Text style={styles.productCodes}>
-                        Código Interno: {item.product?.itemCode} | EAN: {item.product?.barCode}
+                        Código Interno: {item.product?.itemCode || ''} | EAN: {item.product?.barCode || ''}
                       </Text>
                     )}
                     {item.receivedQuantity && (
                       <Text style={styles.itemReceivingInfo}>
-                        Pedido: {item.quantity} | Recebido: {item.receivedQuantity}
+                        Pedido: {item.quantity || ''} | Recebido: {item.receivedQuantity || ''}
                         {item.missingQuantity && Number(item.missingQuantity) > 0 ? 
                           ` | Faltante: ${item.missingQuantity}` : ''}
                         {item.receivingNotes ? `\nObs: ${item.receivingNotes}` : ''}
@@ -302,13 +303,13 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
                     )}
                   </View>
                   <View style={[styles.tableCell, styles.tableColQty]}>
-                    <Text>{item.quantity}</Text>
+                    <Text>{item.quantity || ''}</Text>
                   </View>
                   <View style={[styles.tableCell, styles.tableColPrice]}>
-                    <Text>${Number(item.price).toFixed(2)}</Text>
+                    <Text>${Number(item.price || 0).toFixed(2)}</Text>
                   </View>
                   <View style={[styles.tableCell, styles.tableColTotal]}>
-                    <Text>${Number(item.total).toFixed(2)}</Text>
+                    <Text>${Number(item.total || 0).toFixed(2)}</Text>
                   </View>
                 </View>
               );
@@ -316,7 +317,7 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
           </View>
 
           <View style={styles.totals}>
-            <View style={[styles.totalRow, styles.subtotalSection]}>
+            <View style={[styles.totalRow]}>
               <Text style={styles.totalLabel}>Subtotal Original:</Text>
               <Text style={styles.totalValue}>${originalSubtotal.toFixed(2)}</Text>
             </View>
