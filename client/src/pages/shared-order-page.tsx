@@ -351,15 +351,22 @@ export default function SharedOrderPage() {
       <Card className="overflow-hidden">
         <CardHeader className="border-b bg-muted/30">
           <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <ClipboardList className="h-6 w-6 text-primary" />
-                Pedido #{order.id}
-              </CardTitle>
-              <CardDescription className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4" />
-                Criado em {format(new Date(order.createdAt), "dd/MM/yyyy 'às' HH:mm")}
-              </CardDescription>
+            <div className="space-y-1 flex items-center gap-4">
+              <img 
+                src="/attached_assets/LOGO.png" 
+                alt="Gol Supermarket Logo" 
+                className="h-16 w-16 object-contain"
+              />
+              <div>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <ClipboardList className="h-6 w-6 text-primary" />
+                  Pedido #{order.id}
+                </CardTitle>
+                <CardDescription className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4" />
+                  Criado em {format(new Date(order.createdAt), "dd/MM/yyyy 'às' HH:mm")}
+                </CardDescription>
+              </div>
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center gap-2">
