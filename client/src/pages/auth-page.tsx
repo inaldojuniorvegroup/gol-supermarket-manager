@@ -35,7 +35,6 @@ export default function AuthPage() {
     },
   });
 
-  // Use useEffect for navigation instead of doing it during render
   useEffect(() => {
     if (user) {
       setLocation("/products");
@@ -50,7 +49,14 @@ export default function AuthPage() {
     <div className="min-h-screen grid lg:grid-cols-2">
       <div className="flex items-center justify-center p-8">
         <Card className="w-full max-w-md">
-          <CardHeader>
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4">
+              <img 
+                src="/assets/LOGO.png" 
+                alt="Gol Supermarket Logo" 
+                className="h-24 w-24 mx-auto object-contain"
+              />
+            </div>
             <CardTitle>Bem-vindo ao Gol Market</CardTitle>
             <CardDescription>
               Acesse o sistema de gerenciamento de pedidos

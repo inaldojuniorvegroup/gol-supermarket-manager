@@ -57,9 +57,9 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4">
           <img 
-            src="https://placehold.co/32x32/png" 
+            src="/assets/LOGO.png" 
             alt="Gol Market" 
-            className="w-8 h-8"
+            className="w-8 h-8 object-contain"
           />
           <span className="font-semibold text-lg">Gol Market</span>
         </div>
