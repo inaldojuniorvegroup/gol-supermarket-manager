@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Package, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { Package, AlertTriangle, CheckCircle2, XCircle, Calculator } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
@@ -11,6 +11,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { OrderWithDetails } from "@/pages/shared-order-page";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 interface OrderReceivingDialogProps {
   order: OrderWithDetails;
@@ -22,6 +24,11 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
   const { toast } = useToast();
   const { user } = useAuth();
   const [notes, setNotes] = useState("");
+  const [totals, setTotals] = useState({
+    totalOrdered: 0,
+    totalReceived: 0,
+    totalMissing: 0
+  });
   const [receivedItems, setReceivedItems] = useState<Record<number, { 
     receivedQuantity: string;
     missingQuantity: string;
@@ -30,12 +37,30 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
     order.items?.reduce((acc, item) => ({
       ...acc,
       [item.id]: {
-        receivedQuantity: item.receivedQuantity || "0",
-        missingQuantity: item.missingQuantity || "0",
+        receivedQuantity: item.receivedQuantity || "0.00",
+        missingQuantity: item.missingQuantity || "0.00",
         notes: item.receivingNotes || ""
       }
     }), {}) || {}
   );
+
+  useEffect(() => {
+    if (!order.items) return;
+
+    const newTotals = order.items.reduce((acc, item) => {
+      const ordered = parseFloat(item.quantity);
+      const received = parseFloat(receivedItems[item.id]?.receivedQuantity || "0");
+      const missing = parseFloat(receivedItems[item.id]?.missingQuantity || "0");
+
+      return {
+        totalOrdered: acc.totalOrdered + ordered,
+        totalReceived: acc.totalReceived + received,
+        totalMissing: acc.totalMissing + missing
+      };
+    }, { totalOrdered: 0, totalReceived: 0, totalMissing: 0 });
+
+    setTotals(newTotals);
+  }, [order.items, receivedItems]);
 
   const updateOrderReceivingMutation = useMutation({
     mutationFn: async () => {
@@ -54,8 +79,8 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
           const missingQty = parseFloat(data.missingQuantity) || 0;
 
           await apiRequest("PATCH", `/api/order-items/${itemId}`, {
-            receivedQuantity: receivedQty.toString(),
-            missingQuantity: missingQty.toString(),
+            receivedQuantity: receivedQty.toFixed(2),
+            missingQuantity: missingQty.toFixed(2),
             receivingNotes: data.notes,
             receivingStatus: getItemStatus(itemId, receivedQty)
           });
@@ -68,6 +93,7 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
         });
 
       } catch (error) {
+        console.error("Erro ao atualizar recebimento:", error);
         throw new Error("Falha ao atualizar o recebimento");
       }
     },
@@ -97,9 +123,14 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
 
     // Validar e formatar números
     if (field === 'receivedQuantity' || field === 'missingQuantity') {
-      const numValue = parseFloat(value);
+      // Remove caracteres inválidos, mantendo apenas números e ponto decimal
+      const cleanValue = value.replace(/[^\d.]/g, '');
+      const numValue = parseFloat(cleanValue);
+
       if (isNaN(numValue) || numValue < 0) {
-        finalValue = "0";
+        finalValue = "0.00";
+      } else {
+        finalValue = numValue.toFixed(2);
       }
     }
 
@@ -163,20 +194,40 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
           </DialogDescription>
         </DialogHeader>
 
+        <Card className="mt-4">
+          <CardContent className="p-4 grid grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <div className="text-sm text-muted-foreground">Total Pedido</div>
+              <div className="text-xl font-semibold">{totals.totalOrdered.toFixed(2)}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-sm text-muted-foreground">Total Recebido</div>
+              <div className="text-xl font-semibold text-green-600">{totals.totalReceived.toFixed(2)}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-sm text-muted-foreground">Total Faltante</div>
+              <div className="text-xl font-semibold text-red-600">{totals.totalMissing.toFixed(2)}</div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Separator className="my-4" />
+
         <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-[60vh]">
+          <ScrollArea className="h-[50vh]">
             <div className="space-y-6 p-1">
               {order.items?.map(item => (
                 <div key={item.id} className="bg-muted/30 p-4 rounded-lg space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <h4 className="font-medium">{item.product?.name}</h4>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground flex items-center gap-2">
+                        <Calculator className="h-4 w-4" />
                         Quantidade pedida: {item.quantity}
                       </div>
                     </div>
-                    <Badge variant={statusBadgeVariant[getItemStatus(item.id.toString(), Number(receivedItems[item.id]?.receivedQuantity || 0))]}>
-                        {statusLabel[getItemStatus(item.id.toString(), Number(receivedItems[item.id]?.receivedQuantity || 0))]}
+                    <Badge className={statusBadgeVariant[getItemStatus(item.id.toString(), parseFloat(receivedItems[item.id]?.receivedQuantity) || 0)]}>
+                      {statusLabel[getItemStatus(item.id.toString(), parseFloat(receivedItems[item.id]?.receivedQuantity) || 0)]}
                     </Badge>
                   </div>
 
@@ -192,7 +243,7 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
                         onChange={(e) => handleQuantityChange(item.id, 'receivedQuantity', e.target.value)}
                         min="0"
                         max={item.quantity}
-                        step="any"
+                        step="0.01"
                       />
                     </div>
                     <div className="space-y-2">
@@ -205,7 +256,7 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
                         value={receivedItems[item.id]?.missingQuantity}
                         onChange={(e) => handleQuantityChange(item.id, 'missingQuantity', e.target.value)}
                         min="0"
-                        step="any"
+                        step="0.01"
                       />
                     </div>
                   </div>
@@ -228,7 +279,9 @@ export function OrderReceivingDialog({ order, open, onOpenChange }: OrderReceivi
           </ScrollArea>
         </div>
 
-        <div className="space-y-4 pt-4 border-t">
+        <Separator className="my-4" />
+
+        <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">
               Observações Gerais do Recebimento
