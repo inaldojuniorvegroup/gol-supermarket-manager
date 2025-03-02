@@ -102,6 +102,11 @@ export default function SharedOrderPage() {
   const [viewMode, setViewMode] = useState<'supplier' | 'internal'>('supplier');
   const [orderTotal, setOrderTotal] = useState("0");
   const [isReceivingDialogOpen, setIsReceivingDialogOpen] = useState(false);
+  const [receivingTotals, setReceivingTotals] = useState({
+    totalOrdered: 0,
+    totalReceived: 0,
+    totalMissing: 0
+  });
 
   const { data: order, isLoading } = useQuery<OrderWithDetails>({
     queryKey: [`/api/orders/share/${orderId}`],
@@ -278,6 +283,25 @@ export default function SharedOrderPage() {
     }
   }, [order?.items, editedItems]);
 
+  useEffect(() => {
+    if (!order?.items) return;
+
+    const totals = order.items.reduce((acc, item) => {
+      const ordered = parseFloat(item.quantity);
+      const received = parseFloat(item.receivedQuantity || "0");
+      const missing = parseFloat(item.missingQuantity || "0");
+
+      return {
+        totalOrdered: acc.totalOrdered + ordered,
+        totalReceived: acc.totalReceived + received,
+        totalMissing: acc.totalMissing + missing
+      };
+    }, { totalOrdered: 0, totalReceived: 0, totalMissing: 0 });
+
+    setReceivingTotals(totals);
+  }, [order?.items]);
+
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6 max-w-5xl">
@@ -333,69 +357,74 @@ export default function SharedOrderPage() {
               </CardDescription>
             </div>
             <div className="flex flex-col items-end gap-2">
-              <div className="flex items-center gap-2">
-                {canUpdateStatus ? (
-                  <Select
-                    value={order.status}
-                    onValueChange={handleStatusChange}
-                    disabled={updateStatusMutation.isPending}
-                  >
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(orderStatuses).map(([value, { label }]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Badge
-                    variant={orderStatuses[order.status as keyof typeof orderStatuses]?.color as any || 'default'}
-                    className="h-9 px-4 text-sm"
-                  >
-                    {orderStatuses[order.status as keyof typeof orderStatuses]?.label || order.status}
-                  </Badge>
-                )}
-                {canManageReceiving && (
+              {canUpdateStatus ? (
+                <Select
+                  value={order.status}
+                  onValueChange={handleStatusChange}
+                  disabled={updateStatusMutation.isPending}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(orderStatuses).map(([value, { label }]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge
+                  variant={orderStatuses[order.status as keyof typeof orderStatuses]?.color as any || 'default'}
+                  className="h-9 px-4 text-sm"
+                >
+                  {orderStatuses[order.status as keyof typeof orderStatuses]?.label || order.status}
+                </Badge>
+              )}
+              {canManageReceiving && (
+                <Button
+                  variant="secondary"
+                  onClick={() => setIsReceivingDialogOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Package className="h-4 w-4" />
+                  Gerenciar Recebimento
+                </Button>
+              )}
+              <PDFDownloadLink
+                document={<OrderPDF order={order} isVendorView={isVendorView} />}
+                fileName={`pedido-${order.id}.pdf`}
+              >
+                {({ loading }) => (
                   <Button
-                    variant="secondary"
-                    onClick={() => setIsReceivingDialogOpen(true)}
-                    className="flex items-center gap-2"
+                    variant="outline"
+                    size="icon"
+                    disabled={loading}
                   >
-                    <Package className="h-4 w-4" />
-                    Gerenciar Recebimento
+                    <FileDown className="h-4 w-4" />
                   </Button>
                 )}
-                <PDFDownloadLink
-                  document={<OrderPDF order={order} isVendorView={isVendorView} />}
-                  fileName={`pedido-${order.id}.pdf`}
-                >
-                  {({ loading }) => (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      disabled={loading}
-                    >
-                      <FileDown className="h-4 w-4" />
-                    </Button>
-                  )}
-                </PDFDownloadLink>
-              </div>
-              <span className="text-sm text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                Última atualização: {format(new Date(order.updatedAt), "dd/MM HH:mm")}
-              </span>
-              {order.receivedAt && (
-                <span className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Package className="h-3 w-3" />
-                  Recebido em: {format(new Date(order.receivedAt), "dd/MM HH:mm")} por {order.receivedBy}
-                </span>
-              )}
+              </PDFDownloadLink>
             </div>
           </div>
+
+          {order.receivedAt && (
+            <div className="mt-4 grid grid-cols-3 gap-4 bg-muted/20 p-4 rounded-lg">
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">Total Pedido</div>
+                <div className="text-xl font-semibold">{receivingTotals.totalOrdered.toFixed(2)}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">Total Recebido</div>
+                <div className="text-xl font-semibold text-green-600">{receivingTotals.totalReceived.toFixed(2)}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">Total Faltante</div>
+                <div className="text-xl font-semibold text-red-600">{receivingTotals.totalMissing.toFixed(2)}</div>
+              </div>
+            </div>
+          )}
         </CardHeader>
 
         <CardContent className="p-6">

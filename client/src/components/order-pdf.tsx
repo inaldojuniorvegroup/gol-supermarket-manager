@@ -207,6 +207,19 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
     'missing': 'Faltante'
   };
 
+  // Calcular totais de recebimento
+  const receivingTotals = order.items?.reduce((acc, item) => {
+    const ordered = parseFloat(item.quantity);
+    const received = parseFloat(item.receivedQuantity || "0");
+    const missing = parseFloat(item.missingQuantity || "0");
+
+    return {
+      totalOrdered: acc.totalOrdered + ordered,
+      totalReceived: acc.totalReceived + received,
+      totalMissing: acc.totalMissing + missing
+    };
+  }, { totalOrdered: 0, totalReceived: 0, totalMissing: 0 }) || { totalOrdered: 0, totalReceived: 0, totalMissing: 0 };
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -294,6 +307,22 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
           </View>
 
           <View style={styles.totals}>
+            {order.receivedAt && (
+              <>
+                <View style={[styles.totalRow, styles.subtotalSection]}>
+                  <Text style={styles.totalLabel}>Total Pedido (Qtd):</Text>
+                  <Text style={styles.totalValue}>{receivingTotals.totalOrdered.toFixed(2)}</Text>
+                </View>
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Total Recebido (Qtd):</Text>
+                  <Text style={[styles.totalValue, { color: '#16a34a' }]}>{receivingTotals.totalReceived.toFixed(2)}</Text>
+                </View>
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Total Faltante (Qtd):</Text>
+                  <Text style={[styles.totalValue, { color: '#dc2626' }]}>{receivingTotals.totalMissing.toFixed(2)}</Text>
+                </View>
+              </>
+            )}
             <View style={[styles.totalRow, styles.subtotalSection]}>
               <Text style={styles.totalLabel}>Subtotal:</Text>
               <Text style={styles.totalValue}>${subtotal.toFixed(2)}</Text>
