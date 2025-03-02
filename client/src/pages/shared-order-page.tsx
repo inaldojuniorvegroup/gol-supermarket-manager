@@ -353,7 +353,7 @@ export default function SharedOrderPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-1 flex items-center gap-4">
               <img 
-                src="/attached_assets/LOGO.png" 
+                src="/assets/LOGO.png" 
                 alt="Gol Supermarket Logo" 
                 className="h-16 w-16 object-contain"
               />

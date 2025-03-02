@@ -218,7 +218,7 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Image
-              src={`${window.location.origin}/attached_assets/LOGO.png`}
+              src={`${window.location.origin}/assets/LOGO.png`}
               style={styles.logo}
             />
           </View>
