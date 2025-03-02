@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import type { OrderWithDetails } from '@/pages/shared-order-page';
 import { format } from 'date-fns';
 
@@ -9,10 +9,21 @@ const styles = StyleSheet.create({
     padding: 30,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#000000',
     paddingBottom: 10,
     marginBottom: 20,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    objectFit: 'contain',
   },
   headerTitle: {
     fontSize: 24,
@@ -205,15 +216,22 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Gol Supermarket</Text>
-          <Text style={styles.orderInfo}>Pedido #{order.id}</Text>
-          <Text style={styles.orderInfo}>Data: {format(new Date(order.createdAt), "dd/MM/yyyy")}</Text>
-          {order.receivedAt && (
-            <Text style={styles.orderInfo}>
-              Recebido em: {format(new Date(order.receivedAt), "dd/MM/yyyy 'às' HH:mm")}
-              {order.receivedBy ? ` por ${order.receivedBy}` : ''}
-            </Text>
-          )}
+          <View style={styles.headerLeft}>
+            <Image
+              src="/attached_assets/LOGO.png"
+              style={styles.logo}
+            />
+          </View>
+          <View>
+            <Text style={styles.orderInfo}>Pedido #{order.id}</Text>
+            <Text style={styles.orderInfo}>Data: {format(new Date(order.createdAt), "dd/MM/yyyy")}</Text>
+            {order.receivedAt && (
+              <Text style={styles.orderInfo}>
+                Recebido em: {format(new Date(order.receivedAt), "dd/MM/yyyy 'às' HH:mm")}
+                {order.receivedBy ? ` por ${order.receivedBy}` : ''}
+              </Text>
+            )}
+          </View>
         </View>
 
         <View style={styles.section}>
