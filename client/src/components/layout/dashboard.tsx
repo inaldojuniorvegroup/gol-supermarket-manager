@@ -58,7 +58,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-2 px-4">
           <motion.img 
             src="/assets/LOGO.png" 
-            alt="Gol Market" 
+            alt="Gol Supermarket" 
             className="w-8 h-8 object-contain"
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -78,7 +78,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
               delay: 0.4
             }}
           >
-            Gol Market
+            Gol Supermarket
           </motion.span>
         </div>
       </SidebarHeader>

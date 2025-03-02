@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { InsertUser, insertUserSchema } from "@shared/schema";
-import { motion } from "framer-motion"; // Adicionando import do Framer Motion
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -81,7 +81,7 @@ export default function AuthPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.5 }}
             >
-              <CardTitle>Bem-vindo ao Gol Market</CardTitle>
+              <CardTitle>Bem-vindo ao Gol Supermarket</CardTitle>
               <CardDescription>
                 Acesse o sistema de gerenciamento de pedidos
               </CardDescription>
@@ -136,7 +136,7 @@ export default function AuthPage() {
         <div className="max-w-md text-center">
           <Store className="mx-auto h-16 w-16 mb-6" />
           <h1 className="text-4xl font-bold mb-4">
-            Gol Market - Gestão de Pedidos
+            Gol Supermarket - Gestão de Pedidos
           </h1>
           <p className="text-lg opacity-90">
             Gerencie seus pedidos e controle seu estoque em várias lojas com nosso sistema completo de gerenciamento.
