@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Store as StoreType } from "@shared/schema";
+import { motion } from "framer-motion";
 import { 
   Package, Store, Truck, ShoppingCart, Menu, LogOut,
   ChevronRight, User
@@ -55,12 +56,30 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
     <>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4">
-          <img 
+          <motion.img 
             src="/assets/LOGO.png" 
             alt="Gol Market" 
             className="w-8 h-8 object-contain"
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ 
+              duration: 0.5,
+              ease: "easeOut",
+              delay: 0.2
+            }}
           />
-          <span className="font-semibold text-lg">Gol Market</span>
+          <motion.span 
+            className="font-semibold text-lg"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ 
+              duration: 0.5,
+              ease: "easeOut",
+              delay: 0.4
+            }}
+          >
+            Gol Market
+          </motion.span>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -103,16 +122,13 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
     <SidebarProvider defaultOpen>
       <div className="flex h-screen">
         <Sidebar>
-          {/* Mover o SidebarTrigger para dentro do Sidebar e ajustar posicionamento */}
           <div className="absolute right-0 translate-x-full top-2">
             <SidebarTrigger />
           </div>
           <NavContent />
         </Sidebar>
 
-        {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* User info header */}
           <div className="bg-background border-b py-3">
             <div className="max-w-screen-xl mx-auto px-4">
               <div className="flex flex-wrap justify-center items-center gap-3">

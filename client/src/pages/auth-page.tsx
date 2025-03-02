@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { InsertUser, insertUserSchema } from "@shared/schema";
+import { motion } from "framer-motion"; // Adicionando import do Framer Motion
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -50,17 +51,41 @@ export default function AuthPage() {
       <div className="flex items-center justify-center p-8">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4">
-              <img 
+            <motion.div 
+              className="mx-auto mb-4"
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
+                delay: 0.2
+              }}
+            >
+              <motion.img 
                 src="/assets/LOGO.png" 
                 alt="Gol Supermarket Logo" 
                 className="h-24 w-24 mx-auto object-contain"
+                initial={{ scale: 0.5, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 260,
+                  damping: 20,
+                  delay: 0.3
+                }}
               />
-            </div>
-            <CardTitle>Bem-vindo ao Gol Market</CardTitle>
-            <CardDescription>
-              Acesse o sistema de gerenciamento de pedidos
-            </CardDescription>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+            >
+              <CardTitle>Bem-vindo ao Gol Market</CardTitle>
+              <CardDescription>
+                Acesse o sistema de gerenciamento de pedidos
+              </CardDescription>
+            </motion.div>
           </CardHeader>
           <CardContent>
             <Form {...loginForm}>
