@@ -31,7 +31,6 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
 
-  // Buscar informações da loja do usuário
   const { data: store } = useQuery<StoreType>({
     queryKey: [`/api/stores/${user?.storeId}`],
     enabled: !!user?.storeId,
@@ -103,10 +102,11 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen>
       <div className="flex h-screen">
-        {/* Move SidebarTrigger outside of Sidebar */}
-        <SidebarTrigger className="fixed top-4 left-4 z-50" />
-
         <Sidebar>
+          {/* Mover o SidebarTrigger para dentro do Sidebar e ajustar posicionamento */}
+          <div className="absolute right-0 translate-x-full top-2">
+            <SidebarTrigger />
+          </div>
           <NavContent />
         </Sidebar>
 
