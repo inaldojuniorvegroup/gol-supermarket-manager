@@ -185,6 +185,23 @@ const styles = StyleSheet.create({
     color: '#666666',
     marginTop: 2,
     fontStyle: 'italic',
+  },
+  differenceRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 2,
+    paddingTop: 2,
+    borderTopWidth: 1,
+    borderTopColor: '#CCCCCC',
+    borderTopStyle: 'dashed',
+  },
+  missingAmount: {
+    color: '#dc2626', 
+    fontSize: 10,
+  },
+  receivedAmount: {
+    color: '#16a34a', 
+    fontSize: 10,
   }
 });
 
@@ -194,12 +211,20 @@ interface OrderPDFProps {
 }
 
 export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
-  // Calcular subtotal e total
-  const subtotal = order.items?.reduce((acc, item) => {
+  const originalSubtotal = order.items?.reduce((acc, item) => {
     return acc + (Number(item.total) || 0);
   }, 0) || 0;
 
-  // Status labels em português
+  const receivedSubtotal = order.items?.reduce((acc, item) => {
+    if (!item.receivedQuantity) return acc + (Number(item.total) || 0);
+
+    const receivedQty = Number(item.receivedQuantity);
+    const price = Number(item.price);
+    return acc + (receivedQty * price);
+  }, 0) || 0;
+
+  const missingAmount = originalSubtotal - receivedSubtotal;
+
   const statusLabels = {
     'pending': 'Pendente',
     'received': 'Recebido',
@@ -261,47 +286,76 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
               </View>
             </View>
 
-            {order.items?.map((item) => (
-              <View key={item.id} style={styles.tableRow}>
-                <Text style={[styles.tableCell, styles.tableColCode]}>
-                  {item.product?.supplierCode}
-                </Text>
-                <View style={[styles.tableCell, styles.tableColProduct]}>
-                  <Text>{item.product?.name}</Text>
-                  {!isVendorView && (
-                    <Text style={styles.productCodes}>
-                      Código Interno: {item.product?.itemCode} | EAN: {item.product?.barCode}
-                    </Text>
-                  )}
-                  {item.receivedQuantity && (
-                    <Text style={styles.itemReceivingInfo}>
-                      Recebido: {item.receivedQuantity} 
-                      {item.missingQuantity && Number(item.missingQuantity) > 0 ? 
-                        ` | Faltante: ${item.missingQuantity}` : ''}
-                      {item.receivingNotes ? `\nObs: ${item.receivingNotes}` : ''}
-                    </Text>
-                  )}
+            {order.items?.map((item) => {
+              const isPartialOrMissing = item.receivedQuantity && 
+                Number(item.receivedQuantity) < Number(item.quantity);
+
+              return (
+                <View key={item.id} style={[
+                  styles.tableRow,
+                  isPartialOrMissing && { backgroundColor: '#fee2e2' } 
+                ]}>
+                  <Text style={[styles.tableCell, styles.tableColCode]}>
+                    {item.product?.supplierCode}
+                  </Text>
+                  <View style={[styles.tableCell, styles.tableColProduct]}>
+                    <Text>{item.product?.name}</Text>
+                    {!isVendorView && (
+                      <Text style={styles.productCodes}>
+                        Código Interno: {item.product?.itemCode} | EAN: {item.product?.barCode}
+                      </Text>
+                    )}
+                    {item.receivedQuantity && (
+                      <Text style={styles.itemReceivingInfo}>
+                        Pedido: {item.quantity} | 
+                        Recebido: {item.receivedQuantity}
+                        {item.missingQuantity && Number(item.missingQuantity) > 0 ? 
+                          ` | Faltante: ${item.missingQuantity}` : ''}
+                        {item.receivingNotes ? `\nObs: ${item.receivingNotes}` : ''}
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={[styles.tableCell, styles.tableColQty]}>{item.quantity}</Text>
+                  <Text style={[styles.tableCell, styles.tableColPrice]}>
+                    ${Number(item.price).toFixed(2)}
+                  </Text>
+                  <Text style={[styles.tableCell, styles.tableColTotal]}>
+                    ${Number(item.total).toFixed(2)}
+                  </Text>
                 </View>
-                <Text style={[styles.tableCell, styles.tableColQty]}>{item.quantity}</Text>
-                <Text style={[styles.tableCell, styles.tableColPrice]}>
-                  ${Number(item.price).toFixed(2)}
-                </Text>
-                <Text style={[styles.tableCell, styles.tableColTotal]}>
-                  ${Number(item.total).toFixed(2)}
-                </Text>
-              </View>
-            ))}
+              );
+            })}
           </View>
 
           <View style={styles.totals}>
             <View style={[styles.totalRow, styles.subtotalSection]}>
-              <Text style={styles.totalLabel}>Subtotal:</Text>
-              <Text style={styles.totalValue}>${subtotal.toFixed(2)}</Text>
+              <Text style={styles.totalLabel}>Subtotal Original:</Text>
+              <Text style={styles.totalValue}>${originalSubtotal.toFixed(2)}</Text>
             </View>
+
+            {order.receivedAt && (
+              <>
+                <View style={styles.differenceRow}>
+                  <Text style={[styles.totalLabel, styles.receivedAmount]}>
+                    Valor Recebido: ${receivedSubtotal.toFixed(2)}
+                  </Text>
+                </View>
+                {missingAmount > 0 && (
+                  <View style={styles.differenceRow}>
+                    <Text style={[styles.totalLabel, styles.missingAmount]}>
+                      Valor Faltante: -${missingAmount.toFixed(2)}
+                    </Text>
+                  </View>
+                )}
+              </>
+            )}
+
             <View style={[styles.totalRow, styles.grandTotal]}>
-              <Text style={[styles.totalLabel, styles.grandTotalText]}>Total do Pedido:</Text>
+              <Text style={[styles.totalLabel, styles.grandTotalText]}>
+                {order.receivedAt ? 'Total Final:' : 'Total do Pedido:'}
+              </Text>
               <Text style={[styles.totalValue, styles.grandTotalText]}>
-                ${Number(order.total || 0).toFixed(2)}
+                ${(order.receivedAt ? receivedSubtotal : originalSubtotal).toFixed(2)}
               </Text>
             </View>
           </View>

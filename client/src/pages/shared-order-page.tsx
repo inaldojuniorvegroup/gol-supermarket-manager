@@ -271,6 +271,35 @@ export default function SharedOrderPage() {
     }, 0).toFixed(2);
   };
 
+  // Adicionar cálculo de totais
+  const calculateTotals = () => {
+    if (!order?.items) return { original: 0, received: 0, missing: 0 };
+
+    return order.items.reduce((acc, item) => {
+      const originalTotal = Number(item.total) || 0;
+
+      if (!item.receivedQuantity) {
+        return {
+          ...acc,
+          original: acc.original + originalTotal
+        };
+      }
+
+      const receivedQty = Number(item.receivedQuantity);
+      const price = Number(item.price);
+      const receivedTotal = receivedQty * price;
+
+      return {
+        original: acc.original + originalTotal,
+        received: acc.received + receivedTotal,
+        missing: acc.missing + (originalTotal - receivedTotal)
+      };
+    }, { original: 0, received: 0, missing: 0 });
+  };
+
+  const totals = calculateTotals();
+
+
   useEffect(() => {
     if (order?.items) {
       const newTotal = calculateTotal(order.items, editedItems);
@@ -466,14 +495,22 @@ export default function SharedOrderPage() {
                 <BookOpen className="h-4 w-4" />
                 Itens do Pedido
               </div>
-              <div className="text-2xl font-semibold flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                {orderTotal}
+              <div className="space-y-1">
+                <div className="text-2xl font-semibold flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  {order?.receivedAt ? totals.received.toFixed(2) : totals.original.toFixed(2)}
+                </div>
+                {order?.receivedAt && totals.missing > 0 && (
+                  <div className="text-sm text-red-600 flex items-center gap-1 justify-end">
+                    <XCircle className="h-4 w-4" />
+                    Valor Faltante: ${totals.missing.toFixed(2)}
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="space-y-3">
-              {order.items?.map((item) => {
+              {order?.items?.map((item) => {
                 const editedItem = editedItems[item.id] || {
                   quantity: item.quantity || "0",
                   price: item.price || "0"
@@ -482,8 +519,16 @@ export default function SharedOrderPage() {
                 const price = Math.max(0, Number(editedItem.price) || 0);
                 const total = quantity * price;
 
+                const isPartialOrMissing = item.receivedQuantity && 
+                  Number(item.receivedQuantity) < Number(item.quantity);
+
                 return (
-                  <div key={item.id} className="bg-muted/30 p-4 rounded-lg">
+                  <div 
+                    key={item.id} 
+                    className={`bg-muted/30 p-4 rounded-lg space-y-4 ${
+                      isPartialOrMissing ? 'border-l-4 border-red-500' : ''
+                    }`}
+                  >
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center justify-between">
