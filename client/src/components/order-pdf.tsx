@@ -144,6 +144,47 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: '#666666',
     marginTop: 2,
+  },
+  receivingInfo: {
+    marginTop: 10,
+    padding: 5,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 3,
+  },
+  receivingTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  receivingStatus: {
+    fontSize: 10,
+    color: '#666666',
+    marginBottom: 3,
+  },
+  receivingTable: {
+    width: '100%',
+    marginTop: 5,
+  },
+  receivingRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#CCCCCC',
+    paddingVertical: 3,
+  },
+  receivingLabel: {
+    fontSize: 9,
+    color: '#666666',
+    width: '30%',
+  },
+  receivingValue: {
+    fontSize: 9,
+    width: '70%',
+  },
+  itemReceivingInfo: {
+    fontSize: 9,
+    color: '#666666',
+    marginTop: 2,
+    fontStyle: 'italic',
   }
 });
 
@@ -158,6 +199,14 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
     return acc + (Number(item.total) || 0);
   }, 0) || 0;
 
+  // Status labels em português
+  const statusLabels = {
+    'pending': 'Pendente',
+    'received': 'Recebido',
+    'partial': 'Recebido Parcialmente',
+    'missing': 'Faltante'
+  };
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -165,6 +214,12 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
           <Text style={styles.headerTitle}>Gol Supermarket</Text>
           <Text style={styles.orderInfo}>Pedido #{order.id}</Text>
           <Text style={styles.orderInfo}>Data: {format(new Date(order.createdAt), "dd/MM/yyyy")}</Text>
+          {order.receivedAt && (
+            <Text style={styles.orderInfo}>
+              Recebido em: {format(new Date(order.receivedAt), "dd/MM/yyyy 'às' HH:mm")}
+              {order.receivedBy ? ` por ${order.receivedBy}` : ''}
+            </Text>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -181,6 +236,16 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
               <Text style={styles.value}>{order.distributor?.code}</Text>
             </View>
           </View>
+
+          {order.receivingNotes && (
+            <View style={styles.receivingInfo}>
+              <Text style={styles.receivingTitle}>Informações do Recebimento</Text>
+              <Text style={styles.receivingStatus}>
+                Status: {statusLabels[order.status as keyof typeof statusLabels] || order.status}
+              </Text>
+              <Text style={styles.value}>{order.receivingNotes}</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -198,12 +263,22 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
 
             {order.items?.map((item) => (
               <View key={item.id} style={styles.tableRow}>
-                <Text style={[styles.tableCell, styles.tableColCode]}>{item.product?.supplierCode}</Text>
+                <Text style={[styles.tableCell, styles.tableColCode]}>
+                  {item.product?.supplierCode}
+                </Text>
                 <View style={[styles.tableCell, styles.tableColProduct]}>
                   <Text>{item.product?.name}</Text>
                   {!isVendorView && (
                     <Text style={styles.productCodes}>
                       Código Interno: {item.product?.itemCode} | EAN: {item.product?.barCode}
+                    </Text>
+                  )}
+                  {item.receivedQuantity && (
+                    <Text style={styles.itemReceivingInfo}>
+                      Recebido: {item.receivedQuantity} 
+                      {item.missingQuantity && Number(item.missingQuantity) > 0 ? 
+                        ` | Faltante: ${item.missingQuantity}` : ''}
+                      {item.receivingNotes ? `\nObs: ${item.receivingNotes}` : ''}
                     </Text>
                   )}
                 </View>
@@ -234,10 +309,12 @@ export const OrderPDF = ({ order, isVendorView = false }: OrderPDFProps) => {
 
         <View style={styles.footer}>
           <Text>
-            Pedido gerado em {format(new Date(), "dd/MM/yyyy 'às' HH:mm")}
+            {order.receivedAt ? 
+              `Recebimento registrado em ${format(new Date(order.receivedAt), "dd/MM/yyyy 'às' HH:mm")}` :
+              `Relatório gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}`}
           </Text>
           <Text>
-            Status: {order.status.toUpperCase()}
+            Status: {statusLabels[order.status as keyof typeof statusLabels] || order.status}
           </Text>
         </View>
       </Page>

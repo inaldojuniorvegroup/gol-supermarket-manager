@@ -18,7 +18,10 @@ import {
   FileText,
   ClipboardList,
   BookOpen,
-  FileDown
+  FileDown,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -538,6 +541,35 @@ export default function SharedOrderPage() {
                                   EAN: {item.product?.barCode}
                                 </div>
                               </>
+                            )}
+                          </div>
+                        )}
+
+                        {item.receivedQuantity && (
+                          <div className="mt-2 text-sm space-y-1">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Package className="h-3 w-3" />
+                                Quantidade Pedida: {item.quantity}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-green-600 flex items-center gap-1">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Recebido: {item.receivedQuantity}
+                                </span>
+                                {item.missingQuantity && parseFloat(item.missingQuantity) > 0 && (
+                                  <span className="text-red-600 flex items-center gap-1">
+                                    <XCircle className="h-3 w-3" />
+                                    Faltante: {item.missingQuantity}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {item.receivingNotes && (
+                              <div className="flex items-center gap-1 text-yellow-600">
+                                <AlertTriangle className="h-3 w-3" />
+                                Obs: {item.receivingNotes}
+                              </div>
                             )}
                           </div>
                         )}
