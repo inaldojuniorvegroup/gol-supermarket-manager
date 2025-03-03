@@ -23,6 +23,14 @@ const formatPrice = (price: number): string => {
   return (Math.floor(price * 100) / 100).toFixed(2);
 };
 
+// Função para formatar a exibição do preço
+const formatPriceDisplay = (price: string | null | undefined) => {
+  if (!price || Number(price) === 0) {
+    return "Preço não definido";
+  }
+  return `$${formatPrice(Number(price))}`;
+};
+
 export function CartSheet() {
   const { carts, removeFromCart, updateQuantity, clearCart, getCartTotal } = useCart();
   const { toast } = useToast();
@@ -173,7 +181,11 @@ export function CartSheet() {
                           </div>
                         </div>
                         <Badge variant="secondary" className="text-base">
-                          Total: ${formatPrice(cartTotal)}
+                          Total: {cartTotal > 0 ? (
+                            <span>${formatPrice(cartTotal)}</span>
+                          ) : (
+                            <span className="text-muted-foreground">Total não calculado</span>
+                          )}
                         </Badge>
                       </div>
                     </div>
@@ -194,10 +206,10 @@ export function CartSheet() {
                                       <Box className="h-3 w-3" />
                                       <span>Caixa com {item.product.boxQuantity} unidades</span>
                                     </div>
-                                    <div>${formatPrice(Number(item.product.boxPrice))} /cx</div>
+                                    <div>{item.product.boxPrice ? `$${formatPrice(Number(item.product.boxPrice))} /cx` : "Preço não definido"}</div>
                                   </>
                                 ) : (
-                                  <div>${formatPrice(Number(item.product.unitPrice))} /un</div>
+                                  <div>{item.product.unitPrice ? `$${formatPrice(Number(item.product.unitPrice))} /un` : "Preço não definido"}</div>
                                 )}
                               </div>
                             </div>
@@ -231,7 +243,7 @@ export function CartSheet() {
                                 </Button>
                               </div>
                               <div className="text-sm font-medium">
-                                ${formatPrice(total)}
+                                {price ? `$${formatPrice(total)}` : "Preço não definido"}
                               </div>
                             </div>
                           </div>
@@ -259,7 +271,7 @@ export function CartSheet() {
           <div className="border-t mt-6 pt-6">
             <div className="flex items-center justify-between text-lg font-medium">
               <span>Total Geral</span>
-              <span>${formatPrice(totalGeral)}</span>
+              <span>{totalGeral > 0 ? <span>${formatPrice(totalGeral)}</span> : <span className="text-muted-foreground">Total não calculado</span>}</span>
             </div>
           </div>
         )}

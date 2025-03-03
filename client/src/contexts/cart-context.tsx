@@ -32,11 +32,8 @@ const formatPrice = (price: number): string => {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [carts, setCarts] = useState<DistributorCart[]>([]);
 
+  // Modificando a função addToCart para aceitar produtos sem preço
   const addToCart = (product: Product, quantity = 1, isBoxUnit = true) => {
-    if (isBoxUnit && !product.boxPrice) {
-      return;
-    }
-
     setCarts(currentCarts => {
       const distributorCartIndex = currentCarts.findIndex(
         cart => cart.distributorId === product.distributorId
@@ -87,7 +84,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setCarts(currentCarts => 
+    setCarts(currentCarts =>
       currentCarts.map(cart => {
         if (cart.distributorId === distributorId) {
           return {
@@ -112,15 +109,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Atualizando o cálculo do total do carrinho para lidar com preços zerados ou nulos
   const getCartTotal = (distributorId: number): number => {
     const cart = carts.find(cart => cart.distributorId === distributorId);
     if (!cart) return 0;
 
     return cart.items.reduce((sum, item) => {
       if (item.isBoxUnit) {
-        if (!item.product.boxPrice) return sum;
+        if (!item.product.boxPrice || Number(item.product.boxPrice) === 0) return sum;
         return sum + (Number(item.product.boxPrice) * item.quantity);
       }
+      if (!item.product.unitPrice || Number(item.product.unitPrice) === 0) return sum;
       return sum + (Number(item.product.unitPrice) * item.quantity);
     }, 0);
   };
@@ -132,12 +131,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ 
-        carts, 
-        addToCart, 
-        removeFromCart, 
-        updateQuantity, 
-        clearCart, 
+      value={{
+        carts,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
         getCartTotal,
         getDistributorCart
       }}

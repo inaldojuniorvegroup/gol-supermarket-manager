@@ -79,16 +79,15 @@ export function ProductCard({
     }
   });
 
+  // Removendo a validação de preço zero
   const handleAddToCart = () => {
     if (product && onAddToCart) {
       // Verifica se tem preço de caixa quando está no modo caixa
       if (isBoxUnit && !product.boxPrice) {
         toast({
-          title: "Erro ao adicionar ao carrinho",
-          description: "Este produto não possui preço de caixa definido.",
-          variant: "destructive"
+          title: "Aviso",
+          description: "Este produto não possui preço de caixa definido. Será adicionado sem preço.",
         });
-        return;
       }
 
       onAddToCart(product, quantity);
@@ -143,6 +142,14 @@ export function ProductCard({
   const currentPrice = isBoxUnit
     ? (product.boxPrice || (Number(product.unitPrice) * product.boxQuantity))
     : Number(product.unitPrice);
+
+  // Ajustando a exibição do preço
+  const formatPriceDisplay = (price: string | null | undefined) => {
+    if (!price || Number(price) === 0) {
+      return "Preço não definido";
+    }
+    return `$${formatPrice(Number(price))}`;
+  };
 
   return (
     <motion.div
@@ -256,10 +263,10 @@ export function ProductCard({
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <span className="font-semibold text-lg">
-                  ${formatPrice(product.boxPrice || (Number(product.unitPrice) * product.boxQuantity))} /cx
+                  {product.boxPrice ? formatPriceDisplay(product.boxPrice) : "Preço de caixa não definido"} /cx
                 </span>
                 <div className="text-sm text-muted-foreground">
-                  ${formatPrice(product.unitPrice)} /un
+                  {formatPriceDisplay(product.unitPrice)} /un
                 </div>
               </div>
               {similarProducts.length > 0 && !isVendorView && (
